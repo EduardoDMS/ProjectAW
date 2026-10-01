@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+	<ItemGroup>
+		<Folder Include="Modules\Guias\" />
+		<Folder Include="Modules\Despacho\" />
+		<Folder Include="Modules\Maestros\Almacenes\" />
+		<Folder Include="Modules\Maestros\Clientes\" />
+		<Folder Include="Modules\Maestros\Proveedores\" />
+		<Folder Include="Modules\Maestros\Ubicaciones\" />
+		<Folder Include="Modules\Recepcion\" />
+		<Folder Include="Modules\Seguridad\" />
+		<Folder Include="wwwroot\js\modules\maestros\almacenes\" />
+		<Folder Include="wwwroot\js\modules\maestros\clientes\" />
+		<Folder Include="wwwroot\js\modules\maestros\ubicaciones\" />
+		<Folder Include="wwwroot\js\modules\maestros\proveedores\" />
+	</ItemGroup>
+	<ItemGroup>
+	  <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="10.0.12" />
+	  <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="10.0.12">
+	    <PrivateAssets>all</PrivateAssets>
+	    <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+	  </PackageReference>
+	  <PackageReference Include="Swashbuckle.AspNetCore" Version="10.2.3" />
+	</ItemGroup>
+</Project>

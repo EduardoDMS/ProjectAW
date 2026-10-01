@@ -1,0 +1,60 @@
+using Microsoft.EntityFrameworkCore;
+using ProjectAW.Modules.Maestros.Productos.Repositories;
+using ProjectAW.Modules.Maestros.Productos.Services;
+using ProjectAW.Infrastructure.MVC;
+using ProjectAW.Infrastructure.Data;
+
+var builder = WebApplication.CreateBuilder(args);
+
+// Add services to the container.
+//builder.Services.AddControllersWithViews();
+// MVC
+builder.Services.AddControllersWithViews().AddRazorOptions(options =>
+{
+    options.ViewLocationExpanders.Add(new ModuleViewLocationExpander());
+});
+
+// Swagger
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
+
+// EF Core
+builder.Services.AddDbContext<AppDbContext>(options => options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+// DI
+builder.Services.AddScoped<IProductoRepository, ProductoRepository>();
+builder.Services.AddScoped<IProductoService, ProductoService>();
+
+var app = builder.Build();
+
+// Configure the HTTP request pipeline.
+//if (!app.Environment.IsDevelopment())
+//{
+//    app.UseExceptionHandler("/Home/Error");
+//    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
+//    app.UseHsts();
+//}
+
+// Swagger
+if (app.Environment.IsDevelopment())
+{
+    app.UseSwagger();
+    app.UseSwaggerUI();
+}
+
+app.UseHttpsRedirection();
+app.UseRouting();
+
+app.UseAuthorization();
+
+app.MapStaticAssets();
+
+//app.MapControllers();
+
+app.MapControllerRoute(
+    name: "default",
+    pattern: "{controller=Home}/{action=Index}/{id?}")
+    .WithStaticAssets();
+
+
+app.Run();

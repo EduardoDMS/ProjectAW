@@ -1,0 +1,17 @@
+# Visual Studio
+.vs/
+*.user
+*.suo
+
+# .NET
+bin/
+obj/
+
+# ASP.NET Core - configuración local
+appsettings.Development.json
+
+# User Secrets
+secrets.json
+
+# Logs
+*.log
