@@ -1,13 +1,10 @@
-﻿namespace ProjectAW.Modules.Maestros.Productos.DTOs.Requests
+﻿namespace ProjectAW.Modules.Maestros.Ubicaciones.DTOs.Requests
 {
-    public class ActualizarProductoDto
+    public class ActualizarUbicacionDto
     {
         public string Codigo { get; set; } = string.Empty;
         public string? Descripcion { get; set; }
-        public string? Lote { get; set; }
-        public string Serie { get; set; } = string.Empty;
         public bool Activo { get; set; }
-
         public DateTime FchModificacion { get; set; } = DateTime.Now;
     }
 }

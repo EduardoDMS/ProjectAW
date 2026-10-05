@@ -8,10 +8,9 @@
 	<ItemGroup>
 		<Folder Include="Modules\Guias\" />
 		<Folder Include="Modules\Despacho\" />
-		<Folder Include="Modules\Maestros\Almacenes\" />
+		<Folder Include="Modules\Maestros\Categorias\Views\" />
 		<Folder Include="Modules\Maestros\Clientes\" />
 		<Folder Include="Modules\Maestros\Proveedores\" />
-		<Folder Include="Modules\Maestros\Ubicaciones\" />
 		<Folder Include="Modules\Recepcion\" />
 		<Folder Include="Modules\Seguridad\" />
 		<Folder Include="wwwroot\js\modules\maestros\almacenes\" />
