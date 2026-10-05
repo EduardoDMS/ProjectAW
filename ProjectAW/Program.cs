@@ -3,6 +3,10 @@ using ProjectAW.Modules.Maestros.Productos.Repositories;
 using ProjectAW.Modules.Maestros.Productos.Services;
 using ProjectAW.Infrastructure.MVC;
 using ProjectAW.Infrastructure.Data;
+using ProjectAW.Modules.Maestros.Almacenes.Services;
+using ProjectAW.Modules.Maestros.Almacenes.Repositories;
+using ProjectAW.Modules.Maestros.Categorias.Services;
+using ProjectAW.Modules.Maestros.Categorias.Repositories;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -24,6 +28,11 @@ builder.Services.AddDbContext<AppDbContext>(options => options.UseSqlServer(buil
 // DI
 builder.Services.AddScoped<IProductoRepository, ProductoRepository>();
 builder.Services.AddScoped<IProductoService, ProductoService>();
+builder.Services.AddScoped<IAlmacenService, AlmacenService>();
+builder.Services.AddScoped<IAlmacenRepository, AlmacenRepository>();
+builder.Services.AddScoped<ICategoriaService, CategoriaService>();
+builder.Services.AddScoped<ICategoriaRepository, CategoriaRepository>();
+
 
 var app = builder.Build();
 

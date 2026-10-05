@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using ProjectAW.Infrastructure.Data;
 
@@ -11,9 +12,11 @@ using ProjectAW.Infrastructure.Data;
 namespace ProjectAW.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20261001232016_NuevaTabla_Productos")]
+    partial class NuevaTabla_Productos
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -46,48 +49,17 @@ namespace ProjectAW.Migrations
                         .HasColumnType("nvarchar(150)");
 
                     b.Property<DateTime?>("FchModificacion")
-                        .ValueGeneratedOnUpdate()
                         .HasColumnType("datetime2");
 
                     b.Property<DateTime>("FchRegistro")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("datetime2")
-                        .HasDefaultValueSql("GETDATE()");
+                        .HasColumnType("datetime2");
 
                     b.HasKey("IdAlmacen");
 
                     b.HasIndex("Codigo")
                         .IsUnique();
 
-                    b.ToTable("Almacenes");
-                });
-
-            modelBuilder.Entity("ProjectAW.Modules.Maestros.Categorias.Entities.Categoria", b =>
-                {
-                    b.Property<int>("IdCategoria")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("IdCategoria"));
-
-                    b.Property<bool>("Activo")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bit")
-                        .HasDefaultValue(true);
-
-                    b.Property<string>("Descripcion")
-                        .IsRequired()
-                        .HasMaxLength(250)
-                        .HasColumnType("nvarchar(250)");
-
-                    b.Property<string>("Nombre")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.HasKey("IdCategoria");
-
-                    b.ToTable("Categorias");
+                    b.ToTable("Almacen");
                 });
 
             modelBuilder.Entity("ProjectAW.Modules.Maestros.Productos.Entities.Producto", b =>
@@ -137,43 +109,6 @@ namespace ProjectAW.Migrations
                         .IsUnique();
 
                     b.ToTable("Productos");
-                });
-
-            modelBuilder.Entity("ProjectAW.Modules.Maestros.Ubicaciones.Entities.Ubicacion", b =>
-                {
-                    b.Property<int>("IdUbicacion")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("IdUbicacion"));
-
-                    b.Property<bool>("Activo")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("Codigo")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<string>("Descripcion")
-                        .HasMaxLength(150)
-                        .HasColumnType("nvarchar(150)");
-
-                    b.Property<DateTime?>("FchModificacion")
-                        .ValueGeneratedOnUpdate()
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime>("FchRegistro")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("datetime2")
-                        .HasDefaultValueSql("GETDATE()");
-
-                    b.HasKey("IdUbicacion");
-
-                    b.HasIndex("Codigo")
-                        .IsUnique();
-
-                    b.ToTable("Ubicaciones");
                 });
 #pragma warning restore 612, 618
         }

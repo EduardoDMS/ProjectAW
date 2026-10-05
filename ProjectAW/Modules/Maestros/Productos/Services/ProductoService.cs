@@ -14,6 +14,7 @@ public class ProductoService:IProductoService
         _repository = repository;
     }
 
+    // preguntar si retorna toda la calse menos la fecha p 
     public async Task<List<ProductoDto>> ObtenerTodosAsync()
     {
         var productos=await _repository.ObtenerTodosAsync();
@@ -23,7 +24,9 @@ public class ProductoService:IProductoService
             IdProducto=p.IdProducto,
             Codigo=p.Codigo,
             Descripcion=p.Descripcion,
-            Activo=p.Activo,
+            Lote = p.Lote,
+            Serie = p.Serie,
+            Activo =p.Activo,
         }).ToList();
     }
 
@@ -39,6 +42,8 @@ public class ProductoService:IProductoService
             IdProducto = producto.IdProducto,
             Codigo = producto.Codigo,
             Descripcion = producto.Descripcion,
+            Lote = producto.Lote,
+            Serie = producto.Serie,
             Activo = producto.Activo,
         };
     }
@@ -55,6 +60,8 @@ public class ProductoService:IProductoService
             IdProducto = producto.IdProducto,
             Codigo = producto.Codigo,
             Descripcion = producto.Descripcion,
+            Lote = producto.Lote,
+            Serie = producto.Serie,
             Activo = producto.Activo,
         };
     }
@@ -72,7 +79,11 @@ public class ProductoService:IProductoService
         {
             Codigo = codigo,
             Descripcion = dto.Descripcion?.Trim(),
-            Activo = true
+            Lote = dto.Lote,
+            Serie = dto.Serie,
+            Activo = true,
+            FchRegistro = DateTime.UtcNow
+
         };
 
         await _repository.CrearAsync(producto);
@@ -82,6 +93,8 @@ public class ProductoService:IProductoService
             IdProducto = producto.IdProducto,
             Codigo = producto.Codigo,
             Descripcion = dto.Descripcion,
+            Lote = dto.Lote,
+            Serie = dto.Serie,
             Activo = producto.Activo
         };
     }
@@ -104,7 +117,10 @@ public class ProductoService:IProductoService
 
         producto.Codigo = codigo;
         producto.Descripcion=dto.Descripcion?.Trim();
+        producto.Lote = dto.Lote;
+        producto.Serie = dto.Serie;
         producto.Activo = dto.Activo;
+        producto.FchModificacion = DateTime.UtcNow;
 
         await _repository.ActualizarAsync(producto);
 
