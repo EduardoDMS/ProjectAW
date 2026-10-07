@@ -7,6 +7,10 @@ using ProjectAW.Modules.Maestros.Almacenes.Services;
 using ProjectAW.Modules.Maestros.Almacenes.Repositories;
 using ProjectAW.Modules.Maestros.Categorias.Services;
 using ProjectAW.Modules.Maestros.Categorias.Repositories;
+using ProjectAW.Modules.Maestros.Clientes.Repositories;
+using ProjectAW.Modules.Maestros.Clientes.Services;
+using ProjectAW.Modules.Maestros.Proveedores.Repositories;
+using ProjectAW.Modules.Maestros.Proveedores.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -32,6 +36,10 @@ builder.Services.AddScoped<IAlmacenService, AlmacenService>();
 builder.Services.AddScoped<IAlmacenRepository, AlmacenRepository>();
 builder.Services.AddScoped<ICategoriaService, CategoriaService>();
 builder.Services.AddScoped<ICategoriaRepository, CategoriaRepository>();
+builder.Services.AddScoped<IClienteRepository, ClienteRepository>();
+builder.Services.AddScoped<IClienteService, ClienteService>();
+builder.Services.AddScoped<IProveedorRepository, ProveedorRepository>();
+builder.Services.AddScoped<IProveedorService, ProveedorService>();
 
 
 var app = builder.Build();

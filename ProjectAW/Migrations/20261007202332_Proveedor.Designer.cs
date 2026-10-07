@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using ProjectAW.Infrastructure.Data;
 
@@ -11,9 +12,11 @@ using ProjectAW.Infrastructure.Data;
 namespace ProjectAW.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20261007202332_Proveedor")]
+    partial class Proveedor
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -113,6 +116,7 @@ namespace ProjectAW.Migrations
                         .HasColumnType("nvarchar(50)");
 
                     b.Property<DateTime?>("FchModificacion")
+                        .ValueGeneratedOnUpdate()
                         .HasColumnType("datetime2");
 
                     b.Property<DateTime>("FchRegistro")
@@ -171,6 +175,7 @@ namespace ProjectAW.Migrations
                         .HasColumnType("nvarchar(150)");
 
                     b.Property<DateTime?>("FchModificacion")
+                        .ValueGeneratedOnUpdate()
                         .HasColumnType("datetime2");
 
                     b.Property<DateTime>("FchRegistro")
@@ -216,7 +221,8 @@ namespace ProjectAW.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
-                    b.Property<DateTime?>("FchModificacion")
+                    b.Property<DateTime>("FchModificacion")
+                        .ValueGeneratedOnUpdate()
                         .HasColumnType("datetime2");
 
                     b.Property<DateTime>("FchRegistro")

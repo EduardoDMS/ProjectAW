@@ -32,9 +32,9 @@ public class ProductoConfiguration:IEntityTypeConfiguration<Producto>
         builder.Property(p => p.FchRegistro)
                .HasDefaultValueSql("GETDATE()")
                .ValueGeneratedOnAdd();
-        
+
         builder.Property(p => p.FchModificacion)
-               .ValueGeneratedOnUpdate();
+               .IsRequired(false);
 
     }
 }
