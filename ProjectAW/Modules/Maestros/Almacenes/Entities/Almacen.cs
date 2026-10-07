@@ -1,4 +1,6 @@
-﻿namespace ProjectAW.Modules.Maestros.Almacenes.Entities
+﻿using ProjectAW.Modules.Maestros.Ubicaciones.Entities;
+
+namespace ProjectAW.Modules.Maestros.Almacenes.Entities
 {
     public class Almacen
     {
@@ -10,7 +12,8 @@
         public DateTime? FchModificacion { get; set; }
 
         // conexion a la nueva tabla
-        // public int CodigoUsuarioModificacion { get; set; }
+        
+        public ICollection<Ubicacion>? Ubicaciones { get; set; }
 
     }
 }

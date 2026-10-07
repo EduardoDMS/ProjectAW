@@ -5,8 +5,9 @@ using ProjectAW.Modules.Maestros.Ubicaciones.Services;
 
 namespace ProjectAW.Modules.Maestros.Ubicaciones.Controllers
 {
-    [Route("api/[controller]")]
+    
     [ApiController]
+    [Route("api/[controller]")]
     public class UbicacionApiController : ControllerBase
     {
         private readonly IUbicacionService _service;
