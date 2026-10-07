@@ -3,9 +3,9 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace ProjectAW.Modules.Maestros.Ubicaciones.Entities
 {
-    public class UbicacionConfiguration:IEntityTypeConfiguration<Ubicacion>
+    public class UbicacionConfiguration : IEntityTypeConfiguration<Ubicacion>
     {
-         public void Configure(EntityTypeBuilder<Ubicacion> builder)
+        public void Configure(EntityTypeBuilder<Ubicacion> builder)
         {
             builder.HasKey(u => u.IdUbicacion);
 
@@ -28,6 +28,18 @@ namespace ProjectAW.Modules.Maestros.Ubicaciones.Entities
 
             builder.Property(u => u.FchModificacion)
                    .ValueGeneratedOnUpdate();
+
+            builder.HasOne(u => u.Almacen)
+                   .WithMany(a => a.Ubicaciones)
+                   .HasForeignKey(u => u.IdAlmacen)
+                   .OnDelete(DeleteBehavior.Restrict);
+
+
+
+
+
+
         }
     }
 }
+

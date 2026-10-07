@@ -1,4 +1,6 @@
-﻿namespace ProjectAW.Modules.Maestros.Ubicaciones.Entities
+﻿using ProjectAW.Modules.Maestros.Almacenes.Entities;
+
+namespace ProjectAW.Modules.Maestros.Ubicaciones.Entities
 {
     public class Ubicacion
     {
@@ -9,5 +11,7 @@
         public DateTime FchRegistro { get; set; } = DateTime.Now;
         public DateTime? FchModificacion { get; set; }
 
+        public int IdAlmacen { get; set; }
+        public Almacen? Almacen { get; set; }
     }
 }
