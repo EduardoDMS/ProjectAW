@@ -1,7 +1,9 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using ProjectAW.Modules.Maestros.Almacenes.Entities;
 using ProjectAW.Modules.Maestros.Categorias.Entities;
+using ProjectAW.Modules.Maestros.Clientes.Entities;
 using ProjectAW.Modules.Maestros.Productos.Entities;
+using ProjectAW.Modules.Maestros.Proveedores.Entities;
 using ProjectAW.Modules.Maestros.Roles.Entities;
 using ProjectAW.Modules.Maestros.Ubicaciones.Entities;
 using ProjectAW.Modules.Maestros.Usuarios.Entitites;
@@ -15,6 +17,8 @@ namespace ProjectAW.Infrastructure.Data
         public DbSet<Almacen> Almacenes => Set<Almacen>();
         public DbSet<Ubicacion> Ubicaciones => Set<Ubicacion>();
         public DbSet<Categoria> Categorias => Set<Categoria>();
+        public DbSet<Cliente> Clientes => Set<Cliente>();
+        public DbSet<Proveedor> Proveedores => Set<Proveedor>();
         public DbSet<Usuario> Usuarios => Set<Usuario>();
         public DbSet<Rol> Roles => Set<Rol>();
 

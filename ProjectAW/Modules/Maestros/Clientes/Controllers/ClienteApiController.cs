@@ -1,16 +1,16 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using ProjectAW.Modules.Maestros.Productos.DTOs.Requests;
-using ProjectAW.Modules.Maestros.Productos.Services;
+using ProjectAW.Modules.Maestros.Clientes.DTOs.Requests;
+using ProjectAW.Modules.Maestros.Clientes.Services;
 
-namespace ProjectAW.Modules.Maestros.Productos.Controllers
+namespace ProjectAW.Modules.Maestros.Clientes.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    public class ProductoApiController : ControllerBase
+    public class ClienteApiController : ControllerBase
     {
-        private readonly IProductoService _service;
+        private readonly IClienteService _service;
 
-        public ProductoApiController(IProductoService service)
+        public ClienteApiController(IClienteService service)
         {
             _service = service;
         }
@@ -18,33 +18,33 @@ namespace ProjectAW.Modules.Maestros.Productos.Controllers
         [HttpGet]
         public async Task<IActionResult> ObtenerTodos()
         {
-            var productos = await _service.ObtenerTodosAsync();
+            var clientes = await _service.ObtenerTodosAsync();
 
-            return Ok(productos);
+            return Ok(clientes);
         }
 
         [HttpGet("{id:int}")]
         public async Task<IActionResult> ObtenerPorId(int id)
         {
-            var producto = await _service.ObtenerPorIdAsync(id);
+            var cliente = await _service.ObtenerPorIdAsync(id);
 
-            if (producto == null)
+            if (cliente == null)
                 return NotFound();
 
-            return Ok(producto);
+            return Ok(cliente);
         }
 
         [HttpPost]
-        public async Task<IActionResult> Crear([FromBody] CrearProductoDto request)
+        public async Task<IActionResult> Crear([FromBody] CrearClienteDto request)
         {
             try
             {
-                var producto = await _service.CrearAsync(request);
+                var cliente = await _service.CrearAsync(request);
 
                 return CreatedAtAction(
                     nameof(ObtenerPorId),
-                    new { id = producto.IdProducto },
-                    producto);
+                    new { id = cliente.IdCliente },
+                    cliente);
             }
             catch (InvalidOperationException ex)
             {
@@ -56,13 +56,13 @@ namespace ProjectAW.Modules.Maestros.Productos.Controllers
         }
 
         [HttpPut("{id:int}")]
-        public async Task<IActionResult> Actualizar(int id, [FromBody] ActualizarProductoDto request)
+        public async Task<IActionResult> Actualizar(int id, [FromBody] ActualizarClienteDto request)
         {
             try
             {
-                var actualizado=await _service.ActualizarAsync(id,request);
+                var actualizado = await _service.ActualizarAsync(id, request);
 
-                if(!actualizado)
+                if (!actualizado)
                     return NotFound();
 
                 return NoContent();
@@ -77,11 +77,11 @@ namespace ProjectAW.Modules.Maestros.Productos.Controllers
         }
 
         [HttpPatch("{id:int}/estado")]
-        public async Task<IActionResult> CambiarEstado(int id, [FromBody] bool activo) 
+        public async Task<IActionResult> CambiarEstado(int id, [FromBody] bool activo)
         {
-            var actualizado=await _service.CambiarEstadoAsync(id,activo);
+            var actualizado = await _service.CambiarEstadoAsync(id,activo);
 
-            if (!actualizado)
+            if(!actualizado)
                 return NotFound();
 
             return NoContent();

@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using ProjectAW.Infrastructure.Data;
 
@@ -11,9 +12,11 @@ using ProjectAW.Infrastructure.Data;
 namespace ProjectAW.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20261006230053_Cliente")]
+    partial class Cliente
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -113,6 +116,7 @@ namespace ProjectAW.Migrations
                         .HasColumnType("nvarchar(50)");
 
                     b.Property<DateTime?>("FchModificacion")
+                        .ValueGeneratedOnUpdate()
                         .HasColumnType("datetime2");
 
                     b.Property<DateTime>("FchRegistro")
@@ -171,6 +175,7 @@ namespace ProjectAW.Migrations
                         .HasColumnType("nvarchar(150)");
 
                     b.Property<DateTime?>("FchModificacion")
+                        .ValueGeneratedOnUpdate()
                         .HasColumnType("datetime2");
 
                     b.Property<DateTime>("FchRegistro")
@@ -195,66 +200,6 @@ namespace ProjectAW.Migrations
                     b.ToTable("Productos");
                 });
 
-            modelBuilder.Entity("ProjectAW.Modules.Maestros.Proveedores.Entities.Proveedor", b =>
-                {
-                    b.Property<int>("IdProveedor")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("IdProveedor"));
-
-                    b.Property<bool>("Activo")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bit")
-                        .HasDefaultValue(true);
-
-                    b.Property<string>("CorreoContacto")
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<string>("Direccion")
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<DateTime?>("FchModificacion")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime>("FchRegistro")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("datetime2")
-                        .HasDefaultValueSql("GETDATE()");
-
-                    b.Property<int>("IdTipoDocumento")
-                        .HasColumnType("int");
-
-                    b.Property<string>("NombreContacto")
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<string>("NumeroDocumento")
-                        .IsRequired()
-                        .HasMaxLength(25)
-                        .HasColumnType("nvarchar(25)");
-
-                    b.Property<string>("RazonSocial")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<string>("TelefonoContacto")
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.HasKey("IdProveedor");
-
-                    b.HasIndex("IdTipoDocumento");
-
-                    b.HasIndex("NumeroDocumento")
-                        .IsUnique();
-
-                    b.ToTable("Proveedores");
-                });
-
             modelBuilder.Entity("ProjectAW.Modules.Maestros.TipoDocumentos.Entities.TipoDocumento", b =>
                 {
                     b.Property<int>("IdTipoDocumento")
@@ -270,31 +215,7 @@ namespace ProjectAW.Migrations
 
                     b.HasKey("IdTipoDocumento");
 
-                    b.HasIndex("Documento")
-                        .IsUnique();
-
                     b.ToTable("TipoDocumento");
-                });
-
-            modelBuilder.Entity("ProjectAW.Modules.Maestros.Roles.Entities.Rol", b =>
-                {
-                    b.Property<int>("IdRol")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("IdRol"));
-
-                    b.Property<string>("Nombre")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.HasKey("IdRol");
-
-                    b.HasIndex("Nombre")
-                        .IsUnique();
-
-                    b.ToTable("Roles");
                 });
 
             modelBuilder.Entity("ProjectAW.Modules.Maestros.Ubicaciones.Entities.Ubicacion", b =>
@@ -326,15 +247,10 @@ namespace ProjectAW.Migrations
                         .HasColumnType("datetime2")
                         .HasDefaultValueSql("GETDATE()");
 
-                    b.Property<int>("IdAlmacen")
-                        .HasColumnType("int");
-
                     b.HasKey("IdUbicacion");
 
                     b.HasIndex("Codigo")
                         .IsUnique();
-
-                    b.HasIndex("IdAlmacen");
 
                     b.ToTable("Ubicaciones");
                 });
@@ -350,104 +266,9 @@ namespace ProjectAW.Migrations
                     b.Navigation("TipoDocumento");
                 });
 
-            modelBuilder.Entity("ProjectAW.Modules.Maestros.Proveedores.Entities.Proveedor", b =>
-                {
-                    b.HasOne("ProjectAW.Modules.Maestros.TipoDocumentos.Entities.TipoDocumento", "TipoDocumento")
-                        .WithMany("Proveedores")
-                        .HasForeignKey("IdTipoDocumento")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("TipoDocumento");
-                });
-
             modelBuilder.Entity("ProjectAW.Modules.Maestros.TipoDocumentos.Entities.TipoDocumento", b =>
                 {
                     b.Navigation("Clientes");
-
-                    b.Navigation("Proveedores");
-                });
-
-            modelBuilder.Entity("ProjectAW.Modules.Maestros.Usuarios.Entitites.Usuario", b =>
-                {
-                    b.Property<int>("IdUsuario")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("IdUsuario"));
-
-                    b.Property<bool>("Activo")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bit")
-                        .HasDefaultValue(true);
-
-                    b.Property<string>("Apellido")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<DateTime>("FechaActualizada")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime>("FechaRegistro")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("datetime2")
-                        .HasDefaultValueSql("GETDATE()");
-
-                    b.Property<int>("IdRol")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Nombre")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<string>("Password")
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.Property<string>("Username")
-                        .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)");
-
-                    b.HasKey("IdUsuario");
-
-                    b.HasIndex("IdRol");
-
-                    b.ToTable("Usuarios");
-                });
-
-            modelBuilder.Entity("ProjectAW.Modules.Maestros.Ubicaciones.Entities.Ubicacion", b =>
-                {
-                    b.HasOne("ProjectAW.Modules.Maestros.Almacenes.Entities.Almacen", "Almacen")
-                        .WithMany("Ubicaciones")
-                        .HasForeignKey("IdAlmacen")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("Almacen");
-                });
-
-            modelBuilder.Entity("ProjectAW.Modules.Maestros.Usuarios.Entitites.Usuario", b =>
-                {
-                    b.HasOne("ProjectAW.Modules.Maestros.Roles.Entities.Rol", "rol")
-                        .WithMany("Usuario")
-                        .HasForeignKey("IdRol")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("rol");
-                });
-
-            modelBuilder.Entity("ProjectAW.Modules.Maestros.Almacenes.Entities.Almacen", b =>
-                {
-                    b.Navigation("Ubicaciones");
-                });
-
-            modelBuilder.Entity("ProjectAW.Modules.Maestros.Roles.Entities.Rol", b =>
-                {
-                    b.Navigation("Usuario");
                 });
 #pragma warning restore 612, 618
         }
