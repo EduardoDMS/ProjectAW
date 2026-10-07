@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using ProjectAW.Infrastructure.Data;
 
@@ -11,9 +12,11 @@ using ProjectAW.Infrastructure.Data;
 namespace ProjectAW.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20261006152245_Relaciones")]
+    partial class Relaciones
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -139,27 +142,6 @@ namespace ProjectAW.Migrations
                     b.ToTable("Productos");
                 });
 
-            modelBuilder.Entity("ProjectAW.Modules.Maestros.Roles.Entities.Rol", b =>
-                {
-                    b.Property<int>("IdRol")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("IdRol"));
-
-                    b.Property<string>("Nombre")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.HasKey("IdRol");
-
-                    b.HasIndex("Nombre")
-                        .IsUnique();
-
-                    b.ToTable("Roles");
-                });
-
             modelBuilder.Entity("ProjectAW.Modules.Maestros.Ubicaciones.Entities.Ubicacion", b =>
                 {
                     b.Property<int>("IdUbicacion")
@@ -202,56 +184,6 @@ namespace ProjectAW.Migrations
                     b.ToTable("Ubicaciones");
                 });
 
-            modelBuilder.Entity("ProjectAW.Modules.Maestros.Usuarios.Entitites.Usuario", b =>
-                {
-                    b.Property<int>("IdUsuario")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("IdUsuario"));
-
-                    b.Property<bool>("Activo")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bit")
-                        .HasDefaultValue(true);
-
-                    b.Property<string>("Apellido")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<DateTime>("FechaActualizada")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime>("FechaRegistro")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("datetime2")
-                        .HasDefaultValueSql("GETDATE()");
-
-                    b.Property<int>("IdRol")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Nombre")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<string>("Password")
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.Property<string>("Username")
-                        .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)");
-
-                    b.HasKey("IdUsuario");
-
-                    b.HasIndex("IdRol");
-
-                    b.ToTable("Usuarios");
-                });
-
             modelBuilder.Entity("ProjectAW.Modules.Maestros.Ubicaciones.Entities.Ubicacion", b =>
                 {
                     b.HasOne("ProjectAW.Modules.Maestros.Almacenes.Entities.Almacen", "Almacen")
@@ -263,25 +195,9 @@ namespace ProjectAW.Migrations
                     b.Navigation("Almacen");
                 });
 
-            modelBuilder.Entity("ProjectAW.Modules.Maestros.Usuarios.Entitites.Usuario", b =>
-                {
-                    b.HasOne("ProjectAW.Modules.Maestros.Roles.Entities.Rol", "rol")
-                        .WithMany("Usuario")
-                        .HasForeignKey("IdRol")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("rol");
-                });
-
             modelBuilder.Entity("ProjectAW.Modules.Maestros.Almacenes.Entities.Almacen", b =>
                 {
                     b.Navigation("Ubicaciones");
-                });
-
-            modelBuilder.Entity("ProjectAW.Modules.Maestros.Roles.Entities.Rol", b =>
-                {
-                    b.Navigation("Usuario");
                 });
 #pragma warning restore 612, 618
         }
