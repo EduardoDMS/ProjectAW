@@ -10,4 +10,6 @@ public class CrearProductoDto
 
     public DateTime FchRegistro { get; set; } = DateTime.Now;
 
+    public int IdCategoria { get; set; }
+
 }

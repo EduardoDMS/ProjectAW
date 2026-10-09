@@ -1,4 +1,4 @@
-﻿using ProjectAW.Modules.Maestros.Usuarios.Entitites;
+﻿using ProjectAW.Modules.Seguridad.Usuarios.Entitites;
 
 namespace ProjectAW.Modules.Maestros.Roles.Entities
 {

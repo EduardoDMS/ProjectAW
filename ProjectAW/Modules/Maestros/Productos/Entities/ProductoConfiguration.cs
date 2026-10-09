@@ -36,5 +36,10 @@ public class ProductoConfiguration:IEntityTypeConfiguration<Producto>
         builder.Property(p => p.FchModificacion)
                .IsRequired(false);
 
+        builder.HasOne(p => p.Categoria)
+               .WithMany(c => c.Producto)
+               .HasForeignKey(p => p.IdCategoria)
+               .OnDelete(DeleteBehavior.Restrict);
+
     }
 }

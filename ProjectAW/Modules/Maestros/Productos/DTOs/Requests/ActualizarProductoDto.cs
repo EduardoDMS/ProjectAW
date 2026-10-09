@@ -9,5 +9,7 @@
         public bool Activo { get; set; }
 
         public DateTime FchModificacion { get; set; } = DateTime.Now;
+
+        public int IdCategoria { get; set; }
     }
 }

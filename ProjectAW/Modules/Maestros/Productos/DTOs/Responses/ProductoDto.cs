@@ -10,4 +10,5 @@ public class ProductoDto
     public string? Lote { get; set; }
     public string Serie { get; set; } = string.Empty;
     public bool Activo { get; set; } 
+    public int IdCategoria { get; set; }
 }

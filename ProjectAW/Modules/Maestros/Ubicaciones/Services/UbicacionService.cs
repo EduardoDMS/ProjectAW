@@ -33,6 +33,7 @@ namespace ProjectAW.Modules.Maestros.Ubicaciones.Services
             ubicacion.Descripcion = dto.Descripcion?.Trim();
             ubicacion.Activo = dto.Activo;
             ubicacion.FchModificacion = DateTime.UtcNow;
+            ubicacion.IdAlmacen = dto.IdAlmacen;
 
             await _repository.ActualizarUbicacionAsync(ubicacion);
 
@@ -54,7 +55,8 @@ namespace ProjectAW.Modules.Maestros.Ubicaciones.Services
                 Codigo = codigo,
                 Descripcion = dto.Descripcion?.Trim(),
                 Activo = dto.Activo,
-                FchRegistro = DateTime.Now
+                FchRegistro = DateTime.Now,
+                IdAlmacen = dto.IdAlmacen
             };
 
             await _repository.CrearUbicacionAsync(ubicacion);
@@ -64,7 +66,8 @@ namespace ProjectAW.Modules.Maestros.Ubicaciones.Services
                 IdUbicacion = ubicacion.IdUbicacion,
                 Codigo = ubicacion.Codigo,
                 Descripcion = ubicacion.Descripcion,
-                Activo = ubicacion.Activo
+                Activo = ubicacion.Activo,
+                IdAlmacen = ubicacion.IdAlmacen
             };
         }
 
@@ -90,7 +93,8 @@ namespace ProjectAW.Modules.Maestros.Ubicaciones.Services
                 IdUbicacion = u.IdUbicacion,
                 Codigo = u.Codigo,
                 Descripcion = u.Descripcion,
-                Activo = u.Activo
+                Activo = u.Activo,
+                IdAlmacen = u.IdAlmacen
             }).ToList();
 
         }
@@ -107,7 +111,8 @@ namespace ProjectAW.Modules.Maestros.Ubicaciones.Services
                 IdUbicacion = ubicacion.IdUbicacion,
                 Codigo = ubicacion.Codigo,
                 Descripcion = ubicacion.Descripcion,
-                Activo = ubicacion.Activo
+                Activo = ubicacion.Activo,
+                IdAlmacen = ubicacion.IdAlmacen
             };
         }
 
@@ -123,7 +128,8 @@ namespace ProjectAW.Modules.Maestros.Ubicaciones.Services
                 IdUbicacion = ubicacion.IdUbicacion,
                 Codigo = ubicacion.Codigo,
                 Descripcion = ubicacion.Descripcion,
-                Activo = ubicacion.Activo
+                Activo = ubicacion.Activo,
+                IdAlmacen = ubicacion.IdAlmacen
             };
 
         }
