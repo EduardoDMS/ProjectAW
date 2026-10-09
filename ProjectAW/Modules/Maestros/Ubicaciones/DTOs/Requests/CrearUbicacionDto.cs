@@ -6,5 +6,7 @@
         public string? Descripcion { get; set; }
         public bool Activo { get; set; }
         public DateTime FchRegistro { get; set; } = DateTime.Now;
+        public int IdAlmacen { get; set; }
+
     }
 }

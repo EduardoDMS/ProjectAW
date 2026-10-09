@@ -1,4 +1,6 @@
-﻿namespace ProjectAW.Modules.Maestros.Categorias.Entities
+﻿using ProjectAW.Modules.Maestros.Productos.Entities;
+
+namespace ProjectAW.Modules.Maestros.Categorias.Entities
 {
     public class Categoria
     {
@@ -6,6 +8,8 @@
         public string Nombre { get; set; } = string.Empty;
         public string Descripcion { get; set; } = string.Empty;
         public bool Activo { get; set; } = true;
+
+        public ICollection<Producto>? Producto { get; set; }
 
     }
 }

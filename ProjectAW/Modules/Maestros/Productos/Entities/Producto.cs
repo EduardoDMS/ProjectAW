@@ -1,4 +1,6 @@
-﻿namespace ProjectAW.Modules.Maestros.Productos.Entities;
+﻿using ProjectAW.Modules.Maestros.Categorias.Entities;
+
+namespace ProjectAW.Modules.Maestros.Productos.Entities;
 
 public class Producto
 {
@@ -13,7 +15,8 @@ public class Producto
     public DateTime? FchModificacion { get; set; }
 
 
-
+    public int IdCategoria { get; set; }
+    public Categoria? Categoria { get; set; }
     // conexion a nuevas tablas
     // public int CodigoUsuarioModificacion { get; set; } 
 

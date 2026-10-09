@@ -11,10 +11,12 @@ using ProjectAW.Modules.Maestros.Clientes.Repositories;
 using ProjectAW.Modules.Maestros.Clientes.Services;
 using ProjectAW.Modules.Maestros.Proveedores.Repositories;
 using ProjectAW.Modules.Maestros.Proveedores.Services;
-using ProjectAW.Modules.Maestros.Usuarios.Repositories;
-using ProjectAW.Modules.Maestros.Usuarios.Services;
 using ProjectAW.Modules.Maestros.Ubicaciones.Services;
 using ProjectAW.Modules.Maestros.Ubicaciones.Repositories;
+using ProjectAW.Modules.Seguridad.Usuarios.Repositories;
+using ProjectAW.Modules.Seguridad.Usuarios.Services;
+using ProjectAW.Modules.Guias.Repositories;
+using ProjectAW.Modules.Guias.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -48,6 +50,8 @@ builder.Services.AddScoped<IUsuarioRepository, UsuarioRepository>();
 builder.Services.AddScoped<IUsuarioService, UsuarioService>();
 builder.Services.AddScoped<IUbicacionService, UbicacionService>();
 builder.Services.AddScoped<IUbicacionRepository, UbicacionRepository>();
+builder.Services.AddScoped<IGuiaRepository, GuiaRepository>();
+builder.Services.AddScoped<IGuiaService, GuiaService>();
 
 // builder.Services.AddScoped
 
