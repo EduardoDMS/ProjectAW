@@ -6,7 +6,7 @@
         public string Nombre { get; set; } = string.Empty;
         public string Apellido { get; set; } = string.Empty;
         public string Username { get; set; } = string.Empty;
-        public string password { get; set; } = string.Empty;
+        public string Password { get; set; } = string.Empty;
 
         public DateTime FechaActualizacion { get; set; }
 

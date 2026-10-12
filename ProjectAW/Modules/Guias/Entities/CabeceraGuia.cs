@@ -26,5 +26,11 @@ namespace ProjectAW.Modules.Guias.Entities
 
         public ICollection<DetalleGuia> Detalles { get; set; } = new List<DetalleGuia>();
 
+        public int IdUsuarioRegistro { get; set; }
+        public int? IdUsuarioModificacion { get; set; }
+
+        public DateTime? FechaActualizada { get; set; }
+
+
     }
 }

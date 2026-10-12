@@ -17,6 +17,17 @@ using ProjectAW.Modules.Seguridad.Usuarios.Repositories;
 using ProjectAW.Modules.Seguridad.Usuarios.Services;
 using ProjectAW.Modules.Guias.Repositories;
 using ProjectAW.Modules.Guias.Services;
+using ProjectAW.Modules.Seguridad.Security.HttpAuth;
+using Microsoft.AspNetCore.Identity;
+using ProjectAW.Modules.Seguridad.Usuarios.Entitites;
+using ProjectAW.Modules.Seguridad.Security.Repositories;
+using ProjectAW.Modules.Seguridad.Security.Services;
+using System.Net;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using ProjectAW.Modules.Maestros.Roles.Repositories;
+using ProjectAW.Modules.Maestros.Roles.Services;
+using ProjectAW.Modules.Maestros.TipoDocumentos.Repositories;
+using ProjectAW.Modules.Maestros.TipoDocumentos.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -52,8 +63,48 @@ builder.Services.AddScoped<IUbicacionService, UbicacionService>();
 builder.Services.AddScoped<IUbicacionRepository, UbicacionRepository>();
 builder.Services.AddScoped<IGuiaRepository, GuiaRepository>();
 builder.Services.AddScoped<IGuiaService, GuiaService>();
+builder.Services.AddScoped<IRolRepository, RolRepository>();
+builder.Services.AddScoped<IRolService, RolService>();
+builder.Services.AddScoped<ITipoDocumentoRepository, TipoDocumentoRepository>();
+builder.Services.AddScoped<ITipoDocumentoService, TipoDocumentoService>();
 
 // builder.Services.AddScoped
+// token api 
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
+
+builder.Services.AddScoped<IPasswordHasher<Usuario>, PasswordHasher<Usuario>>();
+builder.Services.AddScoped<IAuthRepository, AuthRepository>();
+builder.Services.AddScoped<IAuthService, AuthService>();
+
+builder.Services
+    .AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+    .AddCookie(options =>
+    {
+        options.Cookie.Name = "ProjectAW.Auth";
+        options.Cookie.HttpOnly = true;                     // Javascript no puede leer la cookie
+        options.ExpireTimeSpan = TimeSpan.FromHours(8);
+        options.SlidingExpiration = true;                   // Se renueva mientras el usuario este activo
+
+        options.Events.OnRedirectToLogin = context =>
+        {
+            if (context.Request.Path.StartsWithSegments("/api"))
+                context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+            else
+                context.Response.Redirect(context.RedirectUri);
+            return Task.CompletedTask;
+        };
+
+        options.Events.OnRedirectToAccessDenied = context =>
+        {
+            if (context.Request.Path.StartsWithSegments("/api"))
+                context.Response.StatusCode = StatusCodes.Status403Forbidden;
+            else
+                context.Response.Redirect(context.RedirectUri);
+            return Task.CompletedTask;
+        };
+    });
+
 
 
 
@@ -77,11 +128,12 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 app.UseRouting();
 
+app.UseAuthentication(); // api
 app.UseAuthorization();
 
 app.MapStaticAssets();
 
-//app.MapControllers();
+app.MapControllers().RequireAuthorization(); // si no quieres el token comenta esta linea unicamente 
 
 app.MapControllerRoute(
     name: "default",

@@ -3,10 +3,11 @@ using ProjectAW.Modules.Guias.DTOs.Request;
 using ProjectAW.Modules.Guias.Entities;
 using ProjectAW.Modules.Guias.Services;
 using ProjectAW.Models;
+using Microsoft.AspNetCore.Authorization;
 
 namespace ProjectAW.Modules.Guias.Controllers
 {
-
+    [Authorize]
     [ApiController]
     [Route("api/guias")]
     public class GuiasApiController : ControllerBase
