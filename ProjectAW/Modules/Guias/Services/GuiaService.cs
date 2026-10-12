@@ -10,6 +10,7 @@ using ProjectAW.Modules.Maestros.Productos.Entities;
 using ProjectAW.Modules.Maestros.Proveedores.Entities;
 //using ProjectAW.Modules.Maestros.Estados.Entities;
 using ProjectAW.Modules.Maestros.Operaciones.Entities;
+using ProjectAW.Modules.Seguridad.Security.HttpAuth;
 
 
 namespace ProjectAW.Modules.Guias.Services
@@ -18,8 +19,13 @@ namespace ProjectAW.Modules.Guias.Services
     public class GuiaService : IGuiaService
     {
         private readonly IGuiaRepository _repo;
+        private readonly ICurrentUserService _currentUser;
 
-        public GuiaService(IGuiaRepository repo) => _repo = repo;
+        public GuiaService(IGuiaRepository repo, ICurrentUserService currentUser)
+        {
+            _repo = repo;
+            _currentUser = currentUser;
+        } 
 
         public async Task<GuiaResponse> CrearAsync(CrearGuiaRequest request, CancellationToken ct = default)
         {
@@ -31,7 +37,8 @@ namespace ProjectAW.Modules.Guias.Services
             {
                 NumeroGuia = await _repo.ObtenerSiguienteNumeroAsync(request.IdTipoOperacionGuia, ct),
                 IdTipoOperacionGuia = request.IdTipoOperacionGuia,
-                IdEstadoGuia = EstadoGuiasIds.Pendiente
+                IdEstadoGuia = EstadoGuiasIds.Pendiente,
+                IdUsuarioRegistro = _currentUser.IdUsuario
             };
             AplicarDatos(guia, request);
 
@@ -62,7 +69,7 @@ namespace ProjectAW.Modules.Guias.Services
 
             AplicarDatos(guia, request);
             await _repo.GuardarCambiosAsync(ct);
-
+            RegistrarModificacion(guia); // nuevo api 
             return ToResponse(guia);
         }
 
@@ -165,7 +172,14 @@ namespace ProjectAW.Modules.Guias.Services
             g.IdGuia, g.NumeroGuia, g.IdTipoOperacionGuia, g.IdEstadoGuia,
             g.IdProveedor, g.IdCliente, g.IdAlmacenOrigen, g.IdAlmacenDestino,
             g.FechaProgramada, g.FechaRegistro,
+            g.IdUsuarioRegistro, g.IdUsuarioModificacion, g.FechaActualizada,
             g.TipoDocumentoReferencia, g.NumeroDocumentoReferencia, g.Observacion,
             g.Detalles.Select(d => new DetalleGuiaResponse(d.IdGuiaDetalle, d.IdProducto, d.CantidadEsperada)).ToList());
+
+        private void RegistrarModificacion(CabeceraGuia guia)
+        {
+            guia.IdUsuarioModificacion = _currentUser.IdUsuario;
+            guia.FechaActualizada = DateTime.Now;
+        }
     }
 }

@@ -2,5 +2,6 @@
 {
     public class CrearRolDto
     {
+        public string Nombre { get; set; } = string.Empty;
     }
 }

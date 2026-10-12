@@ -2,5 +2,6 @@
 {
     public class ActualizarRolDto
     {
+        public string Nombre { get; set; } = string.Empty;
     }
 }

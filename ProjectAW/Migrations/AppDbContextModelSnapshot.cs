@@ -36,6 +36,9 @@ namespace ProjectAW.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("IdGuia"));
 
+                    b.Property<DateTime?>("FechaActualizada")
+                        .HasColumnType("datetime2");
+
                     b.Property<DateTime>("FechaProgramada")
                         .HasColumnType("datetime2");
 
@@ -60,6 +63,12 @@ namespace ProjectAW.Migrations
                         .HasColumnType("int");
 
                     b.Property<int>("IdTipoOperacionGuia")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("IdUsuarioModificacion")
+                        .HasColumnType("int");
+
+                    b.Property<int>("IdUsuarioRegistro")
                         .HasColumnType("int");
 
                     b.Property<string>("NumeroDocumentoReferencia")
@@ -92,6 +101,10 @@ namespace ProjectAW.Migrations
                     b.HasIndex("IdProveedor");
 
                     b.HasIndex("IdTipoOperacionGuia");
+
+                    b.HasIndex("IdUsuarioModificacion");
+
+                    b.HasIndex("IdUsuarioRegistro");
 
                     b.HasIndex("NumeroGuia")
                         .IsUnique();
@@ -507,7 +520,7 @@ namespace ProjectAW.Migrations
                     b.HasIndex("Documento")
                         .IsUnique();
 
-                    b.ToTable("TipoDocumento");
+                    b.ToTable("TipoDocument");
                 });
 
             modelBuilder.Entity("ProjectAW.Modules.Maestros.Ubicaciones.Entities.Ubicacion", b =>
@@ -633,6 +646,17 @@ namespace ProjectAW.Migrations
                     b.HasOne("ProjectAW.Modules.Maestros.Operaciones.Entities.TipoOperacionGuia", null)
                         .WithMany()
                         .HasForeignKey("IdTipoOperacionGuia")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("ProjectAW.Modules.Seguridad.Usuarios.Entitites.Usuario", null)
+                        .WithMany()
+                        .HasForeignKey("IdUsuarioModificacion")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("ProjectAW.Modules.Seguridad.Usuarios.Entitites.Usuario", null)
+                        .WithMany()
+                        .HasForeignKey("IdUsuarioRegistro")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
                 });

@@ -10,11 +10,13 @@ namespace ProjectAW.Modules.Seguridad.Usuarios.Services
     public class UsuarioService : IUsuarioService
     {
         private readonly IUsuarioRepository _repository;
+        private readonly IPasswordHasher<Usuario> _hasher;
          
         
-        public UsuarioService(IUsuarioRepository _repo)
+        public UsuarioService(IUsuarioRepository _repo,IPasswordHasher<Usuario> hasher)
         {
             _repository = _repo;
+            _hasher = hasher;
         }
 
         public async Task<bool> ActualizarUsuarioAsync(int id, ActualizarUsuarioDto dto)
@@ -36,9 +38,12 @@ namespace ProjectAW.Modules.Seguridad.Usuarios.Services
             usuario.Username = username;
             usuario.Nombre = dto.Nombre;
             usuario.Apellido = dto.Apellido;
-            usuario.Password = dto.password;
+           // usuario.Password = dto.password;
             usuario.IdRol = dto.IdRol;
             usuario.FechaActualizada = dto.FechaActualizacion;
+
+            if (!string.IsNullOrWhiteSpace(dto.Password))
+                usuario.Password = _hasher.HashPassword(usuario, dto.Password);
 
             await _repository.ActualizarAsync(usuario);
             return true;
@@ -59,6 +64,9 @@ namespace ProjectAW.Modules.Seguridad.Usuarios.Services
 
         public async Task<UsuarioDto?> CrearUsuarioAsync(CrearUsuarioDto dto)
         {
+            if (string.IsNullOrWhiteSpace(dto.Password))
+                throw new InvalidOperationException("La contrasela es obligatoria");
+
             var username = dto.Username.Trim();
             var usuarioExistente = await _repository.ObtenerPorUsernameAsync(username);
 
@@ -72,12 +80,13 @@ namespace ProjectAW.Modules.Seguridad.Usuarios.Services
                 Username = username,
                 Nombre = dto.Nombre,
                 Apellido = dto.Apellido,
-                Password = dto.Password,
+               // Password = dto.Password,
                 IdRol = dto.IdRol,
                 Activo = true,
                 FechaRegistro = DateTime.Now
             };
 
+            usuario.Password = _hasher.HashPassword(usuario, dto.Password);
 
             await _repository.CrearAsync(usuario);
 

@@ -8,6 +8,7 @@ using ProjectAW.Modules.Maestros.Operaciones.Entities;
 using ProjectAW.Modules.Maestros.Productos.Entities;
 using ProjectAW.Modules.Maestros.Proveedores.Entities;
 using ProjectAW.Modules.Maestros.Roles.Entities;
+using ProjectAW.Modules.Maestros.TipoDocumentos.Entities;
 using ProjectAW.Modules.Maestros.Ubicaciones.Entities;
 using ProjectAW.Modules.Seguridad.Usuarios.Entitites;
 
@@ -28,6 +29,7 @@ namespace ProjectAW.Infrastructure.Data
         public DbSet<DetalleGuia> DetalleGuia => Set<DetalleGuia>();
         public DbSet<TipoOperacionGuia> TiposOperacionesGuia => Set<TipoOperacionGuia>();
         public DbSet<EstadoGuia> EstadosGuia => Set<EstadoGuia>();
+        public DbSet<TipoDocumento> TipoDocument => Set<TipoDocumento>();
 
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)

@@ -2,9 +2,10 @@
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using ProjectAW.Modules.Maestros.Almacenes.Entities;
 using ProjectAW.Modules.Maestros.Clientes.Entities;
-using ProjectAW.Modules.Maestros.Proveedores.Entities;
 using ProjectAW.Modules.Maestros.Estados.Entities;
 using ProjectAW.Modules.Maestros.Operaciones.Entities;
+using ProjectAW.Modules.Maestros.Proveedores.Entities;
+using ProjectAW.Modules.Seguridad.Usuarios.Entitites;
 
 namespace ProjectAW.Modules.Guias.Entities
 {
@@ -81,6 +82,18 @@ namespace ProjectAW.Modules.Guias.Entities
             builder.HasOne<EstadoGuia>()
                    .WithMany()
                    .HasForeignKey(x => x.IdEstadoGuia)
+                   .OnDelete(DeleteBehavior.Restrict);
+
+            builder.Property(x => x.FechaActualizada).HasColumnType("datetime2");
+
+            builder.HasOne<Usuario>()
+                   .WithMany()
+                   .HasForeignKey(x => x.IdUsuarioRegistro)
+                   .OnDelete(DeleteBehavior.Restrict);
+
+            builder.HasOne<Usuario>()
+                   .WithMany()
+                   .HasForeignKey(x => x.IdUsuarioModificacion)
                    .OnDelete(DeleteBehavior.Restrict);
 
         }
