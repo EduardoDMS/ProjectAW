@@ -2,6 +2,7 @@
 using ProjectAW.Modules.Maestros.Roles.DTOs.Response;
 using ProjectAW.Modules.Maestros.Roles.Entities;
 using ProjectAW.Modules.Maestros.Roles.Repositories;
+using ProjectAW.Infrastructure.Errors;
 
 namespace ProjectAW.Modules.Maestros.Roles.Services
 {
@@ -29,7 +30,7 @@ namespace ProjectAW.Modules.Maestros.Roles.Services
 
             if(rolConMismoNombre != null && rolConMismoNombre.IdRol != id)
             {
-                throw new InvalidOperationException("Ya existe un Rol con ese nombre ");
+                throw new ConflictoNegocioException("Ya existe un rol con ese nombre.");
             }
 
             rol.Nombre = nombre;
@@ -46,7 +47,7 @@ namespace ProjectAW.Modules.Maestros.Roles.Services
             var rolExistente = await _repo.ObtenerPorNombreAsync(nombre);
 
             if (rolExistente != null)
-                throw new InvalidOperationException("Ya existe un producto con ese codigo");
+                throw new ConflictoNegocioException("Ya existe un rol con ese nombre.");
 
             var rol = new Rol
             {
@@ -62,9 +63,22 @@ namespace ProjectAW.Modules.Maestros.Roles.Services
             };
         }
 
-        public Task<RolDto> CrearRolAsync(CrearRolDto dto)
+        public async Task<RolDto> CrearRolAsync(CrearRolDto dto)
         {
-            throw new NotImplementedException();
+            var nombre = dto.Nombre.Trim();
+            var rolExistente = await _repo.ObtenerPorNombreAsync(nombre);
+
+            if (rolExistente != null)
+                throw new ConflictoNegocioException("Ya existe un rol con ese nombre.");
+
+            var rol = new Rol { Nombre = nombre };
+            await _repo.CrearAsync(rol);
+
+            return new RolDto
+            {
+                IdRol = rol.IdRol,
+                Nombre = rol.Nombre
+            };
         }
 
         public async Task<RolDto?> ObtenerRolPorIdAsync(int id)

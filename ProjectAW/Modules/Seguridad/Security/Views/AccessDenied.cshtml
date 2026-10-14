@@ -1,0 +1,11 @@
+@{
+	ViewData["Title"] = "Acceso denegado";
+	Layout = "~/Views/Shared/_Layout.cshtml";
+}
+<section class="empty-state">
+	<span class="empty-state__icon" aria-hidden="true">!</span>
+	<span class="eyebrow">ACCESO RESTRINGIDO</span>
+	<h1>No tienes permisos para esta sección</h1>
+	<p>Tu sesión sigue activa. Si necesitas acceso, solicita permisos al administrador.</p>
+	<a class="btn btn-primary" asp-controller="Home" asp-action="Index">Volver al inicio</a>
+</section>

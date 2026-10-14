@@ -1,6 +1,7 @@
 ﻿using ProjectAW.Modules.Maestros.Ubicaciones.DTOs.Requests;
 using ProjectAW.Modules.Maestros.Ubicaciones.DTOs.Responses;
 using ProjectAW.Modules.Maestros.Ubicaciones.Repositories;
+using ProjectAW.Infrastructure.Errors;
 using ProjectAW.Modules.Maestros.Ubicaciones.Entities;
 
 namespace ProjectAW.Modules.Maestros.Ubicaciones.Services
@@ -26,13 +27,13 @@ namespace ProjectAW.Modules.Maestros.Ubicaciones.Services
             var ubicacionConElMismoCodigo = await _repository.ObtenerUbicacionPorCodigoAsync(codigo);
             if(ubicacionConElMismoCodigo != null && ubicacionConElMismoCodigo.IdUbicacion != id)
             {
-                throw new InvalidOperationException($"Ya existe una ubicación con el código '{codigo}'.");
+                throw new ConflictoNegocioException($"Ya existe una ubicación con el código '{codigo}'.");
             }
 
             ubicacion.Codigo = codigo;
             ubicacion.Descripcion = dto.Descripcion?.Trim();
             ubicacion.Activo = dto.Activo;
-            ubicacion.FchModificacion = DateTime.UtcNow;
+            ubicacion.FchModificacion = DateTime.Now;
             ubicacion.IdAlmacen = dto.IdAlmacen;
 
             await _repository.ActualizarUbicacionAsync(ubicacion);
@@ -48,7 +49,7 @@ namespace ProjectAW.Modules.Maestros.Ubicaciones.Services
             var ubicacionExistente = await _repository.ObtenerUbicacionPorCodigoAsync(codigo);
         
             if(ubicacionExistente != null)
-                throw new InvalidOperationException($"Ya existe una ubicación con el código '{codigo}'.");
+                throw new ConflictoNegocioException($"Ya existe una ubicación con el código '{codigo}'.");
 
             var ubicacion = new Ubicacion
             {
@@ -79,7 +80,7 @@ namespace ProjectAW.Modules.Maestros.Ubicaciones.Services
                 return false;
 
             ubicacion.Activo = activo;
-            //ubicacion.FchModificacion = DateTime.UtcNow; estaria buena evaluar aqui el cambio tambien de fecha 
+            ubicacion.FchModificacion = DateTime.UtcNow;// estaria buena evaluar aqui el cambio tambien de fecha 
 
             await _repository.ActualizarUbicacionAsync(ubicacion);
             return true;

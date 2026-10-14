@@ -37,43 +37,18 @@ namespace ProjectAW.Modules.Maestros.Productos.Controllers
         [HttpPost]
         public async Task<IActionResult> Crear([FromBody] CrearProductoDto request)
         {
-            try
-            {
-                var producto = await _service.CrearAsync(request);
-
-                return CreatedAtAction(
-                    nameof(ObtenerPorId),
-                    new { id = producto.IdProducto },
-                    producto);
-            }
-            catch (InvalidOperationException ex)
-            {
-                return Conflict(new
-                {
-                    mensaje = ex.Message
-                });
-            }
+            var producto = await _service.CrearAsync(request);
+            return CreatedAtAction(nameof(ObtenerPorId), new { id = producto.IdProducto }, producto);
         }
 
         [HttpPut("{id:int}")]
         public async Task<IActionResult> Actualizar(int id, [FromBody] ActualizarProductoDto request)
         {
-            try
-            {
-                var actualizado=await _service.ActualizarAsync(id,request);
+            var actualizado = await _service.ActualizarAsync(id, request);
+            if (!actualizado)
+                return NotFound();
 
-                if(!actualizado)
-                    return NotFound();
-
-                return NoContent();
-            }
-            catch (InvalidOperationException ex)
-            {
-                return Conflict(new
-                {
-                    mensaje = ex.Message
-                });
-            }
+            return NoContent();
         }
 
         [HttpPatch("{id:int}/estado")]

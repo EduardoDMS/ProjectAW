@@ -1,0 +1,149 @@
+@{
+	ViewData["Title"] = "Almacenes";
+	ViewData["Description"] = "Organiza los espacios donde se recibe y almacena inventario.";
+	Layout = "~/Views/Shared/_Layout.cshtml";
+}
+<section class="page-heading">
+	<div>
+		<h1>Almacenes</h1>
+		<p>Consulta almacenes y administra su disponibilidad operativa.</p>
+	</div>
+	<button class="btn btn-primary" id="new-warehouse" type="button">
+		＋ Nuevo almacén
+	</button>
+</section>
+<section class="content-card maestro-card">
+	<div class="maestro-toolbar">
+		<label class="status-filter" for="warehouse-status"
+			><span>Disponibilidad</span
+			><select id="warehouse-status">
+				<option value="">Todos</option>
+				<option value="true">Activos</option>
+				<option value="false">Inactivos</option>
+			</select></label
+		><span
+			class="ms-auto"
+			id="warehouse-feedback"
+			role="status"
+			aria-live="polite"
+		></span>
+	</div>
+	<div id="warehouse-alert" class="maestro-alert" role="alert" hidden></div>
+	<div class="table-responsive p-3">
+		<table id="warehouses-table" class="table align-middle w-100">
+			<thead>
+				<tr>
+					<th>Código</th>
+					<th>Almacén</th>
+					<th>Fecha de registro</th>
+					<th>Estado</th>
+					<th>Acciones</th>
+				</tr>
+			</thead>
+			<tbody></tbody>
+		</table>
+	</div>
+</section>
+<div
+	class="modal fade"
+	id="warehouse-modal"
+	tabindex="-1"
+	aria-labelledby="warehouse-modal-title"
+	aria-hidden="true"
+>
+	<div class="modal-dialog modal-dialog-centered">
+		<div class="modal-content maestro-modal">
+			<div class="modal-header">
+				<div>
+					<span class="eyebrow">INFRAESTRUCTURA</span>
+					<h2 class="modal-title" id="warehouse-modal-title">
+						Nuevo almacén
+					</h2>
+				</div>
+				<button
+					class="btn-close"
+					type="button"
+					data-bs-dismiss="modal"
+					aria-label="Cerrar"
+				></button>
+			</div>
+			<form id="warehouse-form">
+				<div class="modal-body">
+					<div
+						id="warehouse-form-alert"
+						class="maestro-alert"
+						role="alert"
+						hidden
+					></div>
+					<div class="maestro-form-grid">
+						<div class="maestro-field">
+							<label for="warehouse-code">Código *</label
+							><input
+								class="form-control"
+								id="warehouse-code"
+								name="codigo"
+								maxlength="50"
+								required
+							/>
+						</div>
+						<div class="maestro-field">
+							<label for="warehouse-description"
+								>Descripción *</label
+							><input
+								class="form-control"
+								id="warehouse-description"
+								name="descripcion"
+								maxlength="150"
+								required
+							/>
+						</div>
+						<div class="maestro-field maestro-field--check">
+							<input
+								class="form-check-input"
+								id="warehouse-active"
+								name="activo"
+								type="checkbox"
+							/><label for="warehouse-active"
+								>Almacén activo</label
+							>
+						</div>
+					</div>
+				</div>
+				<div class="modal-footer">
+					<button
+						class="btn btn-light"
+						type="button"
+						data-bs-dismiss="modal"
+					>
+						Cancelar</button
+					><button
+						class="btn btn-primary"
+						id="save-warehouse"
+						type="submit"
+					>
+						Guardar almacén
+					</button>
+				</div>
+			</form>
+		</div>
+	</div>
+</div>
+@section Styles {
+<link
+	rel="stylesheet"
+	href="~/lib/datatables/dataTables.dataTables.min.css"
+	asp-append-version="true"
+/>
+}
+@section Scripts {
+<script
+	src="~/lib/datatables/dataTables.min.js"
+	asp-append-version="true"
+></script>
+<script
+	src="~/js/modules/maestros/almacenes/almacen.js"
+	asp-append-version="true"
+></script>
+}
+
+

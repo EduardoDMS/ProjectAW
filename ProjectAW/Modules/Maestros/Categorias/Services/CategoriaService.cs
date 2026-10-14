@@ -2,6 +2,8 @@
 using ProjectAW.Modules.Maestros.Categorias.DTOs.Responses;
 using ProjectAW.Modules.Maestros.Categorias.Entities;
 using ProjectAW.Modules.Maestros.Categorias.Repositories;
+using ProjectAW.Infrastructure.Errors;
+using ProjectAW.Models;
 
 namespace ProjectAW.Modules.Maestros.Categorias.Services
 {
@@ -19,14 +21,14 @@ namespace ProjectAW.Modules.Maestros.Categorias.Services
             var categoria = await _repository.GetByIdAsync(id);
 
             if (categoria == null)
-                throw new InvalidOperationException($"No se encontró la categoría con ID {id}.");
+                throw new NoEncontradoException($"No se encontró la categoría con ID {id}.");
 
             var nombreCate = dto.Nombre.Trim().ToUpper();
             var categoriaConMismoNombre = await _repository.GetByNombreAsync(nombreCate);
 
             if(categoriaConMismoNombre != null && categoriaConMismoNombre.IdCategoria != id)
             {
-                throw new InvalidOperationException($"Ya existe una categoría con el nombre '{nombreCate}'.");
+                throw new ConflictoNegocioException($"Ya existe una categoría con el nombre '{nombreCate}'.");
             }
 
             categoria.Nombre = nombreCate;
@@ -55,7 +57,7 @@ namespace ProjectAW.Modules.Maestros.Categorias.Services
 
             var categoriaExistente = await _repository.GetByNombreAsync(nombre);
             if(categoriaExistente != null)
-                throw new InvalidOperationException($"Ya existe una categoría con el nombre '{nombre}'.");
+                throw new ConflictoNegocioException($"Ya existe una categoría con el nombre '{nombre}'.");
 
             var categoria = new Categoria
             {

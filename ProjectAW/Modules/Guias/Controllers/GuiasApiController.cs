@@ -2,7 +2,6 @@
 using ProjectAW.Modules.Guias.DTOs.Request;
 using ProjectAW.Modules.Guias.Entities;
 using ProjectAW.Modules.Guias.Services;
-using ProjectAW.Models;
 using Microsoft.AspNetCore.Authorization;
 
 namespace ProjectAW.Modules.Guias.Controllers
@@ -51,21 +50,8 @@ namespace ProjectAW.Modules.Guias.Controllers
                 return NoContent();
             });
 
+        private static Task<IActionResult> Ejecutar(Func<Task<IActionResult>> accion) => accion();
 
-        private async Task<IActionResult> Ejecutar(Func<Task<IActionResult>> accion)
-        {
-            try
-            {
-                return await accion();
-            }
-            catch (NoEncontradoException ex)
-            {
-                return Problem(detail: ex.Message, statusCode: StatusCodes.Status404NotFound, title: "No encontrado");
-            }
-            catch (ReglaNegocioException ex)
-            {
-                return Problem(detail: ex.Message, statusCode: StatusCodes.Status400BadRequest, title: "Regla de negocio");
-            }
-        }
+
     }
 }

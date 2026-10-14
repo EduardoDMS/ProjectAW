@@ -1,4 +1,5 @@
 ﻿using ProjectAW.Modules.Maestros.Estados.Entities;
+using ProjectAW.Modules.Stocks.Entities;
 
 namespace ProjectAW.Modules.Guias.Entities
 { 
@@ -30,6 +31,8 @@ namespace ProjectAW.Modules.Guias.Entities
         public int? IdUsuarioModificacion { get; set; }
 
         public DateTime? FechaActualizada { get; set; }
+
+        public ICollection<MovimientoStock>? MovimientoStocks { get; set; }
 
 
     }

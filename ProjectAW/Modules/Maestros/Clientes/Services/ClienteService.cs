@@ -2,6 +2,7 @@
 using ProjectAW.Modules.Maestros.Clientes.DTOs.Responses;
 using ProjectAW.Modules.Maestros.Clientes.Entities;
 using ProjectAW.Modules.Maestros.Clientes.Repositories;
+using ProjectAW.Infrastructure.Errors;
 
 namespace ProjectAW.Modules.Maestros.Clientes.Services
 {
@@ -23,21 +24,21 @@ namespace ProjectAW.Modules.Maestros.Clientes.Services
 
             var numeroDocumento = dto.NumeroDocumento.Trim();
 
-            var clienteConMismoNumero = await _repository.ObtenerPorIdAsync(id);
+            var clienteConMismoNumero = await _repository.ObtenerPorNumeroDocumentoAsync(numeroDocumento);
 
             if(clienteConMismoNumero!=null && clienteConMismoNumero.IdCliente!=id)
             {
-                throw new InvalidOperationException("Ya existe un cliente con ese número de documento.");
+                throw new ConflictoNegocioException("Ya existe un cliente con ese número de documento.");
             }
 
             cliente.RazonSocial=dto.RazonSocial;
             cliente.IdTipoDocumento = dto.IdTipoDocumento;
-            cliente.NumeroDocumento = dto.NumeroDocumento;
+            cliente.NumeroDocumento = numeroDocumento;
             cliente.Correo=dto.Correo;
             cliente.Telefono=dto.Telefono;
             cliente.Direccion=dto.Direccion;
             cliente.Activo=dto.Activo;
-            cliente.FchModificacion=dto.FchModificacion;
+            cliente.FchModificacion= DateTime.UtcNow;
 
             await _repository.ActualizarAsync(cliente);
 
@@ -65,7 +66,7 @@ namespace ProjectAW.Modules.Maestros.Clientes.Services
             var clienteExistente = await _repository.ObtenerPorNumeroDocumentoAsync(numeroDocumento);
 
             if (clienteExistente != null)
-                throw new InvalidOperationException("Ya existe un cliente con ese número de documento.");
+                throw new ConflictoNegocioException("Ya existe un cliente con ese número de documento.");
 
             var cliente = new Cliente
             {

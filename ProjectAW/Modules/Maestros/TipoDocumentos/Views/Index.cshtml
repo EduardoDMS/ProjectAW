@@ -1,0 +1,56 @@
+@{
+	ViewData["Title"] = "Tipos de documento";
+	ViewData["Description"] = "Consulta los tipos de documento admitidos para clientes y proveedores.";
+	Layout = "~/Views/Shared/_Layout.cshtml";
+}
+<section class="page-heading">
+	<div>
+		<p>Catálogo de consulta utilizado en los registros de terceros.</p>
+	</div>
+	<span class="read-only-note">Solo lectura</span>
+</section>
+<section class="content-card maestro-card">
+	<div class="maestro-toolbar">
+		<span class="read-only-note"
+			>Este catálogo no ofrece operaciones de escritura en la API
+			actual.</span
+		><span
+			class="ms-auto"
+			id="document-feedback"
+			role="status"
+			aria-live="polite"
+		></span>
+	</div>
+	<div id="document-alert" class="maestro-alert" role="alert" hidden></div>
+	<div class="table-responsive p-3">
+		<table id="document-types-table" class="table align-middle w-100">
+			<thead>
+				<tr>
+					<th>Código</th>
+					<th>Tipo de documento</th>
+					<th>Uso</th>
+				</tr>
+			</thead>
+			<tbody></tbody>
+		</table>
+	</div>
+</section>
+@section Styles {
+<link
+	rel="stylesheet"
+	href="~/lib/datatables/dataTables.dataTables.min.css"
+	asp-append-version="true"
+/>
+}
+@section Scripts {
+<script
+	src="~/lib/datatables/dataTables.min.js"
+	asp-append-version="true"
+></script>
+<script
+	src="~/js/modules/maestros/tipo-documentos/tipo-documento.js"
+	asp-append-version="true"
+></script>
+}
+
+

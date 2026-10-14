@@ -15,6 +15,8 @@
 		<Folder Include="Modules\Seguridad\Security\Entities\" />
 		<Folder Include="Modules\Seguridad\Usuarios\Views\" />
 		<Folder Include="Modules\Recepcion\" />
+		<Folder Include="Modules\Stocks\DTOs\Responses\" />
+		<Folder Include="Modules\Stocks\DTOs\Requests\" />
 		<Folder Include="wwwroot\js\modules\maestros\almacenes\" />
 		<Folder Include="wwwroot\js\modules\maestros\clientes\" />
 		<Folder Include="wwwroot\js\modules\maestros\ubicaciones\" />
@@ -26,6 +28,8 @@
 	    <PrivateAssets>all</PrivateAssets>
 	    <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 	  </PackageReference>
+		<!-- SqlClient trae una versión vulnerable de forma transitiva; mantener el parche en la misma rama 9.x. -->
+		<PackageReference Include="System.Security.Cryptography.Pkcs" Version="9.0.21" />
 	  <PackageReference Include="Swashbuckle.AspNetCore" Version="10.2.3" />
 	</ItemGroup>
 </Project>

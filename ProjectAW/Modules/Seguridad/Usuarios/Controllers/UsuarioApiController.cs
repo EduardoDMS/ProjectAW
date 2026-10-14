@@ -38,41 +38,19 @@ namespace ProjectAW.Modules.Seguridad.Usuarios.Controllers
         [HttpPost]
         public async Task<IActionResult> CrearUsuario([FromBody] CrearUsuarioDto request)
         {
-            try
-            {
-                var usuario = await _service.CrearUsuarioAsync(request);
-                return CreatedAtAction(nameof(ObtenerPorId), new { id = usuario.IdUsuario }, usuario);
-
-            }
-            catch(InvalidOperationException ex)
-            {
-                return Conflict(new
-                {
-                    mensaje = ex.Message
-                });
-            }
+            var usuario = await _service.CrearUsuarioAsync(request);
+            return CreatedAtAction(nameof(ObtenerPorId), new { id = usuario!.IdUsuario }, usuario);
         }
 
 
         [HttpPut("{id:int}")]
         public async Task<IActionResult> Actualizar(int id , [FromBody] ActualizarUsuarioDto request)
         {
-            try
-            {
-                var actualizado = await _service.ActualizarUsuarioAsync(id, request);
-                if (!actualizado)
-                    return NotFound();
+            var actualizado = await _service.ActualizarUsuarioAsync(id, request);
+            if (!actualizado)
+                return NotFound();
 
-                return NoContent();
-
-            }
-            catch(InvalidOperationException ex)
-            {
-                return Conflict(new
-                {
-                    mensaje = ex.Message
-                });
-            }
+            return NoContent();
         }
 
 

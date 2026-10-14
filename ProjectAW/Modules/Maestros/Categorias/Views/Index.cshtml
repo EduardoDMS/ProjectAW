@@ -1,0 +1,149 @@
+@{
+	ViewData["Title"] = "Categorías";
+	ViewData["Description"] = "Clasifica productos para mantener ordenado el inventario.";
+	Layout = "~/Views/Shared/_Layout.cshtml";
+}
+<section class="page-heading">
+	<div>
+		<h1>Categorías</h1>
+		<p>Organiza productos por familias y mantén el catálogo actualizado.</p>
+	</div>
+	<button class="btn btn-primary" id="new-category" type="button">
+		＋ Nueva categoría
+	</button>
+</section>
+<section class="content-card maestro-card">
+	<div class="maestro-toolbar">
+		<label class="status-filter" for="category-status"
+			><span>Disponibilidad</span
+			><select id="category-status">
+				<option value="">Todas</option>
+				<option value="true">Activas</option>
+				<option value="false">Inactivas</option>
+			</select></label
+		><span
+			class="ms-auto"
+			id="category-feedback"
+			role="status"
+			aria-live="polite"
+		></span>
+	</div>
+	<div id="category-alert" class="maestro-alert" role="alert" hidden></div>
+	<div class="table-responsive p-3">
+		<table id="categories-table" class="table align-middle w-100">
+			<thead>
+				<tr>
+					<th>ID</th>
+					<th>Nombre</th>
+					<th>Descripción</th>
+					<th>Estado</th>
+					<th>Acciones</th>
+				</tr>
+			</thead>
+			<tbody></tbody>
+		</table>
+	</div>
+</section>
+<div
+	class="modal fade"
+	id="category-modal"
+	tabindex="-1"
+	aria-labelledby="category-modal-title"
+	aria-hidden="true"
+>
+	<div class="modal-dialog modal-dialog-centered">
+		<div class="modal-content maestro-modal">
+			<div class="modal-header">
+				<div>
+					<span class="eyebrow">ORGANIZACIÓN DE PRODUCTOS</span>
+					<h2 class="modal-title" id="category-modal-title">
+						Nueva categoría
+					</h2>
+				</div>
+				<button
+					class="btn-close"
+					type="button"
+					data-bs-dismiss="modal"
+					aria-label="Cerrar"
+				></button>
+			</div>
+			<form id="category-form">
+				<div class="modal-body">
+					<div
+						id="category-form-alert"
+						class="maestro-alert"
+						role="alert"
+						hidden
+					></div>
+					<div class="maestro-form-grid">
+						<div class="maestro-field">
+							<label for="category-name">Nombre *</label
+							><input
+								class="form-control"
+								id="category-name"
+								name="nombre"
+								maxlength="100"
+								required
+							/>
+						</div>
+						<div class="maestro-field">
+							<label for="category-description"
+								>Descripción *</label
+							><input
+								class="form-control"
+								id="category-description"
+								name="descripcion"
+								maxlength="250"
+								required
+							/>
+						</div>
+						<div class="maestro-field maestro-field--check">
+							<input
+								class="form-check-input"
+								id="category-active"
+								name="activo"
+								type="checkbox"
+							/><label for="category-active"
+								>Categoría activa</label
+							>
+						</div>
+					</div>
+				</div>
+				<div class="modal-footer">
+					<button
+						class="btn btn-light"
+						type="button"
+						data-bs-dismiss="modal"
+					>
+						Cancelar</button
+					><button
+						class="btn btn-primary"
+						id="save-category"
+						type="submit"
+					>
+						Guardar categoría
+					</button>
+				</div>
+			</form>
+		</div>
+	</div>
+</div>
+@section Styles {
+<link
+	rel="stylesheet"
+	href="~/lib/datatables/dataTables.dataTables.min.css"
+	asp-append-version="true"
+/>
+}
+@section Scripts {
+<script
+	src="~/lib/datatables/dataTables.min.js"
+	asp-append-version="true"
+></script>
+<script
+	src="~/js/modules/maestros/categorias/categoria.js"
+	asp-append-version="true"
+></script>
+}
+
+

@@ -1,0 +1,387 @@
+@{
+	ViewData["Title"] = "Guías";
+	ViewData["Description"] = "Registra y consulta entradas, salidas y traslados de inventario.";
+	ViewData["Glyph"] = "G";
+	Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div id="guides-app" data-open-create="@(ViewData["OpenCreate"] is true ? "true" : "false")">
+	<section class="page-heading guide-page-heading">
+		<div>
+			<h1>@ViewData["Title"]</h1>
+			<p>@ViewData["Description"]</p>
+		</div>
+		<button
+			class="btn btn-primary guide-primary-action"
+			id="new-guide"
+			type="button"
+		>
+			<span aria-hidden="true">＋</span> Registrar guía
+		</button>
+	</section>
+
+	<div class="guide-summary" aria-label="Resumen de guías">
+		<article class="guide-summary-card">
+			<span class="guide-summary-card__icon guide-icon--all">G</span>
+			<div>
+				<small>Total visible</small><strong id="guide-total">—</strong>
+			</div>
+		</article>
+		<article class="guide-summary-card">
+			<span class="guide-summary-card__icon guide-icon--pending">P</span>
+			<div>
+				<small>Pendientes</small><strong id="guide-pending">—</strong>
+			</div>
+		</article>
+		<article class="guide-summary-card">
+			<span class="guide-summary-card__icon guide-icon--active">↗</span>
+			<div>
+				<small>En proceso</small><strong id="guide-progress">—</strong>
+			</div>
+		</article>
+		<article class="guide-summary-card">
+			<span class="guide-summary-card__icon guide-icon--cancelled"
+				>×</span
+			>
+			<div>
+				<small>Canceladas</small><strong id="guide-cancelled">—</strong>
+			</div>
+		</article>
+	</div>
+
+	<section class="guide-panel" aria-label="Listado de guías">
+		<div class="guide-toolbar">
+			<label class="guide-search" for="guide-search">
+				<svg viewBox="0 0 20 20" fill="none" aria-hidden="true">
+					<circle cx="8.8" cy="8.8" r="5.8" />
+					<path d="m13.2 13.2 4 4" />
+				</svg>
+				<input
+					id="guide-search"
+					type="search"
+					placeholder="Buscar número, tercero o almacén..."
+					autocomplete="off"
+				/>
+			</label>
+			<div class="guide-filters">
+				<label
+					><span>Operación</span
+					><select id="guide-operation-filter" class="form-select">
+						<option value="">Todas</option>
+					</select></label
+				>
+				<label
+					><span>Estado</span
+					><select id="guide-status-filter" class="form-select">
+						<option value="">Todos</option>
+					</select></label
+				>
+			</div>
+		</div>
+		<div
+			id="guide-alert"
+			class="guide-alert"
+			role="status"
+			aria-live="polite"
+			hidden
+		></div>
+		<div class="table-responsive guide-table-wrap">
+			<table class="table guide-table align-middle mb-0">
+				<thead>
+					<tr>
+						<th scope="col">Guía</th>
+						<th scope="col">Operación y referencia</th>
+						<th scope="col">Programación</th>
+						<th scope="col">Productos</th>
+						<th scope="col">Estado</th>
+						<th scope="col" class="text-end">Acciones</th>
+					</tr>
+				</thead>
+				<tbody id="guide-rows">
+					<tr>
+						<td class="guide-empty" colspan="6">
+							Cargando guías...
+						</td>
+					</tr>
+				</tbody>
+			</table>
+		</div>
+		<footer class="guide-table-footer">
+			<span id="guide-count" role="status" aria-live="polite"></span
+			><span>Las guías pendientes se pueden editar o cancelar.</span>
+		</footer>
+	</section>
+</div>
+
+<div
+	class="modal fade"
+	id="guide-editor"
+	tabindex="-1"
+	aria-labelledby="guide-editor-title"
+	aria-hidden="true"
+>
+	<div
+		class="modal-dialog modal-dialog-centered modal-xl modal-dialog-scrollable"
+	>
+		<div class="modal-content guide-modal">
+			<div class="modal-header">
+				<div>
+					<span class="eyebrow">DOCUMENTO DE INVENTARIO</span>
+					<h2 class="modal-title" id="guide-editor-title">
+						Registrar guía
+					</h2>
+					<p id="guide-editor-hint">
+						Completa los datos de la operación y agrega sus
+						productos.
+					</p>
+				</div>
+				<button
+					type="button"
+					class="btn-close"
+					data-bs-dismiss="modal"
+					aria-label="Cerrar"
+				></button>
+			</div>
+			<form id="guide-form" novalidate>
+				<div class="modal-body">
+					<div
+						id="guide-form-alert"
+						class="guide-alert"
+						role="alert"
+						aria-live="polite"
+						hidden
+					></div>
+					<nav
+						class="guide-modal-nav"
+						aria-label="Secciones del formulario de guía"
+					>
+						<button
+							class="guide-modal-nav__item is-active"
+							type="button"
+							data-guide-jump="guide-operation-section"
+							aria-current="step"
+						>
+							01 <span>Operación</span>
+						</button>
+						<button
+							class="guide-modal-nav__item"
+							type="button"
+							data-guide-jump="guide-products-section"
+						>
+							02 <span>Productos</span
+							><b id="guide-line-count">0</b>
+						</button>
+					</nav>
+					<section
+						class="guide-form-section"
+						id="guide-operation-section"
+					>
+						<div class="guide-form-section__heading">
+							<span>01</span>
+							<div>
+								<h3>Datos de la operación</h3>
+								<p>
+									La operación determina qué datos de origen y
+									destino son necesarios.
+								</p>
+							</div>
+						</div>
+						<div class="guide-form-grid">
+							<div class="guide-field">
+								<label for="guide-operation"
+									>Tipo de operación <b>*</b></label
+								><select
+									class="form-select"
+									id="guide-operation"
+									required
+								></select>
+							</div>
+							<div class="guide-field">
+								<label for="guide-date"
+									>Fecha programada <b>*</b></label
+								><input
+									class="form-control"
+									id="guide-date"
+									type="datetime-local"
+									required
+								/>
+							</div>
+							<div class="guide-field" id="guide-provider-wrap">
+								<label for="guide-provider"
+									>Proveedor <b>*</b></label
+								><select
+									class="form-select"
+									id="guide-provider"
+								></select>
+							</div>
+							<div class="guide-field" id="guide-client-wrap">
+								<label for="guide-client"
+									>Cliente <b>*</b></label
+								><select
+									class="form-select"
+									id="guide-client"
+								></select>
+							</div>
+							<div class="guide-field" id="guide-origin-wrap">
+								<label for="guide-origin"
+									>Almacén de origen <b>*</b></label
+								><select
+									class="form-select"
+									id="guide-origin"
+								></select>
+							</div>
+							<div
+								class="guide-field"
+								id="guide-destination-wrap"
+							>
+								<label for="guide-destination"
+									>Almacén de destino <b>*</b></label
+								><select
+									class="form-select"
+									id="guide-destination"
+								></select>
+							</div>
+							<div class="guide-field">
+								<label for="guide-reference-type"
+									>Tipo de documento de referencia</label
+								><input
+									class="form-control"
+									id="guide-reference-type"
+									maxlength="30"
+									placeholder="Ej. Orden de compra"
+								/>
+							</div>
+							<div class="guide-field">
+								<label for="guide-reference-number"
+									>Número de documento</label
+								><input
+									class="form-control"
+									id="guide-reference-number"
+									maxlength="50"
+									placeholder="Ej. OC-2026-0012"
+								/>
+							</div>
+							<div class="guide-field guide-field--wide">
+								<label for="guide-observation"
+									>Observación</label
+								><textarea
+									class="form-control"
+									id="guide-observation"
+									rows="2"
+									maxlength="500"
+									placeholder="Notas sobre la operación (opcional)"
+								></textarea>
+							</div>
+						</div>
+					</section>
+
+					<section
+						class="guide-form-section guide-details-section"
+						id="guide-products-section"
+					>
+						<div class="guide-form-section__heading">
+							<span>02</span>
+							<div>
+								<h3>Productos de la guía</h3>
+								<p>
+									Agrega al menos un producto. No se permiten
+									líneas repetidas.
+								</p>
+							</div>
+							<button
+								class="btn btn-outline-primary guide-add-line"
+								type="button"
+								id="add-guide-line"
+							>
+								＋ Agregar producto
+							</button>
+						</div>
+						<div class="guide-lines-head">
+							<span>Producto</span><span>Cantidad esperada</span
+							><span></span>
+						</div>
+						<div id="guide-lines" class="guide-lines"></div>
+					</section>
+				</div>
+				<div class="modal-footer">
+					<button
+						type="button"
+						class="btn btn-light"
+						data-bs-dismiss="modal"
+					>
+						Cerrar
+					</button>
+					<button
+						type="submit"
+						class="btn btn-primary guide-save"
+						id="save-guide"
+					>
+						<span id="save-guide-label">Guardar guía</span
+						><span class="guide-spinner" aria-hidden="true"></span>
+					</button>
+				</div>
+			</form>
+		</div>
+	</div>
+</div>
+
+<div
+	class="modal fade"
+	id="guide-detail-modal"
+	tabindex="-1"
+	aria-labelledby="guide-detail-title"
+	aria-hidden="true"
+>
+	<div
+		class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable"
+	>
+		<div class="modal-content guide-modal">
+			<div class="modal-header">
+				<div>
+					<span class="eyebrow">DETALLE DEL DOCUMENTO</span>
+					<h2 class="modal-title" id="guide-detail-title">Guía</h2>
+					<p id="guide-detail-subtitle"></p>
+				</div>
+				<button
+					type="button"
+					class="btn-close"
+					data-bs-dismiss="modal"
+					aria-label="Cerrar"
+				></button>
+			</div>
+			<div class="modal-body">
+				<div
+					id="guide-detail-summary"
+					class="guide-detail-summary"
+				></div>
+				<div class="table-responsive">
+					<table class="table guide-lines-table align-middle">
+						<thead>
+							<tr>
+								<th>Producto</th>
+								<th class="text-end">Cantidad esperada</th>
+							</tr>
+						</thead>
+						<tbody id="guide-detail-lines"></tbody>
+					</table>
+				</div>
+			</div>
+			<div class="modal-footer">
+				<button
+					type="button"
+					class="btn btn-light"
+					data-bs-dismiss="modal"
+				>
+					Cerrar
+				</button>
+			</div>
+		</div>
+	</div>
+</div>
+
+@section Scripts {
+<script src="~/js/modules/guias/guias.js" asp-append-version="true"></script>
+}
+
+
+

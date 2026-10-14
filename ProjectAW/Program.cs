@@ -24,24 +24,47 @@ using ProjectAW.Modules.Seguridad.Security.Repositories;
 using ProjectAW.Modules.Seguridad.Security.Services;
 using System.Net;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Mvc;
 using ProjectAW.Modules.Maestros.Roles.Repositories;
 using ProjectAW.Modules.Maestros.Roles.Services;
 using ProjectAW.Modules.Maestros.TipoDocumentos.Repositories;
 using ProjectAW.Modules.Maestros.TipoDocumentos.Services;
+using ProjectAW.Infrastructure.Errors;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 //builder.Services.AddControllersWithViews();
 // MVC
-builder.Services.AddControllersWithViews().AddRazorOptions(options =>
-{
-    options.ViewLocationExpanders.Add(new ModuleViewLocationExpander());
-});
+builder.Services.AddControllersWithViews()
+    .AddRazorOptions(options =>
+    {
+        options.ViewLocationExpanders.Add(new ModuleViewLocationExpander());
+    })
+    .ConfigureApiBehaviorOptions(options =>
+    {
+        options.InvalidModelStateResponseFactory = context =>
+        {
+            var problem = new ValidationProblemDetails(context.ModelState)
+            {
+                Status = StatusCodes.Status400BadRequest,
+                Title = "La solicitud contiene datos no válidos.",
+                Detail = "Revisa los campos indicados y vuelve a intentarlo.",
+                Instance = context.HttpContext.Request.Path
+            };
+            problem.Extensions["mensaje"] = problem.Detail;
+            problem.Extensions["traceId"] = context.HttpContext.TraceIdentifier;
+            return new BadRequestObjectResult(problem);
+        };
+    });
 
 // Swagger
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+
+// Respuestas de error RFC 7807 y conversión centralizada de excepciones.
+builder.Services.AddProblemDetails();
+builder.Services.AddExceptionHandler<ApiExceptionHandler>();
 
 // EF Core
 builder.Services.AddDbContext<AppDbContext>(options => options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
@@ -83,8 +106,11 @@ builder.Services
     {
         options.Cookie.Name = "ProjectAW.Auth";
         options.Cookie.HttpOnly = true;                     // Javascript no puede leer la cookie
+        options.Cookie.SameSite = SameSiteMode.Lax;
         options.ExpireTimeSpan = TimeSpan.FromHours(8);
         options.SlidingExpiration = true;                   // Se renueva mientras el usuario este activo
+        options.LoginPath = "/Login";
+        options.AccessDeniedPath = "/AccesoDenegado";
 
         options.Events.OnRedirectToLogin = context =>
         {
@@ -109,6 +135,15 @@ builder.Services
 
 
 var app = builder.Build();
+
+// Limita el formato centralizado al contrato HTTP de las APIs.
+app.UseWhen(
+    context => context.Request.Path.StartsWithSegments("/api"),
+    api =>
+    {
+        api.UseExceptionHandler();
+        api.UseStatusCodePages();
+    });
 
 // Configure the HTTP request pipeline.
 //if (!app.Environment.IsDevelopment())

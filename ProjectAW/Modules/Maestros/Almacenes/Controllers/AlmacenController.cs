@@ -3,8 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace ProjectAW.Modules.Maestros.Almacenes.Controllers
 {
-    [Route("api/[controller]")]
-    [ApiController]
+    [Route("Maestros/Almacen")]
     public class AlmacenController : Controller
     {
         [HttpGet("")]

@@ -84,7 +84,9 @@ namespace ProjectAW.Modules.Guias.Entities
                    .HasForeignKey(x => x.IdEstadoGuia)
                    .OnDelete(DeleteBehavior.Restrict);
 
-            builder.Property(x => x.FechaActualizada).HasColumnType("datetime2");
+            builder.Property(x => x.FechaActualizada)
+                   .HasColumnType("datetime2")
+                   .IsRequired(false);
 
             builder.HasOne<Usuario>()
                    .WithMany()
