@@ -37,40 +37,19 @@ namespace ProjectAW.Modules.Maestros.Categorias.Controllers
         [HttpPost]
         public async Task<IActionResult> CrearCategoria([FromBody] CrearCategoriaDto dto)
         {
-            try
-            {
-                var categoriaCreada = await _service.CrearCategoriaAsync(dto);
-                return CreatedAtAction(nameof(ObtenerCategiriaId), new { id = categoriaCreada.IdCategoria }, categoriaCreada);
-            }
-            catch (InvalidOperationException ex)
-            {
-                return Conflict(new
-                {
-                    mensaje = ex.Message
-                });
-            }
+            var categoriaCreada = await _service.CrearCategoriaAsync(dto);
+            return CreatedAtAction(nameof(ObtenerCategiriaId), new { id = categoriaCreada.IdCategoria }, categoriaCreada);
         }
 
 
-        [HttpPut("id:int")]
+        [HttpPut("{id:int}")]
         public async Task<IActionResult> ActualizarCategoria(int id ,[FromBody] ActualizarCategoriaDto request)
         {
-            try
-            {
-                var actualizado = await _service.ActualizarCategoriaAsync(id, request);
+            var actualizado = await _service.ActualizarCategoriaAsync(id, request);
+            if (!actualizado)
+                return NotFound();
 
-                if (!actualizado)
-                    return NotFound();
-
-                return NoContent();
-            }
-            catch(InvalidOperationException ex)
-            {
-                return Conflict(new
-                {
-                    mensaje = ex.Message
-                });
-            }
+            return NoContent();
         }
 
 

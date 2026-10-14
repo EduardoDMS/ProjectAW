@@ -1,9 +1,11 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using ProjectAW.Models;
 using System.Diagnostics;
 
 namespace ProjectAW.Controllers
 {
+    [Authorize]
     public class HomeController : Controller
     {
         public IActionResult Index()

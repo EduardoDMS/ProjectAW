@@ -4,6 +4,8 @@ using ProjectAW.Modules.Seguridad.Usuarios.Entitites;
 using ProjectAW.Modules.Seguridad.Usuarios.DTOs.Requests;
 using ProjectAW.Modules.Seguridad.Usuarios.DTOs.Responses;
 using ProjectAW.Modules.Seguridad.Usuarios.Repositories;
+using ProjectAW.Infrastructure.Errors;
+using ProjectAW.Models;
 
 namespace ProjectAW.Modules.Seguridad.Usuarios.Services
 {
@@ -32,7 +34,7 @@ namespace ProjectAW.Modules.Seguridad.Usuarios.Services
 
             if(usuarioConElmismoNombre != null && usuarioConElmismoNombre.IdUsuario!= id)
             {
-                throw new InvalidOperationException("Ya existe un usuario con ese username intenta con otro ");
+                throw new ConflictoNegocioException("Ya existe un usuario con ese nombre de usuario.");
             }
 
             usuario.Username = username;
@@ -65,14 +67,14 @@ namespace ProjectAW.Modules.Seguridad.Usuarios.Services
         public async Task<UsuarioDto?> CrearUsuarioAsync(CrearUsuarioDto dto)
         {
             if (string.IsNullOrWhiteSpace(dto.Password))
-                throw new InvalidOperationException("La contrasela es obligatoria");
+                throw new ReglaNegocioException("La contraseña es obligatoria.");
 
             var username = dto.Username.Trim();
             var usuarioExistente = await _repository.ObtenerPorUsernameAsync(username);
 
             if(usuarioExistente != null)
             {
-                throw new InvalidOperationException("Ya existe un usuario con este nombre");
+                throw new ConflictoNegocioException("Ya existe un usuario con ese nombre de usuario.");
             }
 
             var usuario = new Usuario

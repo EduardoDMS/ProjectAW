@@ -1,4 +1,5 @@
 ﻿using ProjectAW.Modules.Maestros.Ubicaciones.Entities;
+using ProjectAW.Modules.Stocks.Entities;
 
 namespace ProjectAW.Modules.Maestros.Almacenes.Entities
 {
@@ -14,6 +15,9 @@ namespace ProjectAW.Modules.Maestros.Almacenes.Entities
         // conexion a la nueva tabla
         
         public ICollection<Ubicacion>? Ubicaciones { get; set; }
+        public ICollection<MovimientoStock>? MovimientoStock { get; set; }
+        public ICollection<StockAlmacen>? StockAlmacen { get; set; }
 
+        
     }
 }

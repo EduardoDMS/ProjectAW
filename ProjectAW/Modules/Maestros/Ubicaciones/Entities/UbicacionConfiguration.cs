@@ -21,13 +21,14 @@ namespace ProjectAW.Modules.Maestros.Ubicaciones.Entities
 
             builder.Property(u => u.FchRegistro)
                    .IsRequired()
-                   .HasDefaultValueSql("GETDATE()");
+                   .HasDefaultValueSql("GETDATE()")
+                   .ValueGeneratedOnAdd();
 
             builder.HasIndex(u => u.Codigo)
                    .IsUnique();
 
             builder.Property(u => u.FchModificacion)
-                   .ValueGeneratedOnUpdate();
+                   .IsRequired(false);
 
             builder.HasOne(u => u.Almacen)
                    .WithMany(a => a.Ubicaciones)

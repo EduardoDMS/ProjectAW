@@ -37,43 +37,18 @@ namespace ProjectAW.Modules.Maestros.Proveedores.Controllers
         [HttpPost]
         public async Task<IActionResult> Crear([FromBody] CrearProveedorDto request)
         {
-            try
-            {
-                var proveedor=await _service.CrearAsync(request);
-
-                return CreatedAtAction(
-                    nameof(ObtenerPorId),
-                    new { id = proveedor.IdProveedor },
-                    proveedor);
-            }
-            catch(InvalidOperationException ex)
-            {
-                return Conflict(new
-                {
-                    mensaje = ex.Message
-                });
-            }
+            var proveedor = await _service.CrearAsync(request);
+            return CreatedAtAction(nameof(ObtenerPorId), new { id = proveedor.IdProveedor }, proveedor);
         }
 
         [HttpPut("{id:int}")]
         public async Task<IActionResult> Actualizar(int id, [FromBody] ActualizarProveedorDto request)
         {
-            try
-            {
-                var actualizado=await _service.ActualizarAsync(id,request);
+            var actualizado = await _service.ActualizarAsync(id, request);
+            if (!actualizado)
+                return NotFound();
 
-                if (!actualizado)
-                    return NotFound();
-
-                return NoContent();
-            }
-            catch(InvalidOperationException ex)
-            {
-                return Conflict(new
-                {
-                    mensaje = ex.Message
-                });
-            }
+            return NoContent();
         }
 
         [HttpPatch("{id:int}/estado")]

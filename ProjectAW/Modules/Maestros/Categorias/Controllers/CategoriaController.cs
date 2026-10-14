@@ -2,7 +2,6 @@
 
 namespace ProjectAW.Modules.Maestros.Categorias.Controllers
 {
-
     [Route("Maestros/Categoria")]
     public class CategoriaController : Controller
     {

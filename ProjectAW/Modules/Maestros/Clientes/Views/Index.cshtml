@@ -1,0 +1,188 @@
+@{
+	ViewData["Title"] = "Clientes";
+	ViewData["Description"] = "Mantén los datos de clientes disponibles para las guías de salida.";
+	Layout = "~/Views/Shared/_Layout.cshtml";
+}
+<section class="page-heading">
+	<div>
+		<h1>Clientes</h1>
+		<p>Consulta identificación y datos de contacto de tus clientes.</p>
+	</div>
+	<button class="btn btn-primary" id="new-client" type="button">
+		＋ Nuevo cliente
+	</button>
+</section>
+<section class="content-card maestro-card">
+	<div class="maestro-toolbar">
+		<label class="status-filter" for="client-status"
+			><span>Disponibilidad</span
+			><select id="client-status">
+				<option value="">Todos</option>
+				<option value="true">Activos</option>
+				<option value="false">Inactivos</option>
+			</select></label
+		><span
+			class="ms-auto"
+			id="client-feedback"
+			role="status"
+			aria-live="polite"
+		></span>
+	</div>
+	<div id="client-alert" class="maestro-alert" role="alert" hidden></div>
+	<div class="table-responsive p-3">
+		<table id="clients-table" class="table align-middle w-100">
+			<thead>
+				<tr>
+					<th>Razón social</th>
+					<th>Documento</th>
+					<th>Correo</th>
+					<th>Teléfono</th>
+					<th>Estado</th>
+					<th>Acciones</th>
+				</tr>
+			</thead>
+			<tbody></tbody>
+		</table>
+	</div>
+</section>
+<div
+	class="modal fade"
+	id="client-modal"
+	tabindex="-1"
+	aria-labelledby="client-modal-title"
+	aria-hidden="true"
+>
+	<div class="modal-dialog modal-dialog-centered modal-lg">
+		<div class="modal-content maestro-modal">
+			<div class="modal-header">
+				<div>
+					<span class="eyebrow">DIRECTORIO COMERCIAL</span>
+					<h2 class="modal-title" id="client-modal-title">
+						Nuevo cliente
+					</h2>
+				</div>
+				<button
+					class="btn-close"
+					type="button"
+					data-bs-dismiss="modal"
+					aria-label="Cerrar"
+				></button>
+			</div>
+			<form id="client-form">
+				<div class="modal-body">
+					<div
+						id="client-form-alert"
+						class="maestro-alert"
+						role="alert"
+						hidden
+					></div>
+					<div class="maestro-form-grid">
+						<div class="maestro-field">
+							<label for="client-business-name"
+								>Razón social *</label
+							><input
+								class="form-control"
+								id="client-business-name"
+								name="razonSocial"
+								maxlength="50"
+								required
+							/>
+						</div>
+						<div class="maestro-field">
+							<label for="client-document-type"
+								>Tipo de documento *</label
+							><select
+								class="form-select"
+								id="client-document-type"
+								name="idTipoDocumento"
+								required
+							></select>
+						</div>
+						<div class="maestro-field">
+							<label for="client-document-number"
+								>Número de documento *</label
+							><input
+								class="form-control"
+								id="client-document-number"
+								name="numeroDocumento"
+								maxlength="25"
+								required
+							/>
+						</div>
+						<div class="maestro-field">
+							<label for="client-address">Dirección *</label
+							><input
+								class="form-control"
+								id="client-address"
+								name="direccion"
+								maxlength="50"
+								required
+							/>
+						</div>
+						<div class="maestro-field">
+							<label for="client-email">Correo</label
+							><input
+								class="form-control"
+								id="client-email"
+								name="correo"
+								type="email"
+								maxlength="50"
+							/>
+						</div>
+						<div class="maestro-field">
+							<label for="client-phone">Teléfono</label
+							><input
+								class="form-control"
+								id="client-phone"
+								name="telefono"
+								maxlength="50"
+							/>
+						</div>
+						<div class="maestro-field maestro-field--check">
+							<input
+								class="form-check-input"
+								id="client-active"
+								name="activo"
+								type="checkbox"
+							/><label for="client-active">Cliente activo</label>
+						</div>
+					</div>
+				</div>
+				<div class="modal-footer">
+					<button
+						class="btn btn-light"
+						type="button"
+						data-bs-dismiss="modal"
+					>
+						Cancelar</button
+					><button
+						class="btn btn-primary"
+						id="save-client"
+						type="submit"
+					>
+						Guardar cliente
+					</button>
+				</div>
+			</form>
+		</div>
+	</div>
+</div>
+@section Styles {
+<link
+	rel="stylesheet"
+	href="~/lib/datatables/dataTables.dataTables.min.css"
+	asp-append-version="true"
+/>
+}
+@section Scripts {
+<script
+	src="~/lib/datatables/dataTables.min.js"
+	asp-append-version="true"
+></script>
+<script
+	src="~/js/modules/maestros/clientes/cliente.js"
+	asp-append-version="true"
+></script>
+}
+
+

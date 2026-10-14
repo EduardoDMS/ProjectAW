@@ -39,43 +39,19 @@ namespace ProjectAW.Modules.Maestros.Almacenes.Controllers
         [HttpPost]
         public async Task<IActionResult> Crear([FromBody] CrearAlmacenDto request)
         {
-            try
-            {
-                var almacen = await _service.CrearAlmacenAsync(request);
-
-                return CreatedAtAction(
-                    nameof(ObtenerPorId),
-                    new { id = almacen.IdAlmacen },
-                    almacen);
-            }
-            catch(InvalidOperationException ex)
-            {
-                return Conflict(new
-                {
-                    mensaje = ex.Message
-                });
-            }
+            var almacen = await _service.CrearAlmacenAsync(request);
+            return CreatedAtAction(nameof(ObtenerPorId), new { id = almacen.IdAlmacen }, almacen);
         }
 
 
         [HttpPut("{id:int}")]
         public async Task<IActionResult> Actualizar(int id, [FromBody] ActualizarAlmacenDto request)
         {
-            try
-            {
-                var actualizado = await _service.ActualizarAlmacenAsync(id, request);
-                if(!actualizado)
-                    return NotFound();
+            var actualizado = await _service.ActualizarAlmacenAsync(id, request);
+            if (!actualizado)
+                return NotFound();
 
-                return NoContent();
-            }
-            catch (InvalidOperationException ex)
-            {
-                return Conflict(new
-                {
-                    mensaje = ex.Message
-                });
-            }
+            return NoContent();
         }
 
 

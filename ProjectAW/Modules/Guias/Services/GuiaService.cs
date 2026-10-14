@@ -11,6 +11,7 @@ using ProjectAW.Modules.Maestros.Proveedores.Entities;
 //using ProjectAW.Modules.Maestros.Estados.Entities;
 using ProjectAW.Modules.Maestros.Operaciones.Entities;
 using ProjectAW.Modules.Seguridad.Security.HttpAuth;
+using ProjectAW.Infrastructure.Errors;
 
 
 namespace ProjectAW.Modules.Guias.Services
@@ -68,8 +69,9 @@ namespace ProjectAW.Modules.Guias.Services
             await ValidarReferenciasAsync(request, ct);
 
             AplicarDatos(guia, request);
-            await _repo.GuardarCambiosAsync(ct);
             RegistrarModificacion(guia); // nuevo api 
+            await _repo.GuardarCambiosAsync(ct);
+           
             return ToResponse(guia);
         }
 
@@ -77,7 +79,7 @@ namespace ProjectAW.Modules.Guias.Services
         {
             var guia = await ObtenerOFallarAsync(idGuia, ct);
             Exigir(guia.IdEstadoGuia == EstadoGuiasIds.Pendiente, "Solo se puede cancelar una guía en estado Pendiente.");
-
+            RegistrarModificacion(guia); // verificado
             guia.IdEstadoGuia = EstadoGuiasIds.Cancelada;
             await _repo.GuardarCambiosAsync(ct);
         }
@@ -86,6 +88,8 @@ namespace ProjectAW.Modules.Guias.Services
         private static void ValidarCabecera(int idTipoOperacionGuia, ActualizarGuiaRequest r)
         {
             Exigir(r.FechaProgramada != default, "La fecha programada es obligatoria.");
+            Exigir(r.FechaProgramada.Date >= DateTime.Today,
+                "La fecha programada no puede ser anterior a hoy.");
 
             switch (idTipoOperacionGuia)
             {
@@ -179,7 +183,7 @@ namespace ProjectAW.Modules.Guias.Services
         private void RegistrarModificacion(CabeceraGuia guia)
         {
             guia.IdUsuarioModificacion = _currentUser.IdUsuario;
-            guia.FechaActualizada = DateTime.Now;
+            guia.FechaActualizada = DateTime.UtcNow;
         }
     }
 }

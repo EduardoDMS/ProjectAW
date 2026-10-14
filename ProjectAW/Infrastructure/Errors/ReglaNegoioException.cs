@@ -1,4 +1,4 @@
-﻿namespace ProjectAW.Models
+﻿namespace ProjectAW.Infrastructure.Errors
 {
     public class ReglaNegocioException : Exception
     {

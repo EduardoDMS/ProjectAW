@@ -5,7 +5,7 @@ using ProjectAW.Modules.Maestros.Roles.Services;
 namespace ProjectAW.Modules.Maestros.Roles.Controllers
 {
     [ApiController]
-    [Route("api/controller")]
+    [Route("api/[controller]")]
     public class RolApiController : ControllerBase
     {
         private readonly IRolService _service;
@@ -37,42 +37,18 @@ namespace ProjectAW.Modules.Maestros.Roles.Controllers
         [HttpPost]
         public async Task<IActionResult> Crear([FromBody] CrearRolDto request)
         {
-            try
-            {
-                var rol = await _service.CrearRolAsync(request);
-                return CreatedAtAction(
-                        nameof(ObtenerPorId),
-                        new { id = rol.IdRol },
-                        rol);
-            }
-            catch(InvalidOperationException ex)
-            {
-                return Conflict(new
-                {
-                    mensaje = ex.Message
-                });
-            }
+            var rol = await _service.CrearRolAsync(request);
+            return CreatedAtAction(nameof(ObtenerPorId), new { id = rol.IdRol }, rol);
         }
 
         [HttpPut("{id:int}")]
         public async Task<IActionResult> Actualizar(int id, [FromBody] ActualizarRolDto request)
         {
-            try
-            {
-                var actualizado = await _service.ActualizarRolAsync(id, request);
+            var actualizado = await _service.ActualizarRolAsync(id, request);
+            if (!actualizado)
+                return NotFound();
 
-                if (!actualizado)
-                    return NotFound();
-
-                return NoContent();
-            }
-            catch(InvalidOperationException ex)
-            {
-                return Conflict(new
-                {
-                    mensaje = ex.Message
-                });
-            }
+            return NoContent();
         }
 
 

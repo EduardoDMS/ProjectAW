@@ -1,0 +1,156 @@
+@{
+	ViewData["Title"] = "Ubicaciones";
+	ViewData["Description"] = "Localiza productos dentro de cada almacén.";
+	Layout = "~/Views/Shared/_Layout.cshtml";
+}
+<section class="page-heading">
+	<div>
+		<h1>Ubicaciones</h1>
+		<p>Define pasillos, niveles y espacios asociados a un almacén.</p>
+	</div>
+	<button class="btn btn-primary" id="new-location" type="button">
+		＋ Nueva ubicación
+	</button>
+</section>
+<section class="content-card maestro-card">
+	<div class="maestro-toolbar">
+		<label class="status-filter" for="location-status"
+			><span>Disponibilidad</span
+			><select id="location-status">
+				<option value="">Todas</option>
+				<option value="true">Activas</option>
+				<option value="false">Inactivas</option>
+			</select></label
+		><span
+			class="ms-auto"
+			id="location-feedback"
+			role="status"
+			aria-live="polite"
+		></span>
+	</div>
+	<div id="location-alert" class="maestro-alert" role="alert" hidden></div>
+	<div class="table-responsive p-3">
+		<table id="locations-table" class="table align-middle w-100">
+			<thead>
+				<tr>
+					<th>Código</th>
+					<th>Ubicación</th>
+					<th>Almacén</th>
+					<th>Estado</th>
+					<th>Acciones</th>
+				</tr>
+			</thead>
+			<tbody></tbody>
+		</table>
+	</div>
+</section>
+<div
+	class="modal fade"
+	id="location-modal"
+	tabindex="-1"
+	aria-labelledby="location-modal-title"
+	aria-hidden="true"
+>
+	<div class="modal-dialog modal-dialog-centered">
+		<div class="modal-content maestro-modal">
+			<div class="modal-header">
+				<div>
+					<span class="eyebrow">DISTRIBUCIÓN DE ALMACÉN</span>
+					<h2 class="modal-title" id="location-modal-title">
+						Nueva ubicación
+					</h2>
+				</div>
+				<button
+					class="btn-close"
+					type="button"
+					data-bs-dismiss="modal"
+					aria-label="Cerrar"
+				></button>
+			</div>
+			<form id="location-form">
+				<div class="modal-body">
+					<div
+						id="location-form-alert"
+						class="maestro-alert"
+						role="alert"
+						hidden
+					></div>
+					<div class="maestro-form-grid">
+						<div class="maestro-field">
+							<label for="location-code">Código *</label
+							><input
+								class="form-control"
+								id="location-code"
+								name="codigo"
+								maxlength="100"
+								required
+							/>
+						</div>
+						<div class="maestro-field">
+							<label for="location-warehouse">Almacén *</label
+							><select
+								class="form-select"
+								id="location-warehouse"
+								name="idAlmacen"
+								required
+							></select>
+						</div>
+						<div class="maestro-field">
+							<label for="location-description">Descripción</label
+							><input
+								class="form-control"
+								id="location-description"
+								name="descripcion"
+								maxlength="150"
+							/>
+						</div>
+						<div class="maestro-field maestro-field--check">
+							<input
+								class="form-check-input"
+								id="location-active"
+								name="activo"
+								type="checkbox"
+							/><label for="location-active"
+								>Ubicación activa</label
+							>
+						</div>
+					</div>
+				</div>
+				<div class="modal-footer">
+					<button
+						class="btn btn-light"
+						type="button"
+						data-bs-dismiss="modal"
+					>
+						Cancelar</button
+					><button
+						class="btn btn-primary"
+						id="save-location"
+						type="submit"
+					>
+						Guardar ubicación
+					</button>
+				</div>
+			</form>
+		</div>
+	</div>
+</div>
+@section Styles {
+<link
+	rel="stylesheet"
+	href="~/lib/datatables/dataTables.dataTables.min.css"
+	asp-append-version="true"
+/>
+}
+@section Scripts {
+<script
+	src="~/lib/datatables/dataTables.min.js"
+	asp-append-version="true"
+></script>
+<script
+	src="~/js/modules/maestros/ubicaciones/ubicacion.js"
+	asp-append-version="true"
+></script>
+}
+
+

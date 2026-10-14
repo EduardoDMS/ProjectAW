@@ -8,7 +8,7 @@ namespace ProjectAW.Modules.Seguridad.Usuarios.Controllers
         [HttpGet("")]
         public IActionResult Index()
         {
-            RouteData.Values["viewModule"] = "Maestros/Usuarios";
+            RouteData.Values["viewModule"] = "Views/Shared/Login";
             return View();
         }
     }

@@ -1,9 +1,177 @@
-﻿@{
-    ViewData["Title"] = "Productos";
+@{
+	ViewData["Title"] = "Productos";
+	ViewData["Description"] = "Consulta, registra y mantiene el catálogo de productos.";
+	Layout = "~/Views/Shared/_Layout.cshtml";
+}
+<section class="page-heading">
+	<div>
+		<h1>Productos</h1>
+		<p>Administra códigos, categorías, series y disponibilidad.</p>
+	</div>
+	<button class="btn btn-primary" id="new-product" type="button">
+		＋ Nuevo producto
+	</button>
+</section>
+<section class="content-card maestro-card">
+	<div class="maestro-toolbar">
+		<label class="status-filter" for="product-status"
+			><span>Disponibilidad</span
+			><select id="product-status">
+				<option value="">Todos</option>
+				<option value="true">Activos</option>
+				<option value="false">Inactivos</option>
+			</select></label
+		><span
+			class="ms-auto"
+			id="product-feedback"
+			role="status"
+			aria-live="polite"
+		></span>
+	</div>
+	<div id="product-alert" class="maestro-alert" role="alert" hidden></div>
+	<div class="table-responsive p-3">
+		<table id="products-table" class="table align-middle w-100">
+			<thead>
+				<tr>
+					<th>Código</th>
+					<th>Producto</th>
+					<th>Categoría</th>
+					<th>Lote</th>
+					<th>Serie</th>
+					<th>Estado</th>
+					<th>Acciones</th>
+				</tr>
+			</thead>
+			<tbody></tbody>
+		</table>
+	</div>
+</section>
+<div
+	class="modal fade"
+	id="product-modal"
+	tabindex="-1"
+	aria-labelledby="product-modal-title"
+	aria-hidden="true"
+>
+	<div class="modal-dialog modal-dialog-centered modal-lg">
+		<div class="modal-content maestro-modal">
+			<div class="modal-header">
+				<div>
+					<span class="eyebrow">CATÁLOGO DE INVENTARIO</span>
+					<h2 class="modal-title" id="product-modal-title">
+						Nuevo producto
+					</h2>
+				</div>
+				<button
+					class="btn-close"
+					type="button"
+					data-bs-dismiss="modal"
+					aria-label="Cerrar"
+				></button>
+			</div>
+			<form id="product-form">
+				<div class="modal-body">
+					<div
+						id="product-form-alert"
+						class="maestro-alert"
+						role="alert"
+						hidden
+					></div>
+					<div class="maestro-form-grid">
+						<div class="maestro-field">
+							<label for="product-code">Código *</label
+							><input
+								class="form-control"
+								id="product-code"
+								name="codigo"
+								maxlength="50"
+								required
+							/>
+						</div>
+						<div class="maestro-field">
+							<label for="product-name">Descripción *</label
+							><input
+								class="form-control"
+								id="product-name"
+								name="descripcion"
+								maxlength="150"
+								required
+							/>
+						</div>
+						<div class="maestro-field">
+							<label for="product-category">Categoría *</label
+							><select
+								class="form-select"
+								id="product-category"
+								name="idCategoria"
+								required
+							></select>
+						</div>
+						<div class="maestro-field">
+							<label for="product-serial">Serie</label
+							><input
+								class="form-control"
+								id="product-serial"
+								name="serie"
+								maxlength="50"
+							/>
+						</div>
+						<div class="maestro-field">
+							<label for="product-lot">Lote</label
+							><input
+								class="form-control"
+								id="product-lot"
+								name="lote"
+								maxlength="50"
+							/>
+						</div>
+						<div class="maestro-field maestro-field--check">
+							<input
+								class="form-check-input"
+								id="product-active"
+								name="activo"
+								type="checkbox"
+							/><label for="product-active"
+								>Producto activo</label
+							>
+						</div>
+					</div>
+				</div>
+				<div class="modal-footer">
+					<button
+						class="btn btn-light"
+						type="button"
+						data-bs-dismiss="modal"
+					>
+						Cancelar</button
+					><button
+						class="btn btn-primary"
+						type="submit"
+						id="save-product"
+					>
+						Guardar producto
+					</button>
+				</div>
+			</form>
+		</div>
+	</div>
+</div>
+@section Styles {
+<link
+	rel="stylesheet"
+	href="~/lib/datatables/dataTables.dataTables.min.css"
+	asp-append-version="true"
+/>
+}
+@section Scripts {
+<script
+	src="~/lib/datatables/dataTables.min.js"
+	asp-append-version="true"
+></script>
+<script
+	src="~/js/modules/maestros/productos/producto.js"
+	asp-append-version="true"
+></script>
 }
 
-<h1>Productos</h1>
-<p>Módulo de productos funcionando correctamente.</p>
 
-
-<script src="~/js/modules/maestros/productos/producto.js"></script>

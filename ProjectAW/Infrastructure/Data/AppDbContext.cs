@@ -11,6 +11,7 @@ using ProjectAW.Modules.Maestros.Roles.Entities;
 using ProjectAW.Modules.Maestros.TipoDocumentos.Entities;
 using ProjectAW.Modules.Maestros.Ubicaciones.Entities;
 using ProjectAW.Modules.Seguridad.Usuarios.Entitites;
+using ProjectAW.Modules.Stocks.Entities;
 
 namespace ProjectAW.Infrastructure.Data
 {
@@ -30,6 +31,8 @@ namespace ProjectAW.Infrastructure.Data
         public DbSet<TipoOperacionGuia> TiposOperacionesGuia => Set<TipoOperacionGuia>();
         public DbSet<EstadoGuia> EstadosGuia => Set<EstadoGuia>();
         public DbSet<TipoDocumento> TipoDocument => Set<TipoDocumento>();
+        public DbSet<StockAlmacen> StockAlmacen => Set<StockAlmacen>();
+        public DbSet<MovimientoStock> MovimientoStock => Set<MovimientoStock>();
 
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)

@@ -2,6 +2,7 @@
 using ProjectAW.Modules.Maestros.Almacenes.DTOs.Responses;
 using ProjectAW.Modules.Maestros.Almacenes.Entities;
 using ProjectAW.Modules.Maestros.Almacenes.Repositories;
+using ProjectAW.Infrastructure.Errors;
 
 namespace ProjectAW.Modules.Maestros.Almacenes.Services
 {
@@ -27,7 +28,7 @@ namespace ProjectAW.Modules.Maestros.Almacenes.Services
 
             if (almacenMismoCodigo != null && almacenMismoCodigo.IdAlmacen != id)
             {
-                throw new InvalidOperationException("El código del almacén ya existe.");
+                throw new ConflictoNegocioException("El código del almacén ya existe.");
             }
 
             almacen.Codigo = codigo;
@@ -49,7 +50,7 @@ namespace ProjectAW.Modules.Maestros.Almacenes.Services
                 return false;
 
             almacen.Activo = activo;
-
+            almacen.FchModificacion = DateTime.UtcNow;
             await _repository.ActualizarAlmacenAsync(almacen);
 
             return true;
@@ -61,7 +62,7 @@ namespace ProjectAW.Modules.Maestros.Almacenes.Services
             var almacenExistente = await _repository.ObtenerAlmacenPorCodigoAsync(codigo);
 
             if(almacenExistente != null)
-                throw new InvalidOperationException("El código del almacén ya existe.");
+                throw new ConflictoNegocioException("El código del almacén ya existe.");
 
             var almacen = new Almacen
             {
@@ -79,7 +80,7 @@ namespace ProjectAW.Modules.Maestros.Almacenes.Services
                 Codigo = almacen.Codigo,
                 Descripcion = almacen.Descripcion,
                 Activo = true,
-                FchRegistro = DateTime.UtcNow
+                FchRegistro = almacen.FchRegistro
             };
 
         }
@@ -93,7 +94,8 @@ namespace ProjectAW.Modules.Maestros.Almacenes.Services
                 IdAlmacen = a.IdAlmacen,
                 Codigo = a.Codigo,
                 Descripcion = a.Descripcion,
-                Activo = a.Activo
+                Activo = a.Activo,
+                FchRegistro = a.FchRegistro
             }).ToList();
         }
 
@@ -109,7 +111,8 @@ namespace ProjectAW.Modules.Maestros.Almacenes.Services
                 IdAlmacen = almacen.IdAlmacen,
                 Codigo = almacen.Codigo,
                 Descripcion = almacen.Descripcion,
-                Activo = almacen.Activo
+                Activo = almacen.Activo,
+                FchRegistro = almacen.FchRegistro
             };
         }
 
@@ -125,7 +128,8 @@ namespace ProjectAW.Modules.Maestros.Almacenes.Services
                  IdAlmacen = almacen.IdAlmacen,
                  Codigo = almacen.Codigo,
                  Descripcion = almacen.Descripcion,
-                 Activo = almacen.Activo
+                 Activo = almacen.Activo,
+                 FchRegistro = almacen.FchRegistro
              };
         }
     }

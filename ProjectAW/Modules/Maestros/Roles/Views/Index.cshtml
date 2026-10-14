@@ -1,0 +1,121 @@
+@{
+	ViewData["Title"] = "Roles";
+	ViewData["Description"] = "Consulta y administra los perfiles de acceso de la aplicación.";
+	Layout = "~/Views/Shared/_Layout.cshtml";
+}
+<section class="page-heading">
+	<div>
+		<h1>Roles</h1>
+		<p>
+			Los roles disponibles se asignan a usuarios desde el módulo de
+			seguridad.
+		</p>
+	</div>
+	<button class="btn btn-primary" id="new-role" type="button">
+		＋ Nuevo rol
+	</button>
+</section>
+<section class="content-card maestro-card">
+	<div class="maestro-toolbar">
+		<span class="read-only-note"
+			>La asignación de permisos se gestiona en Seguridad.</span
+		><span
+			class="ms-auto"
+			id="role-feedback"
+			role="status"
+			aria-live="polite"
+		></span>
+	</div>
+	<div id="role-alert" class="maestro-alert" role="alert" hidden></div>
+	<div class="table-responsive p-3">
+		<table id="roles-table" class="table align-middle w-100">
+			<thead>
+				<tr>
+					<th>ID</th>
+					<th>Nombre del rol</th>
+					<th>Acciones</th>
+				</tr>
+			</thead>
+			<tbody></tbody>
+		</table>
+	</div>
+</section>
+<div
+	class="modal fade"
+	id="role-modal"
+	tabindex="-1"
+	aria-labelledby="role-modal-title"
+	aria-hidden="true"
+>
+	<div class="modal-dialog modal-dialog-centered">
+		<div class="modal-content maestro-modal">
+			<div class="modal-header">
+				<div>
+					<span class="eyebrow">PERFILES DEL SISTEMA</span>
+					<h2 class="modal-title" id="role-modal-title">Nuevo rol</h2>
+				</div>
+				<button
+					class="btn-close"
+					type="button"
+					data-bs-dismiss="modal"
+					aria-label="Cerrar"
+				></button>
+			</div>
+			<form id="role-form">
+				<div class="modal-body">
+					<div
+						id="role-form-alert"
+						class="maestro-alert"
+						role="alert"
+						hidden
+					></div>
+					<div class="maestro-field">
+						<label for="role-name">Nombre *</label
+						><input
+							class="form-control"
+							id="role-name"
+							name="nombre"
+							maxlength="50"
+							required
+							placeholder="Ej. Supervisor"
+						/>
+					</div>
+				</div>
+				<div class="modal-footer">
+					<button
+						class="btn btn-light"
+						type="button"
+						data-bs-dismiss="modal"
+					>
+						Cancelar</button
+					><button
+						class="btn btn-primary"
+						id="save-role"
+						type="submit"
+					>
+						Guardar rol
+					</button>
+				</div>
+			</form>
+		</div>
+	</div>
+</div>
+@section Styles {
+<link
+	rel="stylesheet"
+	href="~/lib/datatables/dataTables.dataTables.min.css"
+	asp-append-version="true"
+/>
+}
+@section Scripts {
+<script
+	src="~/lib/datatables/dataTables.min.js"
+	asp-append-version="true"
+></script>
+<script
+	src="~/js/modules/maestros/roles/rol.js"
+	asp-append-version="true"
+></script>
+}
+
+

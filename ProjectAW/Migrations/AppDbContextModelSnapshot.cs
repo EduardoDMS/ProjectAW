@@ -169,7 +169,6 @@ namespace ProjectAW.Migrations
                         .HasColumnType("nvarchar(150)");
 
                     b.Property<DateTime?>("FchModificacion")
-                        .ValueGeneratedOnUpdate()
                         .HasColumnType("datetime2");
 
                     b.Property<DateTime>("FchRegistro")
@@ -544,7 +543,6 @@ namespace ProjectAW.Migrations
                         .HasColumnType("nvarchar(150)");
 
                     b.Property<DateTime?>("FchModificacion")
-                        .ValueGeneratedOnUpdate()
                         .HasColumnType("datetime2");
 
                     b.Property<DateTime>("FchRegistro")
@@ -613,6 +611,80 @@ namespace ProjectAW.Migrations
                     b.HasIndex("IdRol");
 
                     b.ToTable("Usuarios");
+                });
+
+            modelBuilder.Entity("ProjectAW.Modules.Stocks.Entities.MovimientoStock", b =>
+                {
+                    b.Property<int>("IdMovimientoStock")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Cantidad")
+                        .HasColumnType("int");
+
+                    b.Property<int>("CantidadDiferenciada")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("FchMovimiento")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("IdAlmacen")
+                        .HasColumnType("int");
+
+                    b.Property<int>("IdGuia")
+                        .HasColumnType("int");
+
+                    b.Property<int>("IdProducto")
+                        .HasColumnType("int");
+
+                    b.Property<int>("IdTipoOperacion")
+                        .HasColumnType("int");
+
+                    b.Property<int>("IdUsuarioOperador")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Observacion")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
+
+                    b.HasKey("IdMovimientoStock");
+
+                    b.HasIndex("IdAlmacen");
+
+                    b.HasIndex("IdGuia");
+
+                    b.HasIndex("IdProducto");
+
+                    b.HasIndex("IdUsuarioOperador");
+
+                    b.ToTable("MovimientoStock");
+                });
+
+            modelBuilder.Entity("ProjectAW.Modules.Stocks.Entities.StockAlmacen", b =>
+                {
+                    b.Property<int>("IdStockAlmacen")
+                        .HasColumnType("int");
+
+                    b.Property<int>("CantidadActual")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("FechaUltimoRegistro")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("GETDATE()");
+
+                    b.Property<int>("IdAlmacen")
+                        .HasColumnType("int");
+
+                    b.Property<int>("IdProducto")
+                        .HasColumnType("int");
+
+                    b.HasKey("IdStockAlmacen");
+
+                    b.HasIndex("IdProducto");
+
+                    b.ToTable("StockAlmacen");
                 });
 
             modelBuilder.Entity("ProjectAW.Modules.Guias.Entities.CabeceraGuia", b =>
@@ -731,19 +803,99 @@ namespace ProjectAW.Migrations
                     b.Navigation("rol");
                 });
 
+            modelBuilder.Entity("ProjectAW.Modules.Stocks.Entities.MovimientoStock", b =>
+                {
+                    b.HasOne("ProjectAW.Modules.Maestros.Almacenes.Entities.Almacen", "Almacen")
+                        .WithMany("MovimientoStock")
+                        .HasForeignKey("IdAlmacen")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("ProjectAW.Modules.Guias.Entities.CabeceraGuia", "Guia")
+                        .WithMany("MovimientoStocks")
+                        .HasForeignKey("IdGuia")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("ProjectAW.Modules.Maestros.Operaciones.Entities.TipoOperacionGuia", "OperacionGuias")
+                        .WithMany("MovimientoSTock")
+                        .HasForeignKey("IdMovimientoStock")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("ProjectAW.Modules.Maestros.Productos.Entities.Producto", "Producto")
+                        .WithMany("MovimientoStocks")
+                        .HasForeignKey("IdProducto")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("ProjectAW.Modules.Seguridad.Usuarios.Entitites.Usuario", "Usuario")
+                        .WithMany("MovimientoStock")
+                        .HasForeignKey("IdUsuarioOperador")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Almacen");
+
+                    b.Navigation("Guia");
+
+                    b.Navigation("OperacionGuias");
+
+                    b.Navigation("Producto");
+
+                    b.Navigation("Usuario");
+                });
+
+            modelBuilder.Entity("ProjectAW.Modules.Stocks.Entities.StockAlmacen", b =>
+                {
+                    b.HasOne("ProjectAW.Modules.Maestros.Productos.Entities.Producto", "Producto")
+                        .WithMany("StockAlmacen")
+                        .HasForeignKey("IdProducto")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("ProjectAW.Modules.Maestros.Almacenes.Entities.Almacen", "Almacen")
+                        .WithMany("StockAlmacen")
+                        .HasForeignKey("IdStockAlmacen")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Almacen");
+
+                    b.Navigation("Producto");
+                });
+
             modelBuilder.Entity("ProjectAW.Modules.Guias.Entities.CabeceraGuia", b =>
                 {
                     b.Navigation("Detalles");
+
+                    b.Navigation("MovimientoStocks");
                 });
 
             modelBuilder.Entity("ProjectAW.Modules.Maestros.Almacenes.Entities.Almacen", b =>
                 {
+                    b.Navigation("MovimientoStock");
+
+                    b.Navigation("StockAlmacen");
+
                     b.Navigation("Ubicaciones");
                 });
 
             modelBuilder.Entity("ProjectAW.Modules.Maestros.Categorias.Entities.Categoria", b =>
                 {
                     b.Navigation("Producto");
+                });
+
+            modelBuilder.Entity("ProjectAW.Modules.Maestros.Operaciones.Entities.TipoOperacionGuia", b =>
+                {
+                    b.Navigation("MovimientoSTock");
+                });
+
+            modelBuilder.Entity("ProjectAW.Modules.Maestros.Productos.Entities.Producto", b =>
+                {
+                    b.Navigation("MovimientoStocks");
+
+                    b.Navigation("StockAlmacen");
                 });
 
             modelBuilder.Entity("ProjectAW.Modules.Maestros.Roles.Entities.Rol", b =>
@@ -756,6 +908,11 @@ namespace ProjectAW.Migrations
                     b.Navigation("Clientes");
 
                     b.Navigation("Proveedores");
+                });
+
+            modelBuilder.Entity("ProjectAW.Modules.Seguridad.Usuarios.Entitites.Usuario", b =>
+                {
+                    b.Navigation("MovimientoStock");
                 });
 #pragma warning restore 612, 618
         }

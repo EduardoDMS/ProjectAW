@@ -37,43 +37,18 @@ namespace ProjectAW.Modules.Maestros.Clientes.Controllers
         [HttpPost]
         public async Task<IActionResult> Crear([FromBody] CrearClienteDto request)
         {
-            try
-            {
-                var cliente = await _service.CrearAsync(request);
-
-                return CreatedAtAction(
-                    nameof(ObtenerPorId),
-                    new { id = cliente.IdCliente },
-                    cliente);
-            }
-            catch (InvalidOperationException ex)
-            {
-                return Conflict(new
-                {
-                    mensaje = ex.Message
-                });
-            }
+            var cliente = await _service.CrearAsync(request);
+            return CreatedAtAction(nameof(ObtenerPorId), new { id = cliente.IdCliente }, cliente);
         }
 
         [HttpPut("{id:int}")]
         public async Task<IActionResult> Actualizar(int id, [FromBody] ActualizarClienteDto request)
         {
-            try
-            {
-                var actualizado = await _service.ActualizarAsync(id, request);
+            var actualizado = await _service.ActualizarAsync(id, request);
+            if (!actualizado)
+                return NotFound();
 
-                if (!actualizado)
-                    return NotFound();
-
-                return NoContent();
-            }
-            catch (InvalidOperationException ex)
-            {
-                return Conflict(new
-                {
-                    mensaje = ex.Message
-                });
-            }
+            return NoContent();
         }
 
         [HttpPatch("{id:int}/estado")]

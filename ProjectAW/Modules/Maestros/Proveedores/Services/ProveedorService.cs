@@ -2,6 +2,7 @@
 using ProjectAW.Modules.Maestros.Proveedores.DTOs.Responses;
 using ProjectAW.Modules.Maestros.Proveedores.Entities;
 using ProjectAW.Modules.Maestros.Proveedores.Repositories;
+using ProjectAW.Infrastructure.Errors;
 
 namespace ProjectAW.Modules.Maestros.Proveedores.Services
 {
@@ -27,7 +28,7 @@ namespace ProjectAW.Modules.Maestros.Proveedores.Services
 
             if(clienteConMismoNumero != null && clienteConMismoNumero.IdProveedor!=id)
             {
-                throw new InvalidOperationException("Ya existe un proveedor con ese número de documento.");
+                throw new ConflictoNegocioException("Ya existe un proveedor con ese número de documento.");
             }
 
             proveedor.RazonSocial = dto.RazonSocial;
@@ -67,7 +68,7 @@ namespace ProjectAW.Modules.Maestros.Proveedores.Services
             var proveedorExistente=await _repository.ObtenerPorNumeroDocumentoAsync(numeroDocumento);
 
             if (proveedorExistente != null)
-                throw new InvalidOperationException("Ya existe un proveedor con ese número de documento.");
+                throw new ConflictoNegocioException("Ya existe un proveedor con ese número de documento.");
 
             var proveedor = new Proveedor
             {

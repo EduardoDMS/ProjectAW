@@ -2,6 +2,7 @@
 using ProjectAW.Modules.Maestros.Productos.DTOs.Responses;
 using ProjectAW.Modules.Maestros.Productos.Entities;
 using ProjectAW.Modules.Maestros.Productos.Repositories;
+using ProjectAW.Infrastructure.Errors;
 
 namespace ProjectAW.Modules.Maestros.Productos.Services;
 
@@ -76,7 +77,7 @@ public class ProductoService:IProductoService
         var productoExistente = await _repository.ObtenerPorCodigoAsync(codigo);
 
         if (productoExistente != null)
-            throw new InvalidOperationException("Ya existe un producto con ese código.");
+            throw new ConflictoNegocioException("Ya existe un producto con ese código.");
 
         var producto = new Producto
         {
@@ -116,7 +117,7 @@ public class ProductoService:IProductoService
 
         if(productoConMismoCodigo!=null && productoConMismoCodigo.IdProducto!=id)
         {
-            throw new InvalidOperationException("Ya existe otro producto con ese código.");
+            throw new ConflictoNegocioException("Ya existe otro producto con ese código.");
         }
 
         producto.Codigo = codigo;

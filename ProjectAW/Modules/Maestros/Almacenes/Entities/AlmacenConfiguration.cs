@@ -29,7 +29,7 @@ namespace ProjectAW.Modules.Maestros.Almacenes.Entities
                    .ValueGeneratedOnAdd();
 
             builder.Property(a => a.FchModificacion)
-                   .ValueGeneratedOnUpdate();
+                   .IsRequired(false);
         }
     
     }
