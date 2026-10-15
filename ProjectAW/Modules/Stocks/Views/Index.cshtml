@@ -1,0 +1,36 @@
+@{
+	ViewData["Title"] = "Existencias";
+	ViewData["Description"] = "Consulta las cantidades disponibles por almacén y producto.";
+	Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<section class="page-heading">
+	<div>
+		<h1>@ViewData["Title"]</h1>
+		<p>@ViewData["Description"]</p>
+	</div>
+	<a class="btn btn-outline-primary" asp-controller="Movimientos" asp-action="Index">Ver movimientos</a>
+</section>
+
+<section class="stock-panel" aria-label="Existencias por almacén">
+	<div class="stock-toolbar">
+		<label class="stock-filter" for="stock-warehouse">Almacén <select class="form-select" id="stock-warehouse"><option value="">Selecciona un almacén</option></select></label>
+		<button class="btn btn-primary" id="stock-refresh" type="button">Actualizar</button>
+	</div>
+	<div class="stock-alert" id="stock-alert" role="status" aria-live="polite" hidden></div>
+	<div class="table-responsive">
+		<table class="table align-middle mb-0" id="stock-table">
+			<thead><tr><th>Código prod</th><th>Descripción / nombre prod</th><th>Ubicación</th><th class="text-end">Stock</th><th>Unidad de medida</th><th>Fecha última modificación</th></tr></thead>
+			<tbody></tbody>
+		</table>
+	</div>
+</section>
+
+@section Styles {
+	<link rel="stylesheet" href="~/lib/datatables/dataTables.dataTables.min.css" asp-append-version="true" />
+	<link rel="stylesheet" href="~/css/modules/stocks/stocks.css" asp-append-version="true" />
+}
+@section Scripts {
+	<script src="~/lib/datatables/dataTables.min.js" asp-append-version="true"></script>
+	<script src="~/js/modules/stocks/stock.js" asp-append-version="true"></script>
+}

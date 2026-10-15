@@ -1,0 +1,24 @@
+namespace ProjectAW.Modules.Stocks.DTOs.Responses;
+
+public sealed record MovimientoStockDto(
+    int IdMovimientoStock,
+    int IdGuia,
+    string NumeroGuia,
+    int IdOperacion,
+    string Operacion,
+    int IdProducto,
+    string CodigoProducto,
+    string Producto,
+    int IdAlmacen,
+    string Origen,
+    string Destino,
+    int Cantidad,
+    int CantidadDiferenciada,
+    string Observacion,
+    int IdUsuarioOperador,
+    string Operador,
+    int? IdUbicacionOrigen,
+    string UbicacionOrigen,
+    int? IdUbicacionDestino,
+    string UbicacionDestino,
+    DateTime FechaMovimiento);

@@ -10,6 +10,7 @@ using ProjectAW.Modules.Maestros.Proveedores.Entities;
 using ProjectAW.Modules.Maestros.Roles.Entities;
 using ProjectAW.Modules.Maestros.TipoDocumentos.Entities;
 using ProjectAW.Modules.Maestros.Ubicaciones.Entities;
+using ProjectAW.Modules.Maestros.UnidadesMedida.Entities;
 using ProjectAW.Modules.Seguridad.Usuarios.Entitites;
 using ProjectAW.Modules.Stocks.Entities;
 
@@ -21,6 +22,7 @@ namespace ProjectAW.Infrastructure.Data
         public DbSet<Producto> Productos => Set<Producto>();
         public DbSet<Almacen> Almacenes => Set<Almacen>();
         public DbSet<Ubicacion> Ubicaciones => Set<Ubicacion>();
+        public DbSet<UnidadMedida> UnidadesMedida => Set<UnidadMedida>();
         public DbSet<Categoria> Categorias => Set<Categoria>();
         public DbSet<Cliente> Clientes => Set<Cliente>();
         public DbSet<Proveedor> Proveedores => Set<Proveedor>();
@@ -33,6 +35,7 @@ namespace ProjectAW.Infrastructure.Data
         public DbSet<TipoDocumento> TipoDocument => Set<TipoDocumento>();
         public DbSet<StockAlmacen> StockAlmacen => Set<StockAlmacen>();
         public DbSet<MovimientoStock> MovimientoStock => Set<MovimientoStock>();
+        public DbSet<StockUbicacion> StockUbicacion => Set<StockUbicacion>();
 
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)

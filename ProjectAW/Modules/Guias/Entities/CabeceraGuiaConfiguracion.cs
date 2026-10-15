@@ -50,21 +50,21 @@ namespace ProjectAW.Modules.Guias.Entities
                    .HasColumnType("datetime2")
                    .HasDefaultValueSql("GETDATE()");
 
-            builder.HasOne<Proveedor>().WithMany()
+            builder.HasOne(x => x.Proveedor).WithMany()
                    .HasForeignKey(x => x.IdProveedor)
                    .OnDelete(DeleteBehavior.Restrict);
             
-            builder.HasOne<Cliente>()
+            builder.HasOne(x => x.Cliente)
                    .WithMany()
                    .HasForeignKey(x => x.IdCliente)
                    .OnDelete(DeleteBehavior.Restrict);
             
-            builder.HasOne<Almacen>()
+            builder.HasOne(x => x.AlmacenOrigen)
                    .WithMany()
                    .HasForeignKey(x => x.IdAlmacenOrigen)
                    .OnDelete(DeleteBehavior.Restrict);
            
-            builder.HasOne<Almacen>()
+            builder.HasOne(x => x.AlmacenDestino)
                    .WithMany()
                    .HasForeignKey(x => x.IdAlmacenDestino)
                    .OnDelete(DeleteBehavior.Restrict);
@@ -97,6 +97,7 @@ namespace ProjectAW.Modules.Guias.Entities
                    .WithMany()
                    .HasForeignKey(x => x.IdUsuarioModificacion)
                    .OnDelete(DeleteBehavior.Restrict);
+
 
         }
     }

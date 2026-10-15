@@ -1,5 +1,4 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace ProjectAW.Modules.Stocks.Entities
@@ -10,6 +9,12 @@ namespace ProjectAW.Modules.Stocks.Entities
         {
             builder.HasKey(s => s.IdStockAlmacen);
 
+            // StockAlmacen es una fila por combinación producto-almacén.
+            builder.Property(s => s.IdStockAlmacen).ValueGeneratedOnAdd();
+            builder.HasIndex(s => new { s.IdAlmacen, s.IdProducto }).IsUnique();
+            builder.ToTable("StockAlmacen", table =>
+                table.HasCheckConstraint("CK_StockAlmacen_CantidadActual", "CantidadActual >= 0"));
+
             builder.Property(s => s.CantidadActual);
 
             builder.Property(s => s.FechaUltimoRegistro)
@@ -18,7 +23,7 @@ namespace ProjectAW.Modules.Stocks.Entities
 
             builder.HasOne(s => s.Almacen)
                    .WithMany(a => a.StockAlmacen)
-                   .HasForeignKey(s => s.IdStockAlmacen)
+                   .HasForeignKey(s => s.IdAlmacen)
                    .OnDelete(DeleteBehavior.Restrict);
 
             builder.HasOne(s => s.Producto)

@@ -28,7 +28,8 @@ public class ProductoService:IProductoService
             Lote = p.Lote,
             Serie = p.Serie,
             Activo =p.Activo,
-            IdCategoria = p.IdCategoria
+            IdCategoria = p.IdCategoria,
+            IdUnidadMedida = p.IdUnidadMedida
         }).ToList();
     }
 
@@ -47,7 +48,8 @@ public class ProductoService:IProductoService
             Lote = producto.Lote,
             Serie = producto.Serie,
             Activo = producto.Activo,
-            IdCategoria = producto.IdCategoria
+            IdCategoria = producto.IdCategoria,
+            IdUnidadMedida = producto.IdUnidadMedida
         };
     }
 
@@ -66,7 +68,8 @@ public class ProductoService:IProductoService
             Lote = producto.Lote,
             Serie = producto.Serie,
             Activo = producto.Activo,
-            IdCategoria = producto.IdCategoria
+            IdCategoria = producto.IdCategoria,
+            IdUnidadMedida = producto.IdUnidadMedida
         };
     }
 
@@ -87,7 +90,8 @@ public class ProductoService:IProductoService
             Serie = dto.Serie,
             Activo = true,
             FchRegistro = DateTime.UtcNow,
-            IdCategoria = dto.IdCategoria
+            IdCategoria = dto.IdCategoria,
+            IdUnidadMedida = dto.IdUnidadMedida
         };
 
         await _repository.CrearAsync(producto);
@@ -128,6 +132,7 @@ public class ProductoService:IProductoService
         producto.FchModificacion = DateTime.Now;
 
         producto.IdCategoria = dto.IdCategoria;
+        producto.IdUnidadMedida = dto.IdUnidadMedida;
         
         await _repository.ActualizarAsync(producto);
 

@@ -11,5 +11,6 @@ public class CrearProductoDto
     public DateTime FchRegistro { get; set; } = DateTime.Now;
 
     public int IdCategoria { get; set; }
+    public int IdUnidadMedida { get; set; }
 
 }

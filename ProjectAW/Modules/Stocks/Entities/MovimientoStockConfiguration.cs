@@ -8,6 +8,10 @@ namespace ProjectAW.Modules.Stocks.Entities
         public void Configure(EntityTypeBuilder<MovimientoStock> builder)
         {
             builder.HasKey(m => m.IdMovimientoStock);
+            builder.Property(m => m.IdMovimientoStock).ValueGeneratedOnAdd();
+            builder.HasIndex(m => new { m.IdGuia, m.IdProducto }).IsUnique();
+            builder.ToTable("MovimientoStock", table =>
+                table.HasCheckConstraint("CK_MovimientoStock_Cantidad", "Cantidad >= 0"));
 
             builder.Property(m => m.Cantidad)
                    .IsRequired();
@@ -34,7 +38,7 @@ namespace ProjectAW.Modules.Stocks.Entities
 
             builder.HasOne(m => m.OperacionGuias)
                    .WithMany(o => o.MovimientoSTock)
-                   .HasForeignKey(m => m.IdMovimientoStock)
+                   .HasForeignKey(m => m.IdTipoOperacion)
                    .OnDelete(DeleteBehavior.Restrict);
 
             builder.HasOne(m => m.Guia)
@@ -46,6 +50,11 @@ namespace ProjectAW.Modules.Stocks.Entities
                    .WithMany(u => u.MovimientoStock)
                    .HasForeignKey(m => m.IdUsuarioOperador)
                    .OnDelete(DeleteBehavior.Restrict);
+
+            builder.HasOne(m => m.UbicacionOrigen).WithMany()
+                   .HasForeignKey(m => m.IdUbicacionOrigen).OnDelete(DeleteBehavior.Restrict);
+            builder.HasOne(m => m.UbicacionDestino).WithMany()
+                   .HasForeignKey(m => m.IdUbicacionDestino).OnDelete(DeleteBehavior.Restrict);
         
         }
     }

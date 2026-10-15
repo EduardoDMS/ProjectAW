@@ -30,6 +30,8 @@ using ProjectAW.Modules.Maestros.Roles.Services;
 using ProjectAW.Modules.Maestros.TipoDocumentos.Repositories;
 using ProjectAW.Modules.Maestros.TipoDocumentos.Services;
 using ProjectAW.Infrastructure.Errors;
+using ProjectAW.Modules.Stocks.Repositories;
+using ProjectAW.Modules.Stocks.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -103,6 +105,10 @@ builder.Services.AddScoped<IRolRepository, RolRepository>();
 builder.Services.AddScoped<IRolService, RolService>();
 builder.Services.AddScoped<ITipoDocumentoRepository, TipoDocumentoRepository>();
 builder.Services.AddScoped<ITipoDocumentoService, TipoDocumentoService>();
+builder.Services.AddScoped<IStockRepository, StockRepository>();
+builder.Services.AddScoped<IStockService, StockService>();
+builder.Services.AddScoped<IMovimientoStockRepository, MovimientoStockRepository>();
+builder.Services.AddScoped<IMovimientoStockService, MovimientoStockService>();
 
 // builder.Services.AddScoped
 // token api 

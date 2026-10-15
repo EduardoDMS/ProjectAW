@@ -37,6 +37,15 @@
 @*                     <a class="sidebar-link sidebar-link--child @(ViewContext.RouteData.Values["action"]?.ToString() == "Nueva" && ViewContext.RouteData.Values["controller"]?.ToString() == "Guia" ? "is-active" : "")" asp-controller="Guia" asp-action="Nueva" title="Registrar guía"><span class="sidebar-link__bullet"></span><span>Registrar guía</span></a> *@
 				</nav>
 
+				<button class="sidebar-group-toggle @(ViewContext.RouteData.Values["controller"]?.ToString() is "Stock" or "Movimientos" ? "is-current-group" : "")" type="button" data-sidebar-group aria-expanded="@(ViewContext.RouteData.Values["controller"]?.ToString() is "Stock" or "Movimientos" ? "true" : "false")" aria-controls="stocks-menu" title="Stocks">
+					<svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M3 5.5 10 2l7 3.5v9L10 18l-7-3.5v-9Z"/><path d="m3.5 5.8 6.5 3.4 6.5-3.4M10 9.2V18"/></svg>
+					<span>Stocks</span><svg class="sidebar-chevron" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="m6 8 4 4 4-4"/></svg>
+				</button>
+				<nav class="sidebar-submenu @(ViewContext.RouteData.Values["controller"]?.ToString() is "Stock" or "Movimientos" ? "is-open" : "")" id="stocks-menu" aria-label="Stocks">
+					<a class="sidebar-link sidebar-link--child @(ViewContext.RouteData.Values["controller"]?.ToString() == "Stock" ? "is-active" : "")" asp-controller="Stock" asp-action="Index" title="Existencias"><span class="sidebar-link__bullet"></span><span>Existencias</span></a>
+					<a class="sidebar-link sidebar-link--child @(ViewContext.RouteData.Values["controller"]?.ToString() == "Movimientos" ? "is-active" : "")" asp-controller="Movimientos" asp-action="Index" title="Movimientos"><span class="sidebar-link__bullet"></span><span>Movimientos</span></a>
+				</nav>
+
 				<button class="sidebar-group-toggle" type="button" data-sidebar-group aria-expanded="true" aria-controls="maintenance-menu" title="Gestion de Recursos">
 					<svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M3 5.5h14M3 10h14M3 14.5h14"/><circle cx="5" cy="5.5" r=".7" fill="currentColor"/><circle cx="5" cy="10" r=".7" fill="currentColor"/><circle cx="5" cy="14.5" r=".7" fill="currentColor"/></svg>
 					<span>Gestion de Recursos</span><svg class="sidebar-chevron" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="m6 8 4 4 4-4"/></svg>
@@ -50,6 +59,7 @@
 					<a class="sidebar-link sidebar-link--child @(ViewContext.RouteData.Values["controller"]?.ToString() == "Proveedor" ? "is-active" : "")" asp-controller="Proveedor" asp-action="Index" title="Proveedores"><span class="sidebar-link__bullet"></span><span>Proveedores</span></a>
 					<a class="sidebar-link sidebar-link--child @(ViewContext.RouteData.Values["controller"]?.ToString() == "Rol" ? "is-active" : "")" asp-controller="Rol" asp-action="Index" title="Roles"><span class="sidebar-link__bullet"></span><span>Roles</span></a>
 					<a class="sidebar-link sidebar-link--child @(ViewContext.RouteData.Values["controller"]?.ToString() == "TipoDocumento" ? "is-active" : "")" asp-controller="TipoDocumento" asp-action="Index" title="Tipos de documento"><span class="sidebar-link__bullet"></span><span>Tipos de documento</span></a>
+					<a class="sidebar-link sidebar-link--child @(ViewContext.RouteData.Values["controller"]?.ToString() == "UnidadMedida" ? "is-active" : "")" asp-controller="UnidadMedida" asp-action="Index" title="Unidades de medida"><span class="sidebar-link__bullet"></span><span>Unidades de medida</span></a>
 				</nav>
 			</div>
 

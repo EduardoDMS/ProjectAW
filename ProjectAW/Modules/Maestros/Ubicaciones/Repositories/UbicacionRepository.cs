@@ -29,6 +29,14 @@ namespace ProjectAW.Modules.Maestros.Ubicaciones.Repositories
             return await _context.Ubicaciones.ToListAsync();
         }
 
+        public Task<List<Ubicacion>> ListarUbicacionesAsync(int? idAlmacen, bool soloActivas)
+        {
+            var query = _context.Ubicaciones.AsNoTracking().AsQueryable();
+            if (idAlmacen.HasValue) query = query.Where(u => u.IdAlmacen == idAlmacen.Value);
+            if (soloActivas) query = query.Where(u => u.Activo);
+            return query.OrderBy(u => u.Codigo).ToListAsync();
+        }
+
         public async Task<Ubicacion?> ObtenerUbicacionPorCodigoAsync(string codigo)
         {
             return await _context.Ubicaciones.AsNoTracking().FirstOrDefaultAsync(u => u.Codigo == codigo);

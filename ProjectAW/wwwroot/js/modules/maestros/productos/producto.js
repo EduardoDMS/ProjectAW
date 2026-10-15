@@ -12,6 +12,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 	const tableElement = select("#products-table");
 	let records = [];
 	let categories = [];
+	let units = [];
 	let selectedId = null;
 	let grid;
 
@@ -125,13 +126,18 @@ document.addEventListener("DOMContentLoaded", async () => {
 	}
 	// Consulta el catálogo de categorías y llena el selector del formulario.
 	async function loadCategories() {
-		categories = await fetchJson("/api/CategoriaApi");
+		[categories, units] = await Promise.all([fetchJson("/api/CategoriaApi"), fetchJson("/api/unidades-medida")]);
+		categories = categories.filter(x => x.activo);
+		units = units.filter(x => x.activo);
 		const categorySelect = select("#product-category");
 		categorySelect.replaceChildren(new Option("Selecciona categoría", ""));
 		for (const category of categories)
 			categorySelect.append(
 				new Option(category.nombre, String(category.idCategoria)),
 			);
+		const unitSelect = select("#product-unit");
+		unitSelect.replaceChildren(new Option("Selecciona unidad", ""));
+		for (const unit of units) unitSelect.add(new Option(`${unit.nombre} (${unit.codigo})`, String(unit.idUnidadMedida)));
 	}
 	// Limpia los campos y restaura los valores iniciales del modal de productos.
 	function resetForm() {
@@ -155,6 +161,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 			select("#product-code").value = item.codigo;
 			select("#product-name").value = item.descripcion || "";
 			select("#product-category").value = String(item.idCategoria);
+			select("#product-unit").value = String(item.idUnidadMedida);
 			select("#product-serial").value = item.serie;
 			select("#product-lot").value = item.lote || "";
 			select("#product-active").checked = item.activo;
@@ -186,6 +193,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 			codigo: select("#product-code").value.trim(),
 			descripcion: select("#product-name").value.trim(),
 			idCategoria: Number(select("#product-category").value),
+			idUnidadMedida: Number(select("#product-unit").value),
 			serie: select("#product-serial").value.trim(),
 			lote: select("#product-lot").value.trim() || null,
 			activo: select("#product-active").checked,
