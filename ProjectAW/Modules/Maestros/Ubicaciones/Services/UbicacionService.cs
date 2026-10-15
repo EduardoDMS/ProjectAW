@@ -100,6 +100,12 @@ namespace ProjectAW.Modules.Maestros.Ubicaciones.Services
 
         }
 
+        public async Task<List<UbicacionDto>> ObtenerUbicacionesAsync(int? idAlmacen, bool soloActivas)
+        {
+            var ubicaciones = await _repository.ListarUbicacionesAsync(idAlmacen, soloActivas);
+            return ubicaciones.Select(u => new UbicacionDto { IdUbicacion = u.IdUbicacion, Codigo = u.Codigo, Descripcion = u.Descripcion, Activo = u.Activo, IdAlmacen = u.IdAlmacen }).ToList();
+        }
+
         public async Task<UbicacionDto?> ObtenerUbicacionPorCodigoAsync(string codigo)
         {
             var ubicacion = await _repository.ObtenerUbicacionPorCodigoAsync(codigo);

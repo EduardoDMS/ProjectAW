@@ -801,7 +801,18 @@ document.addEventListener("DOMContentLoaded", () => {
 					.filter(Boolean)
 					.join(" · ") || "—",
 			],
-			["Tercero / almacenes", counterparty(guide)],
+			[
+				"Tercero",
+				guide.idTipoOperacionGuia === 3 ? "—" : counterparty(guide),
+			],
+			[
+				"Almacenes",
+				guide.idTipoOperacionGuia === 1
+					? `Destino: ${warehouseName(guide.idAlmacenDestino)}`
+					: guide.idTipoOperacionGuia === 2
+						? `Origen: ${warehouseName(guide.idAlmacenOrigen)}`
+						: `Origen: ${warehouseName(guide.idAlmacenOrigen)} → Destino: ${warehouseName(guide.idAlmacenDestino)}`,
+			],
 			["Observación", guide.observacion || "—"],
 		];
 		for (const [label, value] of details) {

@@ -1,5 +1,6 @@
 ﻿using ProjectAW.Modules.Maestros.Categorias.Entities;
 using ProjectAW.Modules.Stocks.Entities;
+using ProjectAW.Modules.Maestros.UnidadesMedida.Entities;
 
 namespace ProjectAW.Modules.Maestros.Productos.Entities;
 
@@ -18,6 +19,8 @@ public class Producto
 
     public int IdCategoria { get; set; }
     public Categoria? Categoria { get; set; }
+    public int IdUnidadMedida { get; set; }
+    public UnidadMedida? UnidadMedida { get; set; }
 
 
     public ICollection<MovimientoStock>? MovimientoStocks { get; set; }
