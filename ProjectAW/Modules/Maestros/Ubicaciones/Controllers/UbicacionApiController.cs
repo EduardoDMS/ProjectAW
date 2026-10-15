@@ -18,9 +18,9 @@ namespace ProjectAW.Modules.Maestros.Ubicaciones.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> ObtenerTodos()
+        public async Task<IActionResult> ObtenerTodos([FromQuery] int? idAlmacen, [FromQuery] bool soloActivas = false)
         {
-            var ubicaciones = await _service.ObtenerUbicacionesAsync();
+            var ubicaciones = await _service.ObtenerUbicacionesAsync(idAlmacen, soloActivas);
             return Ok(ubicaciones);
         }
 

@@ -1,5 +1,8 @@
 ﻿using ProjectAW.Modules.Maestros.Estados.Entities;
 using ProjectAW.Modules.Stocks.Entities;
+using ProjectAW.Modules.Maestros.Almacenes.Entities;
+using ProjectAW.Modules.Maestros.Clientes.Entities;
+using ProjectAW.Modules.Maestros.Proveedores.Entities;
 
 namespace ProjectAW.Modules.Guias.Entities
 { 
@@ -15,6 +18,10 @@ namespace ProjectAW.Modules.Guias.Entities
         public int? IdCliente { get; set; }
         public int? IdAlmacenOrigen { get; set; }
         public int? IdAlmacenDestino { get; set; }
+        public Proveedor? Proveedor { get; set; }
+        public Cliente? Cliente { get; set; }
+        public Almacen? AlmacenOrigen { get; set; }
+        public Almacen? AlmacenDestino { get; set; }
 
         public DateTime FechaProgramada { get; set; }
        

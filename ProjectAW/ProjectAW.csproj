@@ -12,10 +12,10 @@
 		<Folder Include="Modules\Maestros\Proveedores\Views\" />
 		<Folder Include="Modules\Maestros\Clientes\" />
 		<Folder Include="Modules\Maestros\Proveedores\" />
+		<Folder Include="Modules\Simulacion\" />
 		<Folder Include="Modules\Seguridad\Security\Entities\" />
 		<Folder Include="Modules\Seguridad\Usuarios\Views\" />
 		<Folder Include="Modules\Recepcion\" />
-		<Folder Include="Modules\Stocks\DTOs\Responses\" />
 		<Folder Include="Modules\Stocks\DTOs\Requests\" />
 		<Folder Include="wwwroot\js\modules\maestros\almacenes\" />
 		<Folder Include="wwwroot\js\modules\maestros\clientes\" />

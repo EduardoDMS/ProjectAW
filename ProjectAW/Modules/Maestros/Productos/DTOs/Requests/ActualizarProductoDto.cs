@@ -11,5 +11,6 @@
         public DateTime FchModificacion { get; set; } = DateTime.Now;
 
         public int IdCategoria { get; set; }
+        public int IdUnidadMedida { get; set; }
     }
 }
