@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Identity.Data;
 using Microsoft.AspNetCore.Mvc;
 using ProjectAW.Modules.Seguridad.Security.HttpAuth;
@@ -11,6 +12,7 @@ namespace ProjectAW.Modules.Seguridad.Security.Controllers
 {
     [ApiController]
     [Route("api/auth")]
+    [EnableCors("PwaLogin")]
     public class AuthApiController : ControllerBase
     {
         private readonly IAuthService _service;

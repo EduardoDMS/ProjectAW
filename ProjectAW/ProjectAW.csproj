@@ -17,6 +17,7 @@
 		<Folder Include="Modules\Seguridad\Usuarios\Views\" />
 		<Folder Include="Modules\Recepcion\" />
 		<Folder Include="Modules\Stocks\DTOs\Requests\" />
+		<Folder Include="wwwroot\content\imagenes\" />
 		<Folder Include="wwwroot\js\modules\maestros\almacenes\" />
 		<Folder Include="wwwroot\js\modules\maestros\clientes\" />
 		<Folder Include="wwwroot\js\modules\maestros\ubicaciones\" />

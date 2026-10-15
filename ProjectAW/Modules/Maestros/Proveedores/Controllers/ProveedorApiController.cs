@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Cors;
 using ProjectAW.Modules.Maestros.Proveedores.DTOs.Requests;
 using ProjectAW.Modules.Maestros.Proveedores.Services;
 
@@ -6,6 +7,7 @@ namespace ProjectAW.Modules.Maestros.Proveedores.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [EnableCors("PwaRead")]
     public class ProveedorApiController : ControllerBase
     {
         private readonly IProveedorService _service;

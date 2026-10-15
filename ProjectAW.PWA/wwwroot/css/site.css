@@ -1,0 +1,13 @@
+:root {
+  --aw-primary: #004596;
+  --aw-primary-dark: #003875;
+  --aw-ink: #152b45;
+  --bs-primary: var(--aw-primary);
+  --bs-primary-rgb: 0, 69, 150;
+  --bs-link-color: var(--aw-primary);
+  --bs-link-hover-color: var(--aw-primary-dark);
+}
+
+html { min-width: 320px; min-height: 100%; }
+body { min-height: 100vh; color: var(--aw-ink); font-family: Inter, "Segoe UI", system-ui, -apple-system, sans-serif; }
+.btn-primary { --bs-btn-bg: var(--aw-primary); --bs-btn-border-color: var(--aw-primary); --bs-btn-hover-bg: var(--aw-primary-dark); --bs-btn-hover-border-color: var(--aw-primary-dark); --bs-btn-active-bg: var(--aw-primary-dark); --bs-btn-active-border-color: var(--aw-primary-dark); --bs-btn-focus-shadow-rgb: 0, 69, 150; }

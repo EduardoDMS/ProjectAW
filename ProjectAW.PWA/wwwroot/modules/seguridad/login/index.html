@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#073d78">
+  <meta name="description" content="Acceso a las operaciones de almacén de Proyecto AW">
+  <title>Acceso operativo | Proyecto AW</title>
+  <link rel="stylesheet" href="/libs/bootstrap/bootstrap.min.css">
+  <link rel="stylesheet" href="/css/site.css">
+  <link rel="stylesheet" href="/modules/seguridad/login/login.css">
+  <script src="/config/api-config.js"></script>
+  <script type="module" src="/modules/seguridad/login/login.js"></script>
+</head>
+<body class="login-page">
+  <main class="login-layout container-fluid">
+    <section class="login-card" aria-labelledby="login-title">
+      <header class="login-brand">
+        <div class="brand-mark" aria-hidden="true">AW</div>
+        <div class="brand-name">
+          <strong>Proyecto AW</strong>
+          <span>Operaciones de almacén</span>
+        </div>
+        <span class="brand-tag">OPERACIONES</span>
+      </header>
+
+      <div class="login-content">
+        <p class="eyebrow">ACCESO DE OPERADOR</p>
+        <h1 id="login-title">Inicia tu jornada</h1>
+        <p class="login-intro">Ingresa con tu usuario para continuar al espacio de trabajo.</p>
+
+        <div id="login-message" class="alert d-none" role="status" aria-live="polite" tabindex="-1"></div>
+
+        <form id="login-form" class="login-form" novalidate>
+          <p id="api-status" class="api-status is-checking" role="status" aria-live="polite">
+            <span class="status-dot" aria-hidden="true"></span>
+            <span class="status-message">Verificando disponibilidad del servidor…</span>
+          </p>
+
+          <div class="mb-3">
+            <label class="form-label" for="username">Usuario</label>
+            <input class="form-control form-control-lg" id="username" name="username" type="text"
+                   autocomplete="username" autocapitalize="none" spellcheck="false" required
+                   aria-describedby="username-error" placeholder="Tu usuario">
+            <div class="invalid-feedback" id="username-error">Ingresa tu usuario.</div>
+          </div>
+
+          <div class="mb-2">
+            <label class="form-label" for="password">Contraseña</label>
+            <div class="input-group input-group-lg has-validation">
+              <input class="form-control" id="password" name="password" type="password"
+                     autocomplete="current-password" required aria-describedby="password-error"
+                     placeholder="Tu contraseña">
+              <button class="btn password-toggle" id="toggle-password" type="button"
+                      aria-label="Mostrar contraseña" aria-controls="password" aria-pressed="false">
+                <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                  <path d="M2.5 12s3.4-6 9.5-6 9.5 6 9.5 6-3.4 6-9.5 6-9.5-6-9.5-6Z"></path>
+                  <circle cx="12" cy="12" r="2.6"></circle>
+                </svg>
+              </button>
+              <div class="invalid-feedback" id="password-error">Ingresa tu contraseña.</div>
+            </div>
+          </div>
+
+          <button id="login-submit" class="btn btn-primary btn-lg login-submit w-100" type="submit">
+            <span class="submit-label">Iniciar sesión</span>
+            <span class="spinner-border spinner-border-sm d-none" aria-hidden="true"></span>
+          </button>
+        </form>
+
+        <p class="privacy-note">
+          <span class="privacy-icon" aria-hidden="true">✓</span>
+          Tu sesión se valida de forma segura con Proyecto AW.
+        </p>
+      </div>
+
+      <footer class="login-footer">© <span id="current-year"></span> Proyecto AW</footer>
+    </section>
+
+  </main>
+</body>
+</html>

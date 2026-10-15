@@ -64,6 +64,19 @@ builder.Services.AddControllersWithViews()
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+// Acceso desde la PWA con cookie: los orígenes se configuran por entorno/cliente.
+var pwaOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? [];
+builder.Services.AddCors(options => options.AddPolicy("PwaLogin", policy =>
+    policy.WithOrigins(pwaOrigins)
+        .WithMethods("POST")
+        .WithHeaders("Content-Type")
+        .AllowCredentials()));
+builder.Services.AddCors(options => options.AddPolicy("PwaRead", policy =>
+    policy.WithOrigins(pwaOrigins)
+        .WithMethods("GET")
+        .WithHeaders("Accept")
+        .AllowCredentials()));
+
 // Respuestas de error RFC 7807 y conversión centralizada de excepciones.
 builder.Services.AddProblemDetails();
 builder.Services.AddExceptionHandler<ApiExceptionHandler>();
@@ -168,6 +181,7 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseRouting();
+app.UseCors();
 
 app.UseAuthentication(); // api
 app.UseAuthorization();
