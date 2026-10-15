@@ -3,12 +3,14 @@ using ProjectAW.Modules.Guias.DTOs.Request;
 using ProjectAW.Modules.Guias.Entities;
 using ProjectAW.Modules.Guias.Services;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Cors;
 
 namespace ProjectAW.Modules.Guias.Controllers
 {
     [Authorize]
     [ApiController]
     [Route("api/guias")]
+    [EnableCors("PwaRead")]
     public class GuiasApiController : ControllerBase
     {
         private readonly IGuiaService _service;

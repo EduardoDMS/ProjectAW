@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Mvc;
 using ProjectAW.Modules.Maestros.Almacenes.DTOs.Requests;
 using ProjectAW.Modules.Maestros.Almacenes.Services;
@@ -7,6 +8,7 @@ namespace ProjectAW.Modules.Maestros.Almacenes.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [EnableCors("PwaRead")]
     public class AlmacenApiController : ControllerBase
     {
         private readonly IAlmacenService _service;
