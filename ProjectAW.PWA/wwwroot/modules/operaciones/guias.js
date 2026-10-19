@@ -1,4 +1,4 @@
-import { getJson } from "/shared/js/api-client.js";
+import { getJson, post, postJson } from "/shared/js/api-client.js";
 
 export const OPERATIONS = Object.freeze({
   recepcion: { id: 1, title: "Recepción", subtitle: "Guías de entrada", icon: "↓", color: "reception" },
@@ -20,6 +20,43 @@ export async function getGuides(operationId, statusId = PENDING_STATUS_ID) {
     new Date(first.fechaProgramada).getTime() - new Date(second.fechaProgramada).getTime());
 }
 
+export async function getGuideById(id) {
+  return getJson(`api/guias/${encodeURIComponent(id)}`);
+}
+
+export async function takeGuide(id) {
+  return post(`api/simulacion/guias/${encodeURIComponent(id)}/tomar`);
+}
+
+export async function getMyGuides(statusId) {
+  const params = new URLSearchParams();
+  if (statusId) params.set("idEstadoGuia", String(statusId));
+  return getJson(`api/simulacion/guias/mias${params.size ? `?${params}` : ""}`);
+}
+
+export async function getMyGuideById(id) {
+  return getJson(`api/simulacion/guias/mias/${encodeURIComponent(id)}`);
+}
+
+export async function registerGuideReading(id, reading) {
+  return postJson(`api/simulacion/guias/${encodeURIComponent(id)}/lecturas`, reading);
+}
+
+export async function getGuideReadingHistory(id) {
+  return getJson(`api/simulacion/guias/${encodeURIComponent(id)}/lecturas`);
+}
+
+export async function finalizeGuideReadings(id) {
+  return post(`api/simulacion/guias/${encodeURIComponent(id)}/finalizar`);
+}
+
+export async function getActiveLocations(warehouseId) {
+  const query = new URLSearchParams({ idAlmacen: String(warehouseId), soloActivas: "true" });
+  const result = await getJson(`api/UbicacionApi?${query}`);
+  if (!Array.isArray(result)) throw new Error("La API devolvió ubicaciones en un formato no esperado.");
+  return result;
+}
+
 export async function getReceptionLookups() {
   const [providers, warehouses] = await Promise.all([
     getJson("api/ProveedorApi"),
@@ -39,12 +76,42 @@ export async function getReceptionLookups() {
   };
 }
 
+export async function getGuideDetailLookups(idTipoOperacionGuia, knownProducts = null) {
+  const counterpartyRequest = idTipoOperacionGuia === 1
+    ? getJson("api/ProveedorApi")
+    : idTipoOperacionGuia === 2
+      ? getJson("api/ClienteApi")
+      : Promise.resolve(null);
+  const [warehouses, products, counterparties] = await Promise.all([
+    getJson("api/AlmacenApi"),
+    knownProducts ? Promise.resolve(knownProducts) : getJson("api/ProductoApi"),
+    counterpartyRequest
+  ]);
+  if (!Array.isArray(warehouses) || !Array.isArray(products) ||
+      (counterparties && !Array.isArray(counterparties))) {
+    throw new Error("La API devolvió un formato de detalle no esperado.");
+  }
+
+  return {
+    warehouses: new Map(warehouses.map(item => [
+      Number(item.idAlmacen), [item.codigo, item.descripcion].filter(Boolean).join(" · ")
+    ])),
+    products: new Map(products.map(item => [
+      Number(item.idProducto), [item.codigo, item.descripcion].filter(Boolean).join(" · ")
+    ])),
+    productItems: products,
+    counterparties: new Map((counterparties || []).map(item => [
+      Number(idTipoOperacionGuia === 1 ? item.idProveedor : item.idCliente), item.razonSocial
+    ]))
+  };
+}
+
 export function isUnauthorized(error) {
   return error?.status === 401;
 }
 
 export function showApiError(error) {
-  if (error?.status === 403) return "Tu usuario no tiene permiso para consultar estas guías.";
+  if (error?.status === 403) return "Tu usuario no tiene permiso para consultar o atender estas guías.";
   if (error?.status === 401) return "Tu sesión venció. Inicia sesión nuevamente.";
   if (error?.status === null) return "No se pudo conectar con la API. Revisa la conexión e inténtalo de nuevo.";
   return error?.message || "No se pudieron cargar los datos desde la API.";

@@ -6,6 +6,7 @@ using ProjectAW.Modules.Maestros.Estados.Entities;
 using ProjectAW.Modules.Maestros.Operaciones.Entities;
 using ProjectAW.Modules.Seguridad.Usuarios.Entitites;
 using ProjectAW.Modules.Stocks.Entities;
+using ProjectAW.Modules.Stocks.DTOs.Requests;
 using ProjectAW.Infrastructure.Errors;
 using ProjectAW.Models;
 
@@ -23,6 +24,27 @@ public sealed class MovimientoStockRepository : IMovimientoStockRepository
             .Include(g => g.Proveedor).Include(g => g.Cliente)
             .Include(g => g.AlmacenOrigen).Include(g => g.AlmacenDestino)
             .FirstOrDefaultAsync(g => g.IdGuia == idGuia, ct);
+
+    public Task<CabeceraGuia?> ObtenerGuiaOperadorAsync(int idGuia, int idOperador, CancellationToken ct = default) =>
+        _context.CabeceraGuia.AsNoTracking()
+            .Include(g => g.Detalles)
+            .FirstOrDefaultAsync(g => g.IdGuia == idGuia &&
+                g.IdUsuarioModificacion == idOperador &&
+                (g.IdEstadoGuia == EstadoGuiasIds.EnProceso || g.IdEstadoGuia == EstadoGuiasIds.Atendida), ct);
+
+    public async Task<IReadOnlyList<CabeceraGuia>> ListarGuiasOperadorAsync(
+        int idOperador, int? idEstadoGuia, CancellationToken ct = default)
+    {
+        var query = _context.CabeceraGuia.AsNoTracking()
+            .Include(g => g.Detalles)
+            .Where(g => g.IdUsuarioModificacion == idOperador &&
+                (g.IdEstadoGuia == EstadoGuiasIds.EnProceso || g.IdEstadoGuia == EstadoGuiasIds.Atendida));
+
+        if (idEstadoGuia.HasValue)
+            query = query.Where(g => g.IdEstadoGuia == idEstadoGuia.Value);
+
+        return await query.OrderByDescending(g => g.FechaActualizada ?? g.FechaProgramada).ToListAsync(ct);
+    }
 
     public Task<bool> EsOperadorAsync(int idUsuario, CancellationToken ct = default) =>
         _context.Usuarios
@@ -46,23 +68,68 @@ public sealed class MovimientoStockRepository : IMovimientoStockRepository
         await transaction.CommitAsync(ct);
     }
 
+    public async Task<LecturaGuia> RegistrarLecturaAsync(int idGuia, int idOperador, RegistrarLecturaRequest request, CancellationToken ct = default)
+    {
+        await using var transaction = await _context.Database.BeginTransactionAsync(IsolationLevel.Serializable, ct);
+        var guia = await ObtenerGuiaParaLecturaAsync(idGuia, ct)
+            ?? throw new NoEncontradoException($"La guía {idGuia} no existe.");
+        ValidarGuiaEnProceso(guia, idOperador);
+        var detalle = guia.Detalles.FirstOrDefault(d => d.IdProducto == request.IdProducto)
+            ?? throw new ReglaNegocioException("El producto leído no pertenece a esta guía.");
+        var producto = await _context.Productos.AsNoTracking().FirstOrDefaultAsync(p => p.IdProducto == detalle.IdProducto, ct)
+            ?? throw new NoEncontradoException("El producto de la guía ya no existe.");
+        if (!string.Equals(producto.Codigo.Trim(), request.CodigoLeido.Trim(), StringComparison.OrdinalIgnoreCase))
+            throw new ReglaNegocioException("El código leído no corresponde al producto seleccionado.");
+        await ValidarUbicacionesAsync(guia, request.IdUbicacionOrigen, request.IdUbicacionDestino, ct);
+
+        var lectura = new LecturaGuia
+        {
+            IdGuia = idGuia,
+            IdProducto = request.IdProducto,
+            IdUsuarioOperador = idOperador,
+            Cantidad = request.Cantidad,
+            CodigoLeido = request.CodigoLeido.Trim(),
+            Lote = Normalizar(request.Lote),
+            Serie = Normalizar(request.Serie),
+            Observacion = Normalizar(request.Observacion),
+            IdUbicacionOrigen = request.IdUbicacionOrigen is > 0 ? request.IdUbicacionOrigen : null,
+            IdUbicacionDestino = request.IdUbicacionDestino is > 0 ? request.IdUbicacionDestino : null,
+            FechaRegistroUtc = DateTime.UtcNow
+        };
+        _context.LecturasGuia.Add(lectura);
+        await _context.SaveChangesAsync(ct);
+        await transaction.CommitAsync(ct);
+        return lectura;
+    }
+
+    public async Task<IReadOnlyList<LecturaGuia>> ListarLecturasAsync(int idGuia, int idOperador, CancellationToken ct = default)
+    {
+        var guia = await _context.CabeceraGuia.AsNoTracking()
+            .FirstOrDefaultAsync(g => g.IdGuia == idGuia && g.IdUsuarioModificacion == idOperador, ct)
+            ?? throw new NoEncontradoException("La guía no existe dentro de tus guías asignadas.");
+        return await _context.LecturasGuia.AsNoTracking()
+            .Include(x => x.Producto).Include(x => x.UbicacionOrigen).Include(x => x.UbicacionDestino)
+            .Where(x => x.IdGuia == guia.IdGuia)
+            .OrderByDescending(x => x.FechaRegistroUtc).ThenByDescending(x => x.IdLecturaGuia).ToListAsync(ct);
+    }
+
     public async Task FinalizarLecturaAsync(
-        CabeceraGuia guia,
-        IReadOnlyCollection<LecturaProducto> lecturas,
+        int idGuia,
         int idOperador,
         CancellationToken ct = default)
     {
         await using var transaction = await _context.Database.BeginTransactionAsync(IsolationLevel.Serializable, ct);
 
-        var actual = await ObtenerGuiaParaLecturaAsync(guia.IdGuia, ct)
-            ?? throw new NoEncontradoException($"La guía {guia.IdGuia} no existe.");
+        var actual = await ObtenerGuiaParaLecturaAsync(idGuia, ct)
+            ?? throw new NoEncontradoException($"La guía {idGuia} no existe.");
+        ValidarGuiaEnProceso(actual, idOperador);
+        if (actual.Detalles.Count == 0 || actual.Detalles.Any(d => d.CantidadEsperada != decimal.Truncate(d.CantidadEsperada) || d.CantidadEsperada > int.MaxValue))
+            throw new ReglaNegocioException("La guía contiene cantidades inválidas o fraccionarias para el stock actual.");
 
-        if (actual.IdEstadoGuia != EstadoGuiasIds.EnProceso)
-            throw new ConflictoNegocioException("Solo se puede terminar una guía que está en proceso.");
-        if (actual.IdUsuarioModificacion != idOperador)
-            throw new ConflictoNegocioException("La guía está asignada a otro operador.");
-
-        var cantidadesLeidas = lecturas.ToDictionary(l => l.IdProducto);
+        var lecturas = await _context.LecturasGuia.Where(x => x.IdGuia == idGuia).OrderBy(x => x.IdLecturaGuia).ToListAsync(ct);
+        var productosLeidos = lecturas.Select(x => x.IdProducto).ToHashSet();
+        if (!actual.Detalles.Select(x => x.IdProducto).ToHashSet().SetEquals(productosLeidos))
+            throw new ReglaNegocioException("Registra al menos una lectura para cada producto de la guía antes de finalizar.");
         var tipoOperacion = actual.IdTipoOperacionGuia;
         int? almacenOrigen = actual.IdAlmacenOrigen;
         int? almacenDestino = actual.IdAlmacenDestino;
@@ -74,32 +141,43 @@ public sealed class MovimientoStockRepository : IMovimientoStockRepository
 
         foreach (var detalle in actual.Detalles)
         {
-            var lectura = cantidadesLeidas[detalle.IdProducto];
-            var idUbicacionOrigen = lectura.IdUbicacionOrigen;
-            var idUbicacionDestino = lectura.IdUbicacionDestino;
-            if (requiereOrigen != idUbicacionOrigen.HasValue || requiereDestino != idUbicacionDestino.HasValue)
-                throw new ReglaNegocioException($"Selecciona las ubicaciones requeridas para el producto {detalle.IdProducto}.");
-            if (requiereOrigen && !await _context.Ubicaciones.AnyAsync(u => u.IdUbicacion == idUbicacionOrigen && u.IdAlmacen == almacenOrigen && u.Activo, ct))
-                throw new ReglaNegocioException($"La ubicación de origen del producto {detalle.IdProducto} no está activa o no pertenece al almacén de origen.");
-            if (requiereDestino && !await _context.Ubicaciones.AnyAsync(u => u.IdUbicacion == idUbicacionDestino && u.IdAlmacen == almacenDestino && u.Activo, ct))
-                throw new ReglaNegocioException($"La ubicación de destino del producto {detalle.IdProducto} no está activa o no pertenece al almacén de destino.");
+            var lineas = lecturas.Where(x => x.IdProducto == detalle.IdProducto).ToList();
+            long totalLeido = lineas.Sum(x => (long)x.Cantidad);
+            if (totalLeido > int.MaxValue) throw new ConflictoNegocioException("La suma leída supera el máximo permitido por el inventario.");
+            foreach (var linea in lineas)
+            {
+                if (requiereOrigen != linea.IdUbicacionOrigen.HasValue || requiereDestino != linea.IdUbicacionDestino.HasValue)
+                    throw new ReglaNegocioException($"La lectura del producto {detalle.IdProducto} no tiene las ubicaciones requeridas.");
+                if (requiereOrigen && !await _context.Ubicaciones.AnyAsync(u => u.IdUbicacion == linea.IdUbicacionOrigen && u.IdAlmacen == almacenOrigen && u.Activo, ct))
+                    throw new ReglaNegocioException($"La ubicación de origen del producto {detalle.IdProducto} dejó de estar activa o no pertenece al almacén.");
+                if (requiereDestino && !await _context.Ubicaciones.AnyAsync(u => u.IdUbicacion == linea.IdUbicacionDestino && u.IdAlmacen == almacenDestino && u.Activo, ct))
+                    throw new ReglaNegocioException($"La ubicación de destino del producto {detalle.IdProducto} dejó de estar activa o no pertenece al almacén.");
+            }
             var cantidadEsperada = checked((int)detalle.CantidadEsperada);
-            var cantidadLeida = lectura.CantidadLeida;
-
             if (tipoOperacion == TipoOperacionGuiaIds.Entrada)
             {
-                await AjustarStockUbicacionAsync(idUbicacionDestino!.Value, detalle.IdProducto, cantidadLeida, ct);
-                await SincronizarStockAlmacenAsync(actual.IdAlmacenDestino!.Value, detalle.IdProducto, ct);
+                foreach (var grupo in lineas.GroupBy(x => x.IdUbicacionDestino!.Value))
+                {
+                    var cantidad = checked((int)grupo.Sum(x => (long)x.Cantidad));
+                    await AjustarStockUbicacionAsync(grupo.Key, detalle.IdProducto, cantidad, ct);
+                    await SincronizarStockAlmacenAsync(actual.IdAlmacenDestino!.Value, detalle.IdProducto, ct);
+                }
             }
             else
             {
-                await AjustarStockUbicacionAsync(idUbicacionOrigen!.Value, detalle.IdProducto, -cantidadLeida, ct);
-                await SincronizarStockAlmacenAsync(actual.IdAlmacenOrigen!.Value, detalle.IdProducto, ct);
-                if (tipoOperacion == TipoOperacionGuiaIds.Traslado)
+                foreach (var grupo in lineas.GroupBy(x => x.IdUbicacionOrigen!.Value))
                 {
-                    await AjustarStockUbicacionAsync(idUbicacionDestino!.Value, detalle.IdProducto, cantidadLeida, ct);
-                    await SincronizarStockAlmacenAsync(actual.IdAlmacenDestino!.Value, detalle.IdProducto, ct);
+                    var cantidad = checked((int)grupo.Sum(x => (long)x.Cantidad));
+                    await AjustarStockUbicacionAsync(grupo.Key, detalle.IdProducto, -cantidad, ct);
+                    await SincronizarStockAlmacenAsync(actual.IdAlmacenOrigen!.Value, detalle.IdProducto, ct);
                 }
+                if (tipoOperacion == TipoOperacionGuiaIds.Traslado)
+                    foreach (var grupo in lineas.GroupBy(x => x.IdUbicacionDestino!.Value))
+                    {
+                        var cantidad = checked((int)grupo.Sum(x => (long)x.Cantidad));
+                        await AjustarStockUbicacionAsync(grupo.Key, detalle.IdProducto, cantidad, ct);
+                        await SincronizarStockAlmacenAsync(actual.IdAlmacenDestino!.Value, detalle.IdProducto, ct);
+                    }
             }
 
             _context.MovimientoStock.Add(new MovimientoStock
@@ -109,12 +187,12 @@ public sealed class MovimientoStockRepository : IMovimientoStockRepository
                 IdTipoOperacion = tipoOperacion,
                 IdGuia = actual.IdGuia,
                 IdUsuarioOperador = idOperador,
-                Cantidad = cantidadLeida,
-                CantidadDiferenciada = checked(cantidadLeida - cantidadEsperada),
-                Observacion = lectura.Observacion?.Trim() ?? string.Empty,
+                Cantidad = (int)totalLeido,
+                CantidadDiferenciada = checked((int)totalLeido - cantidadEsperada),
+                Observacion = lineas.Select(x => x.Observacion).FirstOrDefault(x => !string.IsNullOrWhiteSpace(x)) ?? string.Empty,
                 FchMovimiento = DateTime.UtcNow,
-                IdUbicacionOrigen = idUbicacionOrigen,
-                IdUbicacionDestino = idUbicacionDestino
+                IdUbicacionOrigen = lineas.Select(x => x.IdUbicacionOrigen).Distinct().Count() == 1 ? lineas[0].IdUbicacionOrigen : null,
+                IdUbicacionDestino = lineas.Select(x => x.IdUbicacionDestino).Distinct().Count() == 1 ? lineas[0].IdUbicacionDestino : null
             });
         }
 
@@ -125,6 +203,28 @@ public sealed class MovimientoStockRepository : IMovimientoStockRepository
         await _context.SaveChangesAsync(ct);
         await transaction.CommitAsync(ct);
     }
+
+    private static void ValidarGuiaEnProceso(CabeceraGuia guia, int idOperador)
+    {
+        if (guia.IdEstadoGuia != EstadoGuiasIds.EnProceso)
+            throw new ConflictoNegocioException("La guía no está en proceso.");
+        if (guia.IdUsuarioModificacion != idOperador)
+            throw new ConflictoNegocioException("La guía está asignada a otro operador.");
+    }
+
+    private async Task ValidarUbicacionesAsync(CabeceraGuia guia, int? origen, int? destino, CancellationToken ct)
+    {
+        var requiereOrigen = guia.IdTipoOperacionGuia is TipoOperacionGuiaIds.Salida or TipoOperacionGuiaIds.Traslado;
+        var requiereDestino = guia.IdTipoOperacionGuia is TipoOperacionGuiaIds.Entrada or TipoOperacionGuiaIds.Traslado;
+        if (requiereOrigen != (origen is > 0) || requiereDestino != (destino is > 0))
+            throw new ReglaNegocioException("Indica las ubicaciones correspondientes al tipo de operación de esta guía.");
+        if (requiereOrigen && !await _context.Ubicaciones.AnyAsync(u => u.IdUbicacion == origen && u.IdAlmacen == guia.IdAlmacenOrigen && u.Activo, ct))
+            throw new ReglaNegocioException("La ubicación de origen no está activa o no pertenece al almacén de origen.");
+        if (requiereDestino && !await _context.Ubicaciones.AnyAsync(u => u.IdUbicacion == destino && u.IdAlmacen == guia.IdAlmacenDestino && u.Activo, ct))
+            throw new ReglaNegocioException("La ubicación de destino no está activa o no pertenece al almacén de destino.");
+    }
+
+    private static string? Normalizar(string? valor) => string.IsNullOrWhiteSpace(valor) ? null : valor.Trim();
 
     public async Task<IReadOnlyList<MovimientoStock>> ListarMovimientosAsync(
         int? idGuia, int? idAlmacen, int? idOperacion, CancellationToken ct = default)

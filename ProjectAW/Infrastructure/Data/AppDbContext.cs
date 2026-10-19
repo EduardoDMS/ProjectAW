@@ -36,6 +36,7 @@ namespace ProjectAW.Infrastructure.Data
         public DbSet<StockAlmacen> StockAlmacen => Set<StockAlmacen>();
         public DbSet<MovimientoStock> MovimientoStock => Set<MovimientoStock>();
         public DbSet<StockUbicacion> StockUbicacion => Set<StockUbicacion>();
+        public DbSet<LecturaGuia> LecturasGuia => Set<LecturaGuia>();
 
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)

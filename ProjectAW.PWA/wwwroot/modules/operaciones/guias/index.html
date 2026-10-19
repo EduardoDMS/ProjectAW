@@ -39,5 +39,20 @@
 
     <footer class="operations-footer">© <span id="current-year"></span> Proyecto AW</footer>
   </main>
+  <dialog id="take-guide-confirmation" class="guide-confirmation" aria-labelledby="take-guide-title">
+    <form method="dialog">
+      <p class="eyebrow">CONFIRMACIÓN</p>
+      <h2 id="take-guide-title">¿Deseas atender esta guía?</h2>
+      <p>Se asignará a tu usuario para iniciar la lectura.</p>
+      <dl class="guide-confirmation-details">
+        <div><dt>Guía</dt><dd id="confirm-guide-code"></dd></div>
+        <div><dt>Fecha</dt><dd id="confirm-guide-date"></dd></div>
+      </dl>
+      <div class="guide-confirmation-actions">
+        <button class="btn btn-outline-secondary" value="cancel">Cancelar</button>
+        <button id="confirm-take-guide" class="btn btn-primary" value="confirm">Sí, atender</button>
+      </div>
+    </form>
+  </dialog>
 </body>
 </html>

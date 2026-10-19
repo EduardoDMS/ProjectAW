@@ -5,6 +5,7 @@ using ProjectAW.Modules.Maestros.Operaciones.Entities;
 using ProjectAW.Modules.Seguridad.Security.HttpAuth;
 using ProjectAW.Modules.Stocks.DTOs.Requests;
 using ProjectAW.Modules.Stocks.DTOs.Responses;
+using ProjectAW.Modules.Guias.DTOs.Response;
 using ProjectAW.Modules.Stocks.Repositories;
 
 namespace ProjectAW.Modules.Stocks.Services;
@@ -26,8 +27,40 @@ public sealed class MovimientoStockService : IMovimientoStockService
         await _repository.TomarGuiaAsync(idGuia, _currentUser.IdUsuario, ct);
     }
 
-    public async Task FinalizarLecturaAsync(
-        int idGuia, FinalizarLecturaRequest request, CancellationToken ct = default)
+    public async Task<IReadOnlyList<GuiaOperadorDto>> ListarMisGuiasAsync(
+        int? idEstadoGuia, CancellationToken ct = default)
+    {
+        await ExigirOperadorAsync(ct);
+        if (idEstadoGuia.HasValue && idEstadoGuia.Value is not (EstadoGuiasIds.EnProceso or EstadoGuiasIds.Atendida))
+            throw new ReglaNegocioException("Solo puedes filtrar tus guías por En proceso o Atendida.");
+
+        var guias = await _repository.ListarGuiasOperadorAsync(_currentUser.IdUsuario, idEstadoGuia, ct);
+        return guias.Select(ToGuiaOperadorDto).ToList();
+    }
+
+    public async Task<GuiaOperadorDto> ObtenerMiGuiaAsync(int idGuia, CancellationToken ct = default)
+    {
+        await ExigirOperadorAsync(ct);
+        var guia = await _repository.ObtenerGuiaOperadorAsync(idGuia, _currentUser.IdUsuario, ct)
+            ?? throw new NoEncontradoException("La guía no existe en tus guías en proceso o terminadas.");
+        return ToGuiaOperadorDto(guia);
+    }
+
+    public async Task<LecturaGuiaDto> RegistrarLecturaAsync(int idGuia, RegistrarLecturaRequest request, CancellationToken ct = default)
+    {
+        await ExigirOperadorAsync(ct);
+        var lectura = await _repository.RegistrarLecturaAsync(idGuia, _currentUser.IdUsuario, request, ct);
+        return ToLecturaDto(lectura);
+    }
+
+    public async Task<IReadOnlyList<LecturaGuiaDto>> ListarLecturasAsync(int idGuia, CancellationToken ct = default)
+    {
+        await ExigirOperadorAsync(ct);
+        var lecturas = await _repository.ListarLecturasAsync(idGuia, _currentUser.IdUsuario, ct);
+        return lecturas.Select(ToLecturaDto).ToList();
+    }
+
+    public async Task FinalizarLecturaAsync(int idGuia, CancellationToken ct = default)
     {
         await ExigirOperadorAsync(ct);
         var guia = await ObtenerGuiaAsync(idGuia, ct);
@@ -49,36 +82,9 @@ public sealed class MovimientoStockService : IMovimientoStockService
         if (!tieneAlmacenes)
             throw new ReglaNegocioException("La guía no tiene los almacenes requeridos para su tipo de operación.");
 
-        if (request.Lecturas is null || request.Lecturas.Count == 0)
-            throw new ReglaNegocioException("Debes enviar la lectura de todos los productos de la guía.");
-
-        if (request.Lecturas.Any(l => l.CantidadLeida < 0))
-            throw new ReglaNegocioException("La cantidad leída no puede ser negativa.");
-
-        if (request.Lecturas.GroupBy(l => l.IdProducto).Any(g => g.Count() > 1))
-            throw new ReglaNegocioException("No repitas productos en la lectura; envía una sola cantidad por producto.");
-
-        var productosEsperados = guia.Detalles.Select(d => d.IdProducto).ToHashSet();
-        var productosLeidos = request.Lecturas.Select(l => l.IdProducto).ToHashSet();
-
-        if (!productosEsperados.SetEquals(productosLeidos))
-            throw new ReglaNegocioException("La lectura debe incluir una sola cantidad para cada producto de la guía, sin agregar productos ajenos.");
-
         if (guia.Detalles.Any(d => d.CantidadEsperada != decimal.Truncate(d.CantidadEsperada) || d.CantidadEsperada > int.MaxValue))
             throw new ReglaNegocioException("Esta guía contiene cantidades fraccionarias, pero el stock actual registra unidades enteras. No se aplicó ningún movimiento.");
-
-        var lecturas = request.Lecturas
-            .Select(l => new LecturaProducto(
-                l.IdProducto,
-                l.CantidadLeida,
-                l.Observacion?.Trim(),
-                l.IdUbicacionOrigen is > 0 ? l.IdUbicacionOrigen : null,
-                l.IdUbicacionDestino is > 0 ? l.IdUbicacionDestino : null))
-            .ToList();
-
-        ValidarUbicaciones(guia.IdTipoOperacionGuia, lecturas);
-
-        await _repository.FinalizarLecturaAsync(guia, lecturas, _currentUser.IdUsuario, ct);
+        await _repository.FinalizarLecturaAsync(idGuia, _currentUser.IdUsuario, ct);
     }
 
     public async Task<IReadOnlyList<MovimientoStockDto>> ListarAsync(
@@ -115,28 +121,30 @@ public sealed class MovimientoStockService : IMovimientoStockService
             throw new ReglaNegocioException("Solo un usuario activo con rol Operador puede realizar lecturas de guías.");
     }
 
-    private static void ValidarUbicaciones(int tipoOperacion, IReadOnlyCollection<LecturaProducto> lecturas)
-    {
-        var requiereOrigen = tipoOperacion is TipoOperacionGuiaIds.Salida or TipoOperacionGuiaIds.Traslado;
-        var requiereDestino = tipoOperacion is TipoOperacionGuiaIds.Entrada or TipoOperacionGuiaIds.Traslado;
-
-        foreach (var lectura in lecturas)
-        {
-            if (lectura.IdUbicacionOrigen.HasValue != requiereOrigen || lectura.IdUbicacionDestino.HasValue != requiereDestino)
-            {
-                var ubicacionesEsperadas = tipoOperacion switch
-                {
-                    TipoOperacionGuiaIds.Entrada => "solo la ubicación destino",
-                    TipoOperacionGuiaIds.Salida => "solo la ubicación origen",
-                    TipoOperacionGuiaIds.Traslado => "la ubicación origen y la ubicación destino",
-                    _ => "las ubicaciones correspondientes a la operación"
-                };
-                throw new ReglaNegocioException($"La operación de la guía requiere {ubicacionesEsperadas} para el producto {lectura.IdProducto}. Omite las ubicaciones no aplicables o envíalas como 0.");
-            }
-        }
-    }
-
     private async Task<Modules.Guias.Entities.CabeceraGuia> ObtenerGuiaAsync(int idGuia, CancellationToken ct) =>
         await _repository.ObtenerGuiaParaLecturaAsync(idGuia, ct)
         ?? throw new NoEncontradoException($"La guía {idGuia} no existe.");
+
+    private static GuiaOperadorDto ToGuiaOperadorDto(Modules.Guias.Entities.CabeceraGuia guia) => new(
+        guia.IdGuia,
+        guia.NumeroGuia,
+        guia.IdTipoOperacionGuia,
+        guia.IdEstadoGuia,
+        guia.IdProveedor,
+        guia.IdCliente,
+        guia.IdAlmacenOrigen,
+        guia.IdAlmacenDestino,
+        guia.FechaProgramada,
+        guia.FechaRegistro,
+        guia.FechaActualizada,
+        guia.TipoDocumentoReferencia,
+        guia.NumeroDocumentoReferencia,
+        guia.Observacion,
+        guia.Detalles.Select(d => new DetalleGuiaResponse(d.IdGuiaDetalle, d.IdProducto, d.CantidadEsperada)).ToList());
+
+    private static LecturaGuiaDto ToLecturaDto(Modules.Stocks.Entities.LecturaGuia l) => new(
+        l.IdLecturaGuia, l.IdGuia, l.IdProducto, l.Producto?.Codigo ?? l.CodigoLeido,
+        l.Producto?.Descripcion ?? string.Empty, l.CodigoLeido, l.Cantidad, l.Lote, l.Serie,
+        l.Observacion, l.IdUbicacionOrigen, l.UbicacionOrigen?.Codigo, l.IdUbicacionDestino,
+        l.UbicacionDestino?.Codigo, l.FechaRegistroUtc);
 }

@@ -14,6 +14,6 @@ namespace ProjectAW.Modules.Seguridad.Security.Repositories
         }
 
         public Task<Usuario?> ObtenerPorUsernameAsync(string username, CancellationToken ct = default) =>
-                                    _context.Usuarios.AsNoTracking().FirstOrDefaultAsync(u => u.Username == username, ct);
+        _context.Usuarios.AsNoTracking().Include(u => u.rol).FirstOrDefaultAsync(u => u.Username == username, ct);
     }
 }
