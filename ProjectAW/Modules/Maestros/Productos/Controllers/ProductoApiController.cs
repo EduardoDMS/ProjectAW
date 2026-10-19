@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Cors;
 using ProjectAW.Modules.Maestros.Productos.DTOs.Requests;
 using ProjectAW.Modules.Maestros.Productos.Services;
 
@@ -6,6 +7,7 @@ namespace ProjectAW.Modules.Maestros.Productos.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [EnableCors("PwaRead")]
     public class ProductoApiController : ControllerBase
     {
         private readonly IProductoService _service;

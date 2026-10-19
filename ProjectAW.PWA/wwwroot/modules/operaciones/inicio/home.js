@@ -47,6 +47,13 @@ function createCard(key, operation) {
 
 for (const [key, operation] of Object.entries(OPERATIONS)) cardContainer.append(createCard(key, operation));
 
+const settingsCard = document.createElement("a");
+settingsCard.className = "operation-card settings-card";
+settingsCard.href = "/modules/operaciones/ajustes/index.html";
+settingsCard.setAttribute("aria-label", "Configurar lector PDA o cámara");
+settingsCard.innerHTML = '<span class="settings-card-icon" aria-hidden="true">⚙</span><span><strong>Ajustes de lectura</strong><small>Elige entre PDA y cámara para escanear.</small></span><span class="my-guides-shortcut__arrow" aria-hidden="true">→</span>';
+cardContainer.append(settingsCard);
+
 async function loadPendingCounts() {
   cardContainer.setAttribute("aria-busy", "true");
   message.className = "alert d-none";

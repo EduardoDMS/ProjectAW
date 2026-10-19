@@ -650,6 +650,30 @@ namespace ProjectAW.Migrations
                     b.ToTable("Usuarios");
                 });
 
+            modelBuilder.Entity("ProjectAW.Modules.Stocks.Entities.LecturaGuia", b =>
+                {
+                    b.Property<long>("IdLecturaGuia").ValueGeneratedOnAdd().HasColumnType("bigint");
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("IdLecturaGuia"));
+                    b.Property<int>("Cantidad").HasColumnType("int");
+                    b.Property<string>("CodigoLeido").IsRequired().HasMaxLength(100).HasColumnType("nvarchar(100)");
+                    b.Property<DateTime>("FechaRegistroUtc").HasColumnType("datetime2");
+                    b.Property<int>("IdGuia").HasColumnType("int");
+                    b.Property<int?>("IdUbicacionDestino").HasColumnType("int");
+                    b.Property<int?>("IdUbicacionOrigen").HasColumnType("int");
+                    b.Property<int>("IdProducto").HasColumnType("int");
+                    b.Property<int>("IdUsuarioOperador").HasColumnType("int");
+                    b.Property<string>("Lote").HasMaxLength(100).HasColumnType("nvarchar(100)");
+                    b.Property<string>("Observacion").HasMaxLength(300).HasColumnType("nvarchar(300)");
+                    b.Property<string>("Serie").HasMaxLength(100).HasColumnType("nvarchar(100)");
+                    b.HasKey("IdLecturaGuia");
+                    b.HasIndex("IdProducto");
+                    b.HasIndex("IdUsuarioOperador");
+                    b.HasIndex("IdUbicacionDestino");
+                    b.HasIndex("IdUbicacionOrigen");
+                    b.HasIndex("IdGuia", "FechaRegistroUtc");
+                    b.ToTable("LecturaGuia", null, t => t.HasCheckConstraint("CK_LecturaGuia_Cantidad", "Cantidad >= 0"));
+                });
+
             modelBuilder.Entity("ProjectAW.Modules.Stocks.Entities.MovimientoStock", b =>
                 {
                     b.Property<int>("IdMovimientoStock")
@@ -917,6 +941,16 @@ namespace ProjectAW.Migrations
                         .IsRequired();
 
                     b.Navigation("rol");
+                });
+
+            modelBuilder.Entity("ProjectAW.Modules.Stocks.Entities.LecturaGuia", b =>
+                {
+                    b.HasOne("ProjectAW.Modules.Guias.Entities.CabeceraGuia", "Guia").WithMany().HasForeignKey("IdGuia").OnDelete(DeleteBehavior.Restrict).IsRequired();
+                    b.HasOne("ProjectAW.Modules.Maestros.Productos.Entities.Producto", "Producto").WithMany().HasForeignKey("IdProducto").OnDelete(DeleteBehavior.Restrict).IsRequired();
+                    b.HasOne("ProjectAW.Modules.Seguridad.Usuarios.Entitites.Usuario", "UsuarioOperador").WithMany().HasForeignKey("IdUsuarioOperador").OnDelete(DeleteBehavior.Restrict).IsRequired();
+                    b.HasOne("ProjectAW.Modules.Maestros.Ubicaciones.Entities.Ubicacion", "UbicacionDestino").WithMany().HasForeignKey("IdUbicacionDestino").OnDelete(DeleteBehavior.Restrict);
+                    b.HasOne("ProjectAW.Modules.Maestros.Ubicaciones.Entities.Ubicacion", "UbicacionOrigen").WithMany().HasForeignKey("IdUbicacionOrigen").OnDelete(DeleteBehavior.Restrict);
+                    b.Navigation("Guia"); b.Navigation("Producto"); b.Navigation("UbicacionDestino"); b.Navigation("UbicacionOrigen"); b.Navigation("UsuarioOperador");
                 });
 
             modelBuilder.Entity("ProjectAW.Modules.Stocks.Entities.MovimientoStock", b =>

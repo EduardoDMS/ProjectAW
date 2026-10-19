@@ -24,6 +24,8 @@ using ProjectAW.Modules.Seguridad.Security.Repositories;
 using ProjectAW.Modules.Seguridad.Security.Services;
 using System.Net;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.RateLimiting;
+using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.Mvc;
 using ProjectAW.Modules.Maestros.Roles.Repositories;
 using ProjectAW.Modules.Maestros.Roles.Services;
@@ -76,6 +78,25 @@ builder.Services.AddCors(options => options.AddPolicy("PwaRead", policy =>
         .WithMethods("GET")
         .WithHeaders("Accept")
         .AllowCredentials()));
+builder.Services.AddCors(options => options.AddPolicy("PwaOperations", policy =>
+    policy.WithOrigins(pwaOrigins)
+        .WithMethods("GET", "POST")
+        .WithHeaders("Accept", "Content-Type")
+        .AllowCredentials()));
+
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    options.AddPolicy("login", context => RateLimitPartition.GetFixedWindowLimiter(
+        context.Connection.RemoteIpAddress?.ToString() ?? "ip-desconocida",
+        _ => new FixedWindowRateLimiterOptions
+        {
+            PermitLimit = 5,
+            Window = TimeSpan.FromMinutes(1),
+            QueueLimit = 0,
+            AutoReplenishment = true
+        }));
+});
 
 // Respuestas de error RFC 7807 y conversión centralizada de excepciones.
 builder.Services.AddProblemDetails();
@@ -119,36 +140,52 @@ builder.Services.AddScoped<IPasswordHasher<Usuario>, PasswordHasher<Usuario>>();
 builder.Services.AddScoped<IAuthRepository, AuthRepository>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 
-builder.Services
-    .AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
-    .AddCookie(options =>
+void ConfigureAuthCookie(CookieAuthenticationOptions options, string cookieName)
+{
+    options.Cookie.Name = cookieName;
+    options.Cookie.HttpOnly = true;
+    options.Cookie.SameSite = SameSiteMode.Lax;
+    options.ExpireTimeSpan = TimeSpan.FromHours(8);
+    options.SlidingExpiration = true;
+    options.LoginPath = "/Login";
+    options.AccessDeniedPath = "/AccesoDenegado";
+    options.Events.OnRedirectToLogin = context =>
     {
-        options.Cookie.Name = "ProjectAW.Auth";
-        options.Cookie.HttpOnly = true;                     // Javascript no puede leer la cookie
-        options.Cookie.SameSite = SameSiteMode.Lax;
-        options.ExpireTimeSpan = TimeSpan.FromHours(8);
-        options.SlidingExpiration = true;                   // Se renueva mientras el usuario este activo
-        options.LoginPath = "/Login";
-        options.AccessDeniedPath = "/AccesoDenegado";
+        if (context.Request.Path.StartsWithSegments("/api"))
+            context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+        else
+            context.Response.Redirect(context.RedirectUri);
+        return Task.CompletedTask;
+    };
+    options.Events.OnRedirectToAccessDenied = context =>
+    {
+        if (context.Request.Path.StartsWithSegments("/api"))
+            context.Response.StatusCode = StatusCodes.Status403Forbidden;
+        else
+            context.Response.Redirect(context.RedirectUri);
+        return Task.CompletedTask;
+    };
+}
 
-        options.Events.OnRedirectToLogin = context =>
-        {
-            if (context.Request.Path.StartsWithSegments("/api"))
-                context.Response.StatusCode = StatusCodes.Status401Unauthorized;
-            else
-                context.Response.Redirect(context.RedirectUri);
-            return Task.CompletedTask;
-        };
-
-        options.Events.OnRedirectToAccessDenied = context =>
-        {
-            if (context.Request.Path.StartsWithSegments("/api"))
-                context.Response.StatusCode = StatusCodes.Status403Forbidden;
-            else
-                context.Response.Redirect(context.RedirectUri);
-            return Task.CompletedTask;
-        };
-    });
+builder.Services
+    .AddAuthentication(options =>
+    {
+        options.DefaultAuthenticateScheme = AuthCookieSchemes.Selector;
+        options.DefaultChallengeScheme = AuthCookieSchemes.Selector;
+        options.DefaultForbidScheme = AuthCookieSchemes.Selector;
+        options.DefaultSignInScheme = AuthCookieSchemes.Selector;
+    })
+    .AddPolicyScheme(AuthCookieSchemes.Selector, AuthCookieSchemes.Selector, options =>
+    {
+        options.ForwardDefaultSelector = context =>
+            AuthCookieSchemes.Resolver(context, pwaOrigins);
+    })
+    .AddCookie(AuthCookieSchemes.Admin, options =>
+        ConfigureAuthCookie(options, AuthCookieSchemes.AdminCookieName))
+    .AddCookie(AuthCookieSchemes.Operador, options =>
+        ConfigureAuthCookie(options, AuthCookieSchemes.OperadorCookieName))
+    .AddCookie(AuthCookieSchemes.Rechazar, options =>
+        ConfigureAuthCookie(options, AuthCookieSchemes.RechazarCookieName));
 
 
 
@@ -181,6 +218,7 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseRouting();
+app.UseRateLimiter();
 app.UseCors();
 
 app.UseAuthentication(); // api

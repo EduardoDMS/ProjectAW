@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#073d78">
+  <meta name="description" content="Detalle de la guía seleccionada para lectura">
+  <title>Detalle de guía | Proyecto AW</title>
+  <link rel="stylesheet" href="/libs/bootstrap/bootstrap.min.css">
+  <link rel="stylesheet" href="/css/site.css">
+  <link rel="stylesheet" href="/modules/operaciones/operaciones.css">
+  <script src="/config/api-config.js"></script>
+  <script type="module" src="/modules/operaciones/guias/detalle.js"></script>
+</head>
+<body class="operations-page">
+  <main class="operations-shell">
+    <header class="operations-header">
+      <a class="operations-brand" href="/modules/operaciones/inicio/index.html" aria-label="Volver al inicio de Proyecto AW">
+        <span class="brand-mark" aria-hidden="true">AW</span>
+        <span><strong>Proyecto AW</strong><small>Operaciones de almacén</small></span>
+      </a>
+      <button class="btn btn-outline-primary logout-button" id="logout-button" type="button">Cerrar sesión</button>
+    </header>
+
+    <section class="guide-detail-page" aria-labelledby="guide-detail-title" aria-busy="true">
+      <a class="guides-back" id="back-to-guides" href="/modules/operaciones/inicio/index.html"><span aria-hidden="true">←</span> Guías</a>
+      <div id="guide-detail-message" class="alert d-none" role="alert"></div>
+      <p class="eyebrow">LECTURA DE GUÍA</p>
+      <div class="guide-detail-heading">
+        <div>
+          <h1 id="guide-detail-title">Cargando guía…</h1>
+          <p id="guide-detail-operation">Consultando la API</p>
+        </div>
+        <span id="guide-detail-status" class="guide-status-badge">—</span>
+      </div>
+
+      <section class="guide-detail-panel" aria-labelledby="guide-detail-data-title">
+        <h2 id="guide-detail-data-title">Datos de la guía</h2>
+        <dl id="guide-detail-summary" class="guide-detail-summary"></dl>
+      </section>
+
+      <section class="guide-detail-panel" aria-labelledby="guide-detail-products-title">
+        <h2 id="guide-detail-products-title">Productos esperados</h2>
+        <div class="table-responsive">
+          <table class="table guide-products-table align-middle mb-0">
+            <thead><tr><th>Producto</th><th class="text-end">Cantidad esperada</th></tr></thead>
+            <tbody id="guide-detail-products"><tr><td colspan="2">Cargando productos…</td></tr></tbody>
+          </table>
+        </div>
+      </section>
+      <div class="guide-detail-actions">
+        <button class="btn btn-primary" id="start-registration" type="button" hidden>Empezar registro</button>
+        <a class="btn btn-outline-primary" href="/modules/operaciones/guias/mis-guias.html">Volver a mis guías</a>
+      </div>
+    </section>
+
+    <dialog class="guide-confirmation" id="start-confirmation" aria-labelledby="start-confirmation-title">
+      <p class="eyebrow">CONFIRMACIÓN</p>
+      <h2 id="start-confirmation-title">¿Deseas empezar el registro de esta guía?</h2>
+      <dl class="guide-confirmation-details"><div><dt>Guía</dt><dd id="confirm-guide-code">—</dd></div><div><dt>Fecha</dt><dd id="confirm-guide-date">—</dd></div></dl>
+      <div class="guide-confirmation-actions">
+        <button class="btn btn-outline-secondary" id="cancel-start" type="button">Ahora no</button>
+        <button class="btn btn-primary" id="confirm-start" type="button">Continuar</button>
+      </div>
+    </dialog>
+
+    <footer class="operations-footer">© <span id="current-year"></span> Proyecto AW</footer>
+  </main>
+</body>
+</html>

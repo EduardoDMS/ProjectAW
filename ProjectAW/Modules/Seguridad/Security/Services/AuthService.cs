@@ -34,7 +34,8 @@ namespace ProjectAW.Modules.Seguridad.Security.Services
                 return null;
 
             return new SesionResponse(
-                usuario.IdUsuario, usuario.Username, $"{usuario.Nombre} {usuario.Apellido}", usuario.IdRol);
+                usuario.IdUsuario, usuario.Username, $"{usuario.Nombre} {usuario.Apellido}", usuario.IdRol,
+                usuario.rol?.Nombre ?? string.Empty);
         }
     }
 }

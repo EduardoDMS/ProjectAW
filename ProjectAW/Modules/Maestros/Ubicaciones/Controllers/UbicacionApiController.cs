@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Cors;
 using ProjectAW.Modules.Maestros.Ubicaciones.DTOs.Requests;
 using ProjectAW.Modules.Maestros.Ubicaciones.Services;
 
@@ -8,6 +9,7 @@ namespace ProjectAW.Modules.Maestros.Ubicaciones.Controllers
     
     [ApiController]
     [Route("api/[controller]")]
+    [EnableCors("PwaRead")]
     public class UbicacionApiController : ControllerBase
     {
         private readonly IUbicacionService _service;
