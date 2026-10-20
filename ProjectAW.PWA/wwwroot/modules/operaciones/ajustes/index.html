@@ -14,11 +14,10 @@
                         <small>Ajustes del operador</small>
                     </span>
                 </a>
-                    <button class="btn btn-outline-primary logout-button" id="logout-button" type="button">Cerrar sesión</button>
             </header>
   
         <section class="settings-page">
-            <a class="guides-back" href="/modules/operaciones/inicio/index.html">← Inicio</a>
+            <a class="guides-back" href="/modules/operaciones/inicio/index.html"><i class="ti ti-arrow-left" aria-hidden="true"></i> Inicio</a>
             <p class="eyebrow">PREFERENCIAS</p>
             <h1>Ajustes de lectura</h1>
             <p class="settings-intro">Elige el método que usarás para capturar códigos. Puedes escribirlos manualmente en ambos modos.</p>
@@ -26,7 +25,7 @@
             <fieldset class="capture-options"><legend>Método de captura</legend>
                 <label class="capture-option">
                     <input type="radio" name="capture-mode" value="pda">
-                    <span class="capture-option-icon" aria-hidden="true">▥</span>
+                    <i class="capture-option-icon ti ti-barcode" aria-hidden="true"></i>
                     <span>
                         <strong>Lector PDA</strong>
                         <small>Escáner conectado como teclado. Presiona Enter para avanzar.</small>
@@ -35,7 +34,7 @@
                 
             <label class="capture-option">
                 <input type="radio" name="capture-mode" value="camera">
-                <span class="capture-option-icon" aria-hidden="true">▣</span>
+                <i class="capture-option-icon ti ti-camera" aria-hidden="true"></i>
                 <span>
                     <strong>Cámara</strong>
                     <small>Usa la cámara del dispositivo cuando abras un registro.</small>
@@ -43,6 +42,26 @@
             </label>
             
             </fieldset>
+
+            <fieldset class="capture-options"><legend>Informaciones adicionales</legend>
+                <label class="capture-option">
+                    <input id="lot-enabled" type="checkbox">
+                    <i class="capture-option-icon ti ti-box" aria-hidden="true"></i>
+                    <span><strong>Lote</strong><small>Mostrar el campo Lote en el paso Productos.</small></span>
+                </label>
+                <label class="capture-option">
+                    <input id="serial-enabled" type="checkbox">
+                    <i class="capture-option-icon ti ti-barcode" aria-hidden="true"></i>
+                    <span><strong>Serie</strong><small>Mostrar el campo Serie en el paso Productos.</small></span>
+                </label>
+                <label class="capture-option">
+                    <input id="expiry-enabled" type="checkbox">
+                    <i class="capture-option-icon ti ti-calendar" aria-hidden="true"></i>
+                    <span><strong>Fch. vencimiento</strong><small>Mostrar la fecha en Productos como referencia visual.</small></span>
+                </label>
+            </fieldset>
+
+            <button class="btn btn-outline-danger settings-signout" id="logout-button" type="button"><i class="ti ti-logout inline-icon" aria-hidden="true"></i>Cerrar sesión</button>
     
             <p id="settings-status" class="settings-status" role="status" aria-live="polite"></p>
         </section>

@@ -12,6 +12,7 @@ public sealed record MovimientoStockDto(
     int IdAlmacen,
     string Origen,
     string Destino,
+    decimal CantidadEsperada,
     int Cantidad,
     int CantidadDiferenciada,
     string Observacion,

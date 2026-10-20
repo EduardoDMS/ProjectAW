@@ -13,6 +13,7 @@ public interface IMovimientoStockRepository
     Task TomarGuiaAsync(int idGuia, int idOperador, CancellationToken ct = default);
     Task<LecturaGuia> RegistrarLecturaAsync(int idGuia, int idOperador, RegistrarLecturaRequest request, CancellationToken ct = default);
     Task<IReadOnlyList<LecturaGuia>> ListarLecturasAsync(int idGuia, int idOperador, CancellationToken ct = default);
+    Task<bool> EliminarLecturaAsync(int idGuia, long idLecturaGuia, int idOperador, CancellationToken ct = default);
     Task FinalizarLecturaAsync(
         int idGuia,
         int idOperador,

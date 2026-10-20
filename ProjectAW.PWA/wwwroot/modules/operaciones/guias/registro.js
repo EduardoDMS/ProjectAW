@@ -1,81 +1,89 @@
-import { logout } from "/shared/js/session.js";
 import { getJson } from "/shared/js/api-client.js";
+import "/shared/js/navigation.js";
 import {
-  finalizeGuideReadings, formatScheduledAt, getActiveLocations, getGuideDetailLookups,
+  deleteGuideReading, finalizeGuideReadings, formatScheduledAt, getActiveLocations, getGuideDetailLookups,
   getGuideReadingHistory, getMyGuideById, registerGuideReading, showApiError
 } from "/modules/operaciones/guias.js";
 
 const page = document.querySelector(".registration-page");
 const message = document.querySelector("#registration-message");
 const guideId = Number(new URLSearchParams(location.search).get("id"));
-const modeKey = "projectaw.operator.capture-mode";
-const mode = localStorage.getItem(modeKey) || "pda";
-const fields = {
-  code: document.querySelector("#scan-code"), product: document.querySelector("#product-select"),
-  quantity: document.querySelector("#read-quantity"), origin: document.querySelector("#origin-location"),
-  destination: document.querySelector("#destination-location"), lot: document.querySelector("#read-lot"),
-  serial: document.querySelector("#read-serial"), observation: document.querySelector("#read-observation")
+const mode = localStorage.getItem("projectaw.operator.capture-mode") || "pda";
+const additionalInfo = {
+  lot: localStorage.getItem("projectaw.operator.lot-enabled") === "true",
+  serial: localStorage.getItem("projectaw.operator.serial-enabled") === "true",
+  expiry: localStorage.getItem("projectaw.operator.expiry-enabled") === "true"
 };
+const byId = id => document.querySelector(`#${id}`);
+const fields = {
+  productCode: byId("scan-code"), productName: byId("product-name"), productQuantity: byId("read-quantity"),
+  productLot: byId("product-lot"), productSerial: byId("product-serial"), productExpiry: byId("product-expiry"),
+  allocationCode: byId("allocation-code"), allocationProduct: byId("allocation-product"), allocationQuantity: byId("allocation-quantity"),
+  origin: byId("origin-location"), destination: byId("destination-location"), outboundSource: byId("outbound-source-location"),
+  observation: byId("read-observation")
+};
+byId("product-lot-field").hidden = !additionalInfo.lot;
+byId("product-serial-field").hidden = !additionalInfo.serial;
+byId("product-expiry-field").hidden = !additionalInfo.expiry;
 let guide;
 let products = [];
 let history = [];
+let stockRows = [];
 let lookupData;
+let flow = { step: 1, captured: [] };
 let cameraStream;
 let cameraTimer;
 let detector;
 let detecting = false;
+let activeCodeField = fields.productCode;
 let cameraPausedUntil = 0;
 let lastCameraCode = null;
 let cameraMissFrames = 0;
-const locationLocked = { origin: true, destination: true };
 const locations = { origin: [], destination: [] };
+const flowKey = `projectaw.operator.guide-flow.${guideId}`;
 
-document.querySelector("#current-year").textContent = String(new Date().getFullYear());
-document.querySelector("#logout-button").addEventListener("click", event => {
-  event.currentTarget.disabled = true;
-  void logout(message);
-});
-document.querySelector("#registration-back").href = Number.isSafeInteger(guideId) && guideId > 0
+byId("current-year").textContent = String(new Date().getFullYear());
+byId("registration-back").href = Number.isSafeInteger(guideId) && guideId > 0
   ? `/modules/operaciones/guias/detalle.html?id=${encodeURIComponent(guideId)}`
   : "/modules/operaciones/guias/mis-guias.html";
-document.querySelector("#clear-reading").addEventListener("click", clearFields);
-document.querySelector("#submit-reading").addEventListener("click", () => void submitReading());
-document.querySelector("#history-open").addEventListener("click", () => void openHistory());
-document.querySelector("#history-close").addEventListener("click", () => document.querySelector("#history-dialog").close());
-document.querySelector("#finalize-registration").addEventListener("click", openFinalizeConfirmation);
-document.querySelector("#finalize-cancel").addEventListener("click", () => document.querySelector("#finalize-dialog").close());
-document.querySelector("#finalize-confirm").addEventListener("click", () => void finalize());
-document.querySelector("#guide-note-toggle").addEventListener("click", toggleNote);
-document.querySelector("#guide-note-close").addEventListener("click", closeNote);
-document.querySelector("#camera-start").addEventListener("click", () => void startCamera());
-document.querySelector("#camera-stop").addEventListener("click", stopCamera);
-document.querySelector("#origin-lock").addEventListener("click", () => toggleLocationLock("origin"));
-document.querySelector("#destination-lock").addEventListener("click", () => toggleLocationLock("destination"));
-fields.product.addEventListener("change", () => {
-  const product = products.find(item => item.idProducto === Number(fields.product.value));
-  if (product) {
-    fields.code.value = product.codigo;
-    focusNext("product");
-  }
-});
-fields.code.addEventListener("keydown", event => {
-  if (event.key === "Enter") { event.preventDefault(); processScannedCode(fields.code.value); }
-});
-fields.quantity.addEventListener("keydown", event => {
-  if (event.key === "Enter") { event.preventDefault(); fields.lot.focus(); }
-});
-fields.lot.addEventListener("keydown", event => {
-  if (event.key === "Enter") { event.preventDefault(); fields.serial.focus(); }
-});
-fields.serial.addEventListener("keydown", event => {
-  if (event.key === "Enter") { event.preventDefault(); void submitReading(); }
-});
-fields.origin.addEventListener("keydown", event => {
-  if (event.key === "Enter") { event.preventDefault(); fields.destination.closest("label").hidden ? fields.code.focus() : fields.destination.focus(); }
-});
-fields.destination.addEventListener("keydown", event => {
-  if (event.key === "Enter") { event.preventDefault(); fields.code.focus(); }
-});
+byId("clear-product").addEventListener("click", clearProductFields);
+byId("capture-product").addEventListener("click", captureProduct);
+byId("save-allocation").addEventListener("click", () => void saveAllocation());
+byId("clear-allocation").addEventListener("click", clearAllocationFields);
+byId("to-locations").addEventListener("click", () => goToStep(2));
+byId("back-products").addEventListener("click", () => goToStep(1));
+byId("to-consolidated").addEventListener("click", () => goToStep(3));
+byId("back-locations").addEventListener("click", () => goToStep(2));
+byId("refresh-consolidated").addEventListener("click", () => void refreshHistory());
+byId("consolidated-readings").addEventListener("click", event => void removeAllocation(event));
+byId("finalize-registration").addEventListener("click", openFinalizeConfirmation);
+byId("finalize-cancel").addEventListener("click", () => byId("finalize-dialog").close());
+byId("finalize-confirm").addEventListener("click", () => void finalize());
+byId("api-error-close").addEventListener("click", () => byId("api-error-dialog").close());
+byId("guide-note-toggle").addEventListener("click", toggleNote);
+byId("guide-note-close").addEventListener("click", closeNote);
+byId("camera-start").addEventListener("click", () => void startCamera());
+byId("camera-stop").addEventListener("click", stopCamera);
+document.querySelectorAll("[data-step-go]").forEach(button => button.addEventListener("click", () => goToStep(Number(button.dataset.stepGo))));
+
+for (const input of [fields.productCode, fields.allocationCode]) {
+  input.addEventListener("focus", () => { activeCodeField = input; });
+  input.addEventListener("input", () => resolveProductInput(input));
+  input.addEventListener("keydown", event => {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      const product = resolveProductInput(input);
+      if (product) (input === fields.productCode ? fields.productQuantity : fields.allocationQuantity).focus();
+    }
+  });
+}
+for (const input of [fields.outboundSource, fields.destination]) input.addEventListener("focus", () => { activeCodeField = input; });
+fields.productQuantity.addEventListener("keydown", event => { if (event.key === "Enter") { event.preventDefault(); captureProduct(); } });
+fields.allocationQuantity.addEventListener("keydown", event => { if (event.key === "Enter") { event.preventDefault(); if (isDispatch()) fields.destination.focus(); else (byId("origin-field").hidden ? fields.destination : fields.origin).focus(); } });
+fields.origin.addEventListener("keydown", event => { if (event.key === "Enter") { event.preventDefault(); byId("destination-field").hidden ? focusAfterLocations() : fields.destination.focus(); } });
+fields.destination.addEventListener("keydown", event => { if (event.key === "Enter") { event.preventDefault(); isDispatch() ? fields.allocationCode.focus() : focusAfterLocations(); } });
+fields.outboundSource.addEventListener("keydown", event => { if (event.key === "Enter") { event.preventDefault(); fields.productCode.focus(); } });
+fields.observation.addEventListener("keydown", event => { if (event.key === "Enter") { event.preventDefault(); void saveAllocation(); } });
 document.addEventListener("visibilitychange", () => { if (document.hidden) stopCamera(); });
 window.addEventListener("pagehide", stopCamera, { once: true });
 
@@ -86,31 +94,109 @@ async function loadRegistration() {
   page.setAttribute("aria-busy", "true");
   try {
     guide = await getMyGuideById(guideId);
-    if (guide.idEstadoGuia !== 2) throw new Error("Esta guía ya no está disponible para registrar lecturas.");
-    renderGuideHeader();
+    if (guide.idEstadoGuia !== 2) throw new Error("Esta guía ya no está disponible para registrar.");
     products = await getJson("api/ProductoApi");
     if (!Array.isArray(products)) throw new Error("La API no devolvió el catálogo de productos correctamente.");
-    renderProductOptions();
     lookupData = await getGuideDetailLookups(guide.idTipoOperacionGuia, products);
-    renderGuide();
     await loadLocations();
+    if (isDispatch()) stockRows = await getJson(`api/stocks?idAlmacen=${encodeURIComponent(guide.idAlmacenOrigen)}`);
     history = await getGuideReadingHistory(guideId);
-    renderProgress();
-    restoreLocationDefaults();
+    restoreFlow();
+    renderGuide();
+    renderAll();
     configureCaptureMode();
-    fields.code.focus({ preventScroll: true });
+    goToStep(flow.step, false);
   } catch (error) {
-    if (error.status === 401) { location.replace("/"); return; }
-    showError(showApiError(error));
+    showApiFailure(showApiError(error));
   } finally { page.setAttribute("aria-busy", "false"); }
 }
 
+function restoreFlow() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(flowKey) || "null");
+    if (saved && Array.isArray(saved.captured)) flow = { step: Number(saved.step) || 1, captured: saved.captured };
+  } catch { flow = { step: 1, captured: [] }; }
+
+  const merged = new Map();
+  for (const item of flow.captured) {
+    const id = Number(item.idProducto);
+    const key = isDispatch() ? `${id}|${item.idUbicacionOrigen || ""}` : `${id}|${item.lote || ""}|${item.serie || ""}`;
+    const current = merged.get(key);
+    if (current) current.cantidad = Number(current.cantidad) + Number(item.cantidad);
+    else merged.set(key, { ...item, idProducto: id, cantidad: Number(item.cantidad) });
+  }
+  flow.captured = [...merged.values()];
+
+  // Si hay lecturas guardadas de una sesión anterior, estas también cuentan como productos capturados.
+  const totals = new Map();
+  for (const item of history) totals.set(Number(item.idProducto), (totals.get(Number(item.idProducto)) || 0) + Number(item.cantidad));
+  if (!isDispatch()) {
+    for (const [idProducto, cantidad] of totals) {
+      const captured = flow.captured.filter(item => Number(item.idProducto) === idProducto).reduce((sum, item) => sum + Number(item.cantidad), 0);
+      if (captured < cantidad) {
+        const product = products.find(item => Number(item.idProducto) === idProducto);
+        flow.captured.push({ idProducto, codigo: product?.codigo || "", descripcion: product?.descripcion || "", cantidad: cantidad - captured, recuperado: true });
+      }
+    }
+  }
+  if (isDispatch()) {
+    const persistedBySource = new Map();
+    for (const item of history) {
+      const key = `${Number(item.idProducto)}|${Number(item.idUbicacionOrigen || 0)}`;
+      persistedBySource.set(key, (persistedBySource.get(key) || 0) + Number(item.cantidad));
+    }
+    for (const [key, cantidad] of persistedBySource) {
+      const [idProducto, idUbicacionOrigen] = key.split("|").map(Number);
+      const captured = flow.captured.filter(item => Number(item.idProducto) === idProducto && Number(item.idUbicacionOrigen) === idUbicacionOrigen).reduce((sum, item) => sum + Number(item.cantidad), 0);
+      if (captured < cantidad) {
+        const stock = stockRows.find(item => Number(item.idProducto) === idProducto && Number(item.idUbicacion || 0) === idUbicacionOrigen);
+        const locationItem = locations.origin.find(item => Number(item.idUbicacion) === idUbicacionOrigen);
+        const product = productById(idProducto);
+        flow.captured.push({ idProducto, codigo: product?.codigo || "", descripcion: product?.descripcion || "", cantidad: cantidad - captured, idUbicacionOrigen, ubicacionOrigen: locationItem?.codigo || "", recuperado: true, cantidadStock: Number(stock?.cantidadActual || 0) });
+      }
+    }
+  }
+  if (!flow.captured.length && flow.step > 1) flow.step = 1;
+  persistFlow();
+}
+
+function persistFlow() { localStorage.setItem(flowKey, JSON.stringify(flow)); }
+
 function renderGuide() {
-  renderGuideHeader();
-  const details = [
+  const operationNames = { 1: "Recepción", 2: "Despacho", 3: "Traslado" };
+  const operationName = operationNames[guide.idTipoOperacionGuia] || "Registro";
+  document.title = `${operationName} · ${guide.numeroGuia} | Proyecto AW`;
+  byId("registration-title").textContent = operationName;
+  byId("registration-subtitle").textContent = `${guide.numeroGuia || `Guía #${guide.idGuia}`} · ${formatScheduledAt(guide.fechaProgramada)}`;
+  byId("products-step-title").textContent = guide.idTipoOperacionGuia === 1 ? "Recepción de productos" : guide.idTipoOperacionGuia === 2 ? "Productos a despachar" : "Productos a trasladar";
+  byId("registration-back").href = `/modules/operaciones/guias/detalle.html?id=${encodeURIComponent(guideId)}`;
+  const isTransfer = guide.idTipoOperacionGuia === 3;
+  const needsOrigin = guide.idTipoOperacionGuia === 2 || isTransfer;
+  const needsDestination = guide.idTipoOperacionGuia === 1 || isTransfer;
+  const dispatch = isDispatch();
+  byId("origin-field").hidden = dispatch || !needsOrigin;
+  byId("destination-field").hidden = dispatch ? false : !needsDestination;
+  byId("product-lot-field").hidden = dispatch || !additionalInfo.lot;
+  byId("product-serial-field").hidden = dispatch || !additionalInfo.serial;
+  byId("product-expiry-field").hidden = dispatch || !additionalInfo.expiry;
+  byId("outbound-source-field").hidden = !dispatch;
+  byId("product-code-field").firstChild.textContent = dispatch ? "Código del producto a extraer" : "Código del producto";
+  byId("product-quantity-field").firstChild.textContent = dispatch ? "Cantidad extraída" : "Cantidad contada";
+  byId("products-step-title").textContent = dispatch ? "Extracción de productos" : operationName === "Recepción" ? "Recepción de productos" : operationName === "Traslado" ? "Productos a trasladar" : "Productos";
+  byId("locations-step-title").textContent = dispatch ? "Ubicación de despacho" : "Asignación de ubicaciones";
+  byId("allocation-progress-title").textContent = dispatch ? "Cantidades depositadas" : "Distribución capturada";
+  byId("destination-field").firstChild.textContent = dispatch ? "Ubicación de despacho" : "Ubicación destino";
+  byId("save-allocation").textContent = dispatch ? "Registrar despacho" : "Registrar ubicación";
+  byId("to-locations").textContent = dispatch ? "Continuar a despacho" : "Continuar a Ubicaciones";
+  byId("allocation-code").closest("label").firstChild.textContent = dispatch ? "Código del producto a despachar" : "Código del producto";
+  byId("allocation-quantity").closest("label").firstChild.textContent = dispatch ? "Cantidad despachada" : "Cantidad a ubicar";
+  byId("outbound-stock-suggestions").hidden = !dispatch;
+  if (guide.idTipoOperacionGuia === 1) byId("destination-field").firstChild.textContent = "Ubicación destino";
+  if (guide.idTipoOperacionGuia === 2) byId("origin-field").firstChild.textContent = "Ubicación de origen";
+
+  const facts = [
     ["Código", guide.numeroGuia || `Guía #${guide.idGuia}`],
-    ["Operación", ({ 1: "Recepción", 2: "Despacho", 3: "Traslado" })[guide.idTipoOperacionGuia] || "Operación"],
-    ["Programada", formatScheduledAt(guide.fechaProgramada)],
+    ["Operación", operationName], ["Programada", formatScheduledAt(guide.fechaProgramada)],
     ["Registrada", formatScheduledAt(guide.fechaRegistro)],
     ["Proveedor", lookupData.counterparties.get(Number(guide.idProveedor))],
     ["Cliente", lookupData.counterparties.get(Number(guide.idCliente))],
@@ -119,299 +205,494 @@ function renderGuide() {
     ["Documento", [guide.tipoDocumentoReferencia, guide.numeroDocumentoReferencia].filter(Boolean).join(" · ")],
     ["Observación", guide.observacion]
   ].filter(([, value]) => value);
-  document.querySelector("#note-guide-code").textContent = guide.numeroGuia || `Guía #${guide.idGuia}`;
-  const facts = document.querySelector("#note-guide-facts");
-  facts.replaceChildren();
-  for (const [label, value] of details) {
+  byId("note-guide-code").textContent = guide.numeroGuia || `Guía #${guide.idGuia}`;
+  const factsList = byId("note-guide-facts"); factsList.replaceChildren();
+  for (const [label, value] of facts) {
     const row = document.createElement("div"); const term = document.createElement("dt"); const description = document.createElement("dd");
-    term.textContent = label; description.textContent = value; row.append(term, description); facts.append(row);
+    term.textContent = label; description.textContent = value; row.append(term, description); factsList.append(row);
   }
-  const noteProducts = document.querySelector("#note-guide-products");
-  noteProducts.replaceChildren();
+  const noteProducts = byId("note-guide-products"); noteProducts.replaceChildren();
   for (const line of guide.detalles || []) {
-    const item = products.find(p => Number(p.idProducto) === Number(line.idProducto));
+    const item = products.find(product => Number(product.idProducto) === Number(line.idProducto));
     const row = document.createElement("tr"); const name = document.createElement("td"); const qty = document.createElement("td");
     name.textContent = item ? `${item.codigo} · ${item.descripcion}` : `Producto #${line.idProducto}`;
     qty.className = "text-end"; qty.textContent = Number(line.cantidadEsperada).toLocaleString("es-PE"); row.append(name, qty); noteProducts.append(row);
   }
-  const isTransfer = guide.idTipoOperacionGuia === 3;
-  const needsOrigin = guide.idTipoOperacionGuia === 2 || isTransfer;
-  const needsDestination = guide.idTipoOperacionGuia === 1 || isTransfer;
-  document.querySelector("#origin-field").hidden = !needsOrigin;
-  document.querySelector("#destination-field").hidden = !needsDestination;
+  if (dispatch) renderOutboundStockSuggestions();
 }
 
-function renderGuideHeader() {
-  document.title = `${guide.numeroGuia} · Registro | Proyecto AW`;
-  document.querySelector("#registration-title").textContent = guide.numeroGuia || `Guía #${guide.idGuia}`;
-  document.querySelector("#registration-subtitle").textContent = `${guide.detalles?.length || 0} productos · Fecha ${formatScheduledAt(guide.fechaProgramada)}`;
-  document.querySelector("#registration-back").href = `/modules/operaciones/guias/detalle.html?id=${encodeURIComponent(guideId)}`;
-}
+function isDispatch() { return Number(guide?.idTipoOperacionGuia) === 2; }
 
-function renderProductOptions() {
-  const guideProductIds = new Set((guide.detalles || []).map(line => Number(line.idProducto)));
-  const guideProducts = products.filter(product => guideProductIds.has(Number(product.idProducto)));
-  for (const product of guideProducts) {
-    const option = document.createElement("option");
-    option.value = String(product.idProducto);
-    option.textContent = `${product.codigo} · ${product.descripcion}`;
-    fields.product.append(option);
+function renderOutboundStockSuggestions() {
+  const host = byId("outbound-stock-suggestions").querySelector(".table-responsive");
+  host.replaceChildren();
+  byId("outbound-stock-suggestions").querySelector("h3").textContent = `Stock de ${lookupData.warehouses.get(Number(guide.idAlmacenOrigen)) || "almacén de origen"} sugerido por producto`;
+  const table = createTable(["Código", "Producto", "Cantidad solicitada", "Ubicaciones sugeridas", "Stock sugerido"]);
+  for (const line of guide.detalles || []) {
+    const product = productById(line.idProducto);
+    const expected = Number(line.cantidadEsperada);
+    const rows = stockRows.filter(row => Number(row.idProducto) === Number(line.idProducto) && Number(row.cantidadActual) > 0)
+      .sort((a, b) => Number(b.cantidadActual) - Number(a.cantidadActual));
+    const single = rows.find(row => Number(row.cantidadActual) >= expected);
+    const selected = single ? [single] : [];
+    if (!single) {
+      let sum = 0;
+      for (const row of rows) { selected.push(row); sum += Number(row.cantidadActual); if (sum >= expected) break; }
+    }
+    const row = table.body.insertRow();
+    row.insertCell().textContent = product?.codigo || `#${line.idProducto}`;
+    row.insertCell().textContent = product?.descripcion || "";
+    row.insertCell().textContent = String(expected);
+    row.insertCell().textContent = selected.map(item => `${item.ubicacion} (${item.cantidadActual})`).join(" · ") || "Sin existencias";
+    row.insertCell().textContent = String(selected.reduce((sum, item) => sum + Number(item.cantidadActual), 0));
   }
-  if (guideProducts.length === 0) {
-    fields.product.disabled = true;
-    fields.product.replaceChildren(new Option("La guía no tiene productos disponibles", ""));
-    feedback("No se encontraron productos asociados a esta guía.", true);
-  } else {
-    fields.product.disabled = false;
-    feedback(`${guideProducts.length} productos disponibles para leer.`, false);
-  }
+  host.append(table.element);
 }
 
 async function loadLocations() {
   const requests = [];
-  if (!document.querySelector("#origin-field").hidden) requests.push(getActiveLocations(guide.idAlmacenOrigen).then(items => fillLocations(fields.origin, items)));
-  if (!document.querySelector("#destination-field").hidden) requests.push(getActiveLocations(guide.idAlmacenDestino).then(items => fillLocations(fields.destination, items)));
+  if (guide.idAlmacenOrigen) requests.push(getActiveLocations(guide.idAlmacenOrigen).then(items => {
+    fillLocations("origin", items);
+    if (isDispatch()) fillLocations("destination", items);
+  }));
+  if (guide.idAlmacenDestino && !isDispatch()) requests.push(getActiveLocations(guide.idAlmacenDestino).then(items => fillLocations("destination", items)));
   await Promise.all(requests);
 }
 
-function fillLocations(select, items) {
-  const key = select === fields.origin ? "origin" : "destination";
-  const datalist = document.querySelector(`#${key}-options`);
+function fillLocations(key, items) {
   locations[key] = items;
-  for (const location of items) {
-    const option = document.createElement("option");
-    option.value = location.codigo;
-    option.label = [location.codigo, location.descripcion].filter(Boolean).join(" · ");
-    datalist.append(option);
+  const datalist = byId(`${key}-options`); datalist.replaceChildren();
+  for (const item of items) {
+    const option = document.createElement("option"); option.value = item.codigo;
+    option.label = [item.codigo, item.descripcion].filter(Boolean).join(" · "); datalist.append(option);
   }
 }
 
 function configureCaptureMode() {
-  const hint = document.querySelector("#capture-mode-hint");
-  const cameraButton = document.querySelector("#camera-start");
+  const hint = byId("camera-status");
   if (mode === "camera") {
-    hint.textContent = "Activa la cámara para leer códigos o escribe el valor manualmente.";
-    cameraButton.hidden = false;
-  } else {
-    hint.textContent = "El lector PDA funciona como teclado: escanea y confirma con Enter.";
-    fields.code.placeholder = "Escanea con PDA o escribe el código";
-  }
+    hint.textContent = "Activa la cámara para escanear; el código irá al paso activo.";
+    byId("camera-start").hidden = false;
+  } else hint.textContent = "PDA lista: escanea el código y confirma con Enter.";
 }
 
-function processScannedCode(rawCode) {
-  const code = String(rawCode || "").trim();
-  if (!code) { feedback("Escanea o escribe un código primero.", true); return false; }
-  const product = products.find(item => (guide.detalles || []).some(line => Number(line.idProducto) === Number(item.idProducto)) && item.codigo.trim().toLowerCase() === code.toLowerCase());
-  if (!product) { feedback("El código no pertenece a un producto de esta guía.", true); fields.code.select(); return false; }
-  fields.product.value = String(product.idProducto);
-  fields.code.value = product.codigo;
-  feedback(`Producto reconocido: ${product.descripcion}`, false);
-  fields.quantity.focus(); fields.quantity.select();
-  cameraPausedUntil = Date.now() + 1800;
+function resolveProductInput(input) {
+  const raw = input.value.trim().toLocaleLowerCase("es");
+  const inGuide = products.filter(product => (guide.detalles || []).some(line => Number(line.idProducto) === Number(product.idProducto)));
+  const product = inGuide.find(item => String(item.codigo || "").trim().toLocaleLowerCase("es") === raw) ||
+    inGuide.find(item => [item.nombre, item.descripcion].some(value => String(value || "").trim().toLocaleLowerCase("es") === raw));
+  const output = input === fields.productCode ? fields.productName : fields.allocationProduct;
+  output.value = product ? (product.descripcion || product.nombre || "Producto reconocido") : "";
+  if (product && input === fields.allocationCode && !capturedTotal(product.idProducto))
+    showFeedback("allocation-feedback", "Primero registra este producto en el paso Productos.", true);
+  return product || null;
+}
+
+function processScannedCode(raw) {
+  const input = activeCodeField;
+  if (isDispatch() && input === fields.outboundSource) {
+    input.value = String(raw || "").trim(); fields.productCode.focus(); cameraPausedUntil = Date.now() + 800; return true;
+  }
+  if (isDispatch() && input === fields.destination) {
+    input.value = String(raw || "").trim(); fields.allocationCode.focus(); cameraPausedUntil = Date.now() + 800; return true;
+  }
+  input.value = String(raw || "").trim();
+  const product = resolveProductInput(input);
+  if (!product) {
+    showFeedback(input === fields.productCode ? "scan-feedback" : "allocation-feedback", "El código no coincide exactamente con un producto de esta guía.", true);
+    input.select(); return false;
+  }
+  const output = input === fields.productCode ? fields.productName : fields.allocationProduct;
+  output.value = product.descripcion || product.nombre || "Producto reconocido";
+  showFeedback(input === fields.productCode ? "scan-feedback" : "allocation-feedback", `Producto reconocido: ${product.descripcion}`, false);
+  (input === fields.productCode ? fields.productQuantity : fields.allocationQuantity).focus();
+  cameraPausedUntil = Date.now() + 1200;
   return true;
 }
 
-async function submitReading() {
-  const button = document.querySelector("#submit-reading");
+function captureProduct() {
+  if (isDispatch()) { captureOutboundProduct(); return; }
+  const product = resolveProductInput(fields.productCode);
+  const quantity = Number(fields.productQuantity.value);
+  if (!product) { showFeedback("scan-feedback", "Escanea o escribe el código exacto de un producto de la guía.", true); fields.productCode.focus(); return; }
+  if (!Number.isSafeInteger(quantity) || quantity <= 0) { showFeedback("scan-feedback", "Ingresa una cantidad entera mayor que cero.", true); fields.productQuantity.focus(); return; }
+  const lote = additionalInfo.lot ? fields.productLot.value.trim() : "";
+  const serie = additionalInfo.serial ? fields.productSerial.value.trim() : "";
+  const existing = flow.captured.find(item => Number(item.idProducto) === Number(product.idProducto) &&
+    (item.lote || "") === lote && (item.serie || "") === serie);
+  if (existing) existing.cantidad = Number(existing.cantidad) + quantity;
+  else flow.captured.push({ idProducto: Number(product.idProducto), codigo: product.codigo, descripcion: product.descripcion, cantidad: quantity, lote, serie });
+  persistFlow(); renderAll(); clearProductFields();
+  showFeedback("scan-feedback", `Captura guardada temporalmente: ${product.codigo} · ${quantity} unidades.`, false);
+}
+
+function captureOutboundProduct() {
+  const product = resolveProductInput(fields.productCode);
+  const quantity = Number(fields.productQuantity.value);
+  const locationId = resolveLocationId("origin", fields.outboundSource.value);
+  if (!locationId) { showFeedback("scan-feedback", "Escanea o escribe una ubicación activa del almacén de origen.", true); fields.outboundSource.focus(); return; }
+  if (!product) { showFeedback("scan-feedback", "Escanea o escribe el código exacto de un producto de la guía.", true); fields.productCode.focus(); return; }
+  if (!Number.isSafeInteger(quantity) || quantity <= 0) { showFeedback("scan-feedback", "Ingresa una cantidad entera mayor que cero.", true); fields.productQuantity.focus(); return; }
+  const stock = stockRows.find(item => Number(item.idProducto) === Number(product.idProducto) &&
+    String(item.ubicacion || "").trim().toLocaleLowerCase("es") === fields.outboundSource.value.trim().toLocaleLowerCase("es"));
+  const alreadyCaptured = flow.captured.filter(item => Number(item.idProducto) === Number(product.idProducto) && Number(item.idUbicacionOrigen) === locationId)
+    .reduce((sum, item) => sum + Number(item.cantidad), 0);
+  const alreadySaved = history.filter(item => Number(item.idProducto) === Number(product.idProducto) && Number(item.idUbicacionOrigen) === locationId)
+    .reduce((sum, item) => sum + Number(item.cantidad), 0);
+  const available = Number(stock?.cantidadActual || 0) - Math.max(alreadyCaptured, alreadySaved);
+  if (!stock || quantity > available) {
+    showFeedback("scan-feedback", `La ubicación ${fields.outboundSource.value} tiene ${Math.max(available, 0)} unidades disponibles para extraer.`, true);
+    fields.productQuantity.focus(); return;
+  }
+  const existing = flow.captured.find(item => Number(item.idProducto) === Number(product.idProducto) && Number(item.idUbicacionOrigen) === locationId);
+  if (existing) existing.cantidad = Number(existing.cantidad) + quantity;
+  else flow.captured.push({ idProducto: Number(product.idProducto), codigo: product.codigo, descripcion: product.descripcion, cantidad: quantity,
+    idUbicacionOrigen: locationId, ubicacionOrigen: fields.outboundSource.value.trim(), cantidadStock: Number(stock.cantidadActual) });
+  persistFlow(); renderAll(); fields.productCode.value = ""; fields.productName.value = ""; fields.productQuantity.value = "";
+  fields.productCode.focus({ preventScroll: true });
+  showFeedback("scan-feedback", `Extracción temporal guardada: ${product.codigo} · ${quantity} unidades de ${fields.outboundSource.value}.`, false);
+}
+
+async function saveAllocation() {
+  if (isDispatch()) { await saveOutboundPlacement(); return; }
+  const button = byId("save-allocation");
   if (button.disabled) return;
-  const product = products.find(item => item.idProducto === Number(fields.product.value));
-  const quantity = Number(fields.quantity.value);
-  if (!product) { feedback("Selecciona el producto o escanea su código.", true); fields.code.focus(); return; }
-  if (!Number.isSafeInteger(quantity) || quantity < 0) { feedback("Ingresa una cantidad entera igual o mayor a cero.", true); fields.quantity.focus(); return; }
-  const needsOrigin = !document.querySelector("#origin-field").hidden;
-  const needsDestination = !document.querySelector("#destination-field").hidden;
-  if (needsOrigin && !fields.origin.value) { feedback("Selecciona la ubicación de origen.", true); fields.origin.focus(); return; }
-  if (needsDestination && !fields.destination.value) { feedback("Selecciona la ubicación destino.", true); fields.destination.focus(); return; }
+  const product = resolveProductInput(fields.allocationCode);
+  const quantity = Number(fields.allocationQuantity.value);
+  if (!product) { showFeedback("allocation-feedback", "Escanea un producto capturado en el paso anterior.", true); fields.allocationCode.focus(); return; }
+  if (!Number.isSafeInteger(quantity) || quantity <= 0) { showFeedback("allocation-feedback", "Ingresa una cantidad entera mayor que cero.", true); fields.allocationQuantity.focus(); return; }
+  const remaining = capturedTotal(product.idProducto) - totalFor(product.idProducto);
+  if (quantity > remaining) { showFeedback("allocation-feedback", `Solo quedan ${Math.max(remaining, 0)} unidades de ${product.codigo} por asignar.`, true); fields.allocationQuantity.focus(); return; }
+  const capture = nextPendingCapture(product.idProducto);
+  const batchRemaining = capture ? remainingForCapture(capture) : 0;
+  if (!capture || quantity > batchRemaining) {
+    showFeedback("allocation-feedback", `El lote/serie activo dispone de ${Math.max(batchRemaining, 0)} unidades. Registra esa cantidad para continuar con el siguiente registro adicional.`, true);
+    fields.allocationQuantity.focus(); return;
+  }
+  const needsOrigin = !byId("origin-field").hidden;
+  const needsDestination = !byId("destination-field").hidden;
   const originId = needsOrigin ? resolveLocationId("origin") : null;
   const destinationId = needsDestination ? resolveLocationId("destination") : null;
-  if (needsOrigin && !originId) { feedback("La ubicación de origen no coincide con una ubicación activa del almacén.", true); fields.origin.focus(); return; }
-  if (needsDestination && !destinationId) { feedback("La ubicación destino no coincide con una ubicación activa del almacén.", true); fields.destination.focus(); return; }
+  if (needsOrigin && !originId) { showFeedback("allocation-feedback", "La ubicación de origen no coincide con una ubicación activa del almacén.", true); fields.origin.focus(); return; }
+  if (needsDestination && !destinationId) { showFeedback("allocation-feedback", "La ubicación destino no coincide con una ubicación activa del almacén.", true); fields.destination.focus(); return; }
+
   button.disabled = true;
   try {
     const reading = await registerGuideReading(guideId, {
-      idProducto: product.idProducto, cantidad: quantity, codigoLeido: fields.code.value.trim() || product.codigo,
-      lote: fields.lot.value, serie: fields.serial.value, observacion: fields.observation.value,
-      idUbicacionOrigen: originId,
-      idUbicacionDestino: destinationId
+      idProducto: product.idProducto, cantidad: quantity, codigoLeido: product.codigo,
+      lote: capture.lote || null,
+      serie: capture.serie || null,
+      observacion: fields.observation.value.trim() || null,
+      idUbicacionOrigen: originId, idUbicacionDestino: destinationId
     });
-    history.unshift(reading);
-    renderProgress();
-    persistLocationDefaults();
-    feedback(`Lectura guardada. Total registrado de ${product.codigo}: ${totalFor(product.idProducto)}.`, false);
-    clearFields();
+    history.unshift(reading); renderAll(); clearAllocationFields();
+    showFeedback("allocation-feedback", `Distribución guardada para ${product.codigo}. Quedan ${capturedTotal(product.idProducto) - totalFor(product.idProducto)} unidades por ubicar.`, false);
   } catch (error) {
-    if (error.status === 401) { location.replace("/"); return; }
-    feedback(showApiError(error), true);
+    showApiFailure(showApiError(error), "allocation-feedback");
   } finally { button.disabled = false; }
 }
 
-function renderProgress() {
-  document.querySelector("#registration-progress-count").textContent = `${history.length} ${history.length === 1 ? "lectura guardada" : "lecturas guardadas"}`;
-  const list = document.querySelector("#product-progress"); list.replaceChildren();
-  let exact = true;
-  for (const line of guide.detalles || []) {
-    const product = products.find(item => Number(item.idProducto) === Number(line.idProducto));
-    const count = totalFor(line.idProducto); const expected = Number(line.cantidadEsperada);
-    exact &&= count === expected;
-    const row = document.createElement("div"); row.className = "product-progress-row";
-    const name = document.createElement("strong"); name.textContent = product ? `${product.codigo} · ${product.descripcion}` : `Producto #${line.idProducto}`;
-    const totals = document.createElement("span"); totals.textContent = `${count} / ${expected} unidades`;
-    const track = document.createElement("span"); track.className = "product-progress-track"; track.setAttribute("aria-hidden", "true");
-    const fill = document.createElement("span"); fill.style.width = `${expected > 0 ? Math.min(count / expected * 100, 100) : count > 0 ? 100 : 0}%`; track.append(fill);
-    row.append(name, totals, track); list.append(row);
-  }
-  document.querySelector("#registration-progress-detail").textContent = exact ? "Las cantidades coinciden con lo esperado." : "Puedes seguir leyendo y revisar diferencias al finalizar.";
-}
+async function saveOutboundPlacement() {
+  const button = byId("save-allocation");
+  if (button.disabled) return;
+  const product = resolveProductInput(fields.allocationCode);
+  const quantity = Number(fields.allocationQuantity.value);
+  const destinationId = resolveLocationId("destination");
+  if (!destinationId) { showFeedback("allocation-feedback", "La ubicación de despacho debe estar activa en el almacén de origen.", true); fields.destination.focus(); return; }
+  if (!product) { showFeedback("allocation-feedback", "Escanea un producto extraído en el paso anterior.", true); fields.allocationCode.focus(); return; }
+  if (!Number.isSafeInteger(quantity) || quantity <= 0) { showFeedback("allocation-feedback", "Ingresa una cantidad entera mayor que cero.", true); fields.allocationQuantity.focus(); return; }
+  const pending = flow.captured.filter(item => Number(item.idProducto) === Number(product.idProducto))
+    .map(item => ({ item, remaining: Number(item.cantidad) - history.filter(reading => Number(reading.idProducto) === Number(item.idProducto) && Number(reading.idUbicacionOrigen) === Number(item.idUbicacionOrigen)).reduce((sum, reading) => sum + Number(reading.cantidad), 0) }))
+    .filter(entry => entry.remaining > 0);
+  const available = pending.reduce((sum, entry) => sum + entry.remaining, 0);
+  if (quantity > available) { showFeedback("allocation-feedback", `Quedan ${available} unidades extraídas de ${product.codigo} por depositar.`, true); fields.allocationQuantity.focus(); return; }
 
-function totalFor(productId) { return history.reduce((sum, item) => sum + (Number(item.idProducto) === Number(productId) ? Number(item.cantidad) : 0), 0); }
-
-async function openHistory() {
-  const dialog = document.querySelector("#history-dialog");
-  const content = document.querySelector("#history-content");
-  content.textContent = "Cargando historial…";
-  dialog.showModal();
+  button.disabled = true;
+  let remaining = quantity;
   try {
-    history = await getGuideReadingHistory(guideId); renderProgress(); renderHistory(content);
-  } catch (error) { content.textContent = showApiError(error); }
+    for (const entry of pending) {
+      if (remaining <= 0) break;
+      const part = Math.min(remaining, entry.remaining);
+      const reading = await registerGuideReading(guideId, {
+        idProducto: product.idProducto, cantidad: part, codigoLeido: product.codigo,
+        observacion: fields.observation.value.trim() || null,
+        idUbicacionOrigen: Number(entry.item.idUbicacionOrigen), idUbicacionDestino: destinationId
+      });
+      history.unshift(reading);
+      remaining -= part;
+    }
+    renderAll(); clearAllocationFields();
+    showFeedback("allocation-feedback", `Despacho guardado para ${product.codigo}.`, false);
+  } catch (error) {
+    try { history = await getGuideReadingHistory(guideId); renderAll(); } catch { /* Conserva el error inicial y permite reintentar. */ }
+    showApiFailure(showApiError(error), "allocation-feedback");
+  } finally { button.disabled = false; }
 }
 
-function renderHistory(content) {
-  content.replaceChildren();
-  if (!history.length) { content.textContent = "Todavía no hay lecturas guardadas."; return; }
-  const list = document.createElement("ol"); list.className = "history-list";
-  for (const item of history) {
-    const row = document.createElement("li");
-    const heading = document.createElement("strong"); heading.textContent = `${item.codigoProducto} · ${item.cantidad} unidades`;
-    const detail = document.createElement("span"); detail.textContent = [item.codigoLeido, item.lote && `Lote ${item.lote}`, item.serie && `Serie ${item.serie}`, item.ubicacionOrigen && `Origen ${item.ubicacionOrigen}`, item.ubicacionDestino && `Destino ${item.ubicacionDestino}`, formatScheduledAt(item.fechaRegistroUtc)].filter(Boolean).join(" · ");
-    row.append(heading, detail); list.append(row);
+function goToStep(step, persist = true) {
+  if (step > 1 && !flow.captured.length) { showFeedback("scan-feedback", "Registra al menos un producto antes de continuar.", true); return; }
+  if (step > 2 && !history.length) { showFeedback("allocation-feedback", "Registra al menos una ubicación antes de continuar.", true); return; }
+  if (isDispatch() && step > 2 && (guide.detalles || []).some(line => capturedTotal(line.idProducto) <= 0 || capturedTotal(line.idProducto) !== totalFor(line.idProducto))) {
+    showApiFailure("Para continuar, extrae cada producto de la guía y deposita exactamente la misma cantidad en ubicaciones de despacho.", "allocation-feedback"); return;
   }
-  content.append(list);
+  flow.step = Math.max(1, Math.min(3, step));
+  if (persist) persistFlow();
+  for (let index = 1; index <= 3; index++) {
+    byId(["step-products", "step-locations", "step-consolidated"][index - 1]).hidden = index !== flow.step;
+    const button = document.querySelector(`[data-step-go="${index}"]`);
+    button.classList.toggle("is-current", index === flow.step);
+    button.classList.toggle("is-complete", index < flow.step);
+    button.setAttribute("aria-current", index === flow.step ? "step" : "false");
+  }
+  if (flow.step === 1) { activeCodeField = fields.productCode; (isDispatch() ? fields.outboundSource : fields.productCode).focus({ preventScroll: true }); }
+  if (flow.step === 2) { activeCodeField = fields.allocationCode; fields.allocationCode.focus({ preventScroll: true }); }
+  if (flow.step === 3) { renderConsolidated(); }
+  lastCameraCode = null; cameraMissFrames = 0;
+  stopCamera();
+}
+
+function renderAll() {
+  renderCapturedProducts(); renderAllocationProgress(); renderConsolidated(); renderProgress();
+}
+
+function renderCapturedProducts() {
+  const host = byId("captured-products"); host.replaceChildren();
+  if (!flow.captured.length) { host.textContent = "Todavía no se capturan productos."; return; }
+  if (isDispatch()) {
+    const table = createTable(["Código", "Producto", "Ubicación de origen", "Cantidad extraída", "Stock en ubicación", "Acción"]);
+    flow.captured.forEach((item, index) => {
+      const row = table.body.insertRow();
+      row.insertCell().textContent = item.codigo;
+      row.insertCell().textContent = item.descripcion;
+      row.insertCell().textContent = item.ubicacionOrigen || locations.origin.find(location => Number(location.idUbicacion) === Number(item.idUbicacionOrigen))?.codigo || "—";
+      row.insertCell().textContent = String(item.cantidad);
+      row.insertCell().textContent = String(item.cantidadStock ?? "—");
+      const action = row.insertCell();
+      const remove = document.createElement("button"); remove.type = "button"; remove.className = "btn btn-sm btn-outline-danger"; remove.textContent = "Quitar";
+      remove.disabled = history.some(reading => Number(reading.idProducto) === Number(item.idProducto) && Number(reading.idUbicacionOrigen) === Number(item.idUbicacionOrigen));
+      remove.title = remove.disabled ? "Primero elimina las cantidades depositadas" : "Quitar extracción temporal";
+      remove.addEventListener("click", () => { flow.captured.splice(index, 1); persistFlow(); renderAll(); }); action.append(remove);
+    });
+    host.append(table.element); return;
+  }
+  const metadataColumns = [additionalInfo.lot && "Lote", additionalInfo.serial && "Serie"].filter(Boolean);
+  const table = createTable(["Producto", "Cantidad capturada", ...metadataColumns, "Acción"]);
+  flow.captured.forEach((item, index) => {
+    const row = table.body.insertRow();
+    row.insertCell().textContent = `${item.codigo} · ${item.descripcion}`;
+    row.insertCell().textContent = String(item.cantidad);
+    if (additionalInfo.lot) row.insertCell().textContent = item.lote || "—";
+    if (additionalInfo.serial) row.insertCell().textContent = item.serie || "—";
+    const action = row.insertCell();
+    const decrement = document.createElement("button"); decrement.type = "button"; decrement.className = "btn btn-sm btn-outline-secondary me-1"; decrement.textContent = "−";
+    const allocated = allocatedForCapture(item);
+    decrement.disabled = Number(item.cantidad) - 1 < allocated;
+    decrement.title = "Restar una unidad de la captura";
+    decrement.addEventListener("click", () => { item.cantidad--; if (item.cantidad <= 0) flow.captured.splice(index, 1); persistFlow(); renderAll(); });
+    const remove = document.createElement("button"); remove.type = "button"; remove.className = "btn btn-sm btn-outline-secondary"; remove.textContent = "Quitar";
+    remove.disabled = allocated > 0;
+    remove.title = remove.disabled ? "Primero elimina o corrige las unidades distribuidas" : "Quitar captura temporal";
+    remove.addEventListener("click", () => { flow.captured.splice(index, 1); persistFlow(); renderAll(); }); action.append(decrement, remove);
+  });
+  host.append(table.element);
+}
+
+function renderAllocationProgress() {
+  const host = byId("allocation-progress"); host.replaceChildren();
+  const ids = new Set([...(guide.detalles || []).map(line => Number(line.idProducto)), ...flow.captured.map(item => Number(item.idProducto))]);
+  const table = createTable(isDispatch() ? ["Producto", "Extraído", "Despachado", "Pendiente"] : ["Producto", "Capturado", "Ubicado", "Pendiente"]);
+  for (const id of ids) {
+    const product = productById(id); const captured = capturedTotal(id); const allocated = totalFor(id); const row = table.body.insertRow();
+    row.insertCell().textContent = product ? `${product.codigo} · ${product.descripcion}` : `Producto #${id}`;
+    row.insertCell().textContent = String(captured); row.insertCell().textContent = String(allocated); row.insertCell().textContent = String(Math.max(captured - allocated, 0));
+  }
+  host.append(table.element);
+}
+
+function renderConsolidated() {
+  if (!guide) return;
+  const summary = byId("consolidated-summary"); summary.replaceChildren();
+  const summaryTable = createTable(["Producto", "Esperado", "Capturado", "Distribuido", "Diferencia"]);
+  for (const line of guide.detalles || []) {
+    const product = productById(line.idProducto); const captured = capturedTotal(line.idProducto); const placed = totalFor(line.idProducto); const expected = Number(line.cantidadEsperada); const row = summaryTable.body.insertRow();
+    row.insertCell().textContent = product ? `${product.codigo} · ${product.descripcion}` : `Producto #${line.idProducto}`;
+    row.insertCell().textContent = String(expected); row.insertCell().textContent = String(captured); row.insertCell().textContent = String(placed); row.insertCell().textContent = String(placed - expected);
+  }
+  summary.append(summaryTable.element);
+
+  const readings = byId("consolidated-readings"); readings.replaceChildren();
+  if (!history.length) { readings.textContent = "Todavía no hay distribuciones registradas."; return; }
+  if (isDispatch()) {
+    const detailTable = createTable(["CodigoProd", "Nombre", "UbicaciónOrigen", "Almacén Origen", "Cantidad destinada", "Ubicación de despacho", "Acción"]);
+    for (const item of [...history].reverse()) {
+      const row = detailTable.body.insertRow();
+      row.insertCell().textContent = item.codigoProducto;
+      row.insertCell().textContent = item.descripcionProducto || "";
+      row.insertCell().textContent = item.ubicacionOrigen || "—";
+      row.insertCell().textContent = lookupData.warehouses.get(Number(guide.idAlmacenOrigen)) || "—";
+      row.insertCell().textContent = String(item.cantidad);
+      row.insertCell().textContent = item.ubicacionDestino || "—";
+      const action = row.insertCell();
+      const remove = document.createElement("button"); remove.type = "button"; remove.className = "btn btn-sm btn-outline-danger"; remove.textContent = "Quitar";
+      remove.dataset.removeReading = String(item.idLecturaGuia); remove.setAttribute("aria-label", `Quitar despacho de ${item.codigoProducto}`); action.append(remove);
+    }
+    readings.append(detailTable.element); return;
+  }
+  const detailTable = createTable(["Producto", "Cantidad", "Ubicación de origen", "Ubicación destino", "Lote", "Serie", "Acción"]);
+  for (const item of [...history].reverse()) {
+    const row = detailTable.body.insertRow();
+    row.insertCell().textContent = `${item.codigoProducto} · ${item.descripcionProducto || ""}`;
+    row.insertCell().textContent = String(item.cantidad);
+    row.insertCell().textContent = item.ubicacionOrigen || "—";
+    row.insertCell().textContent = item.ubicacionDestino || "—";
+    row.insertCell().textContent = item.lote || "—"; row.insertCell().textContent = item.serie || "—";
+    const action = row.insertCell();
+    const remove = document.createElement("button"); remove.type = "button"; remove.className = "btn btn-sm btn-outline-danger"; remove.textContent = "Quitar";
+    remove.dataset.removeReading = String(item.idLecturaGuia); remove.setAttribute("aria-label", `Quitar lectura de ${item.codigoProducto}`); action.append(remove);
+  }
+  readings.append(detailTable.element);
+}
+
+function renderProgress() {
+  const captured = flow.captured.reduce((sum, item) => sum + Number(item.cantidad), 0);
+  const allocated = history.reduce((sum, item) => sum + Number(item.cantidad), 0);
+  byId("registration-progress-count").textContent = `${flow.captured.length} capturas · ${allocated} ubicadas`;
+  byId("registration-progress-detail").textContent = `${captured} unidades capturadas · Paso ${flow.step} de 3`;
+}
+
+function createTable(headers) {
+  const element = document.createElement("table"); element.className = "table table-sm align-middle guide-flow-table";
+  const head = element.createTHead().insertRow();
+  for (const label of headers) { const cell = document.createElement("th"); cell.scope = "col"; cell.textContent = label; head.append(cell); }
+  return { element, body: element.createTBody() };
+}
+
+function capturedTotal(productId) { return flow.captured.reduce((sum, item) => sum + (Number(item.idProducto) === Number(productId) ? Number(item.cantidad) : 0), 0); }
+function totalFor(productId) { return history.reduce((sum, item) => sum + (Number(item.idProducto) === Number(productId) ? Number(item.cantidad) : 0), 0); }
+function allocatedForCapture(capture) {
+  if (isDispatch()) return history.reduce((sum, item) => Number(item.idProducto) === Number(capture.idProducto) &&
+    Number(item.idUbicacionOrigen) === Number(capture.idUbicacionOrigen) ? sum + Number(item.cantidad) : sum, 0);
+  return history.reduce((sum, item) => Number(item.idProducto) === Number(capture.idProducto) &&
+    (item.lote || "") === (capture.lote || "") && (item.serie || "") === (capture.serie || "")
+    ? sum + Number(item.cantidad) : sum, 0);
+}
+function remainingForCapture(capture) { return Math.max(Number(capture.cantidad) - allocatedForCapture(capture), 0); }
+function nextPendingCapture(productId) { return flow.captured.find(item => Number(item.idProducto) === Number(productId) && remainingForCapture(item) > 0); }
+function productById(productId) { return products.find(item => Number(item.idProducto) === Number(productId)); }
+
+async function refreshHistory() {
+  try { history = await getGuideReadingHistory(guideId); renderAll(); showFeedback("consolidated-feedback", "Consolidado actualizado.", false); }
+  catch (error) { showApiFailure(showApiError(error), "consolidated-feedback"); }
+}
+
+async function removeAllocation(event) {
+  const button = event.target.closest("[data-remove-reading]");
+  if (!button) return;
+  const readingId = Number(button.dataset.removeReading);
+  const reading = history.find(item => Number(item.idLecturaGuia) === readingId);
+  if (!reading || !window.confirm(`¿Quitar la distribución de ${reading.codigoProducto}, ${reading.cantidad} unidades?`)) return;
+  button.disabled = true;
+  try {
+    await deleteGuideReading(guideId, readingId);
+    history = await getGuideReadingHistory(guideId);
+    renderAll();
+    showFeedback("consolidated-feedback", "Distribución quitada. Puedes volver a capturarla con los datos correctos.", false);
+  } catch (error) {
+    showApiFailure(showApiError(error), "consolidated-feedback");
+  } finally { button.disabled = false; }
+}
+
+function clearProductFields() {
+  fields.productCode.value = ""; fields.productName.value = ""; fields.productQuantity.value = "";
+  fields.productLot.value = ""; fields.productSerial.value = ""; fields.productExpiry.value = "";
+  fields.productCode.focus({ preventScroll: true });
+}
+function clearAllocationFields() {
+  fields.allocationCode.value = ""; fields.allocationProduct.value = ""; fields.allocationQuantity.value = "";
+  fields.observation.value = "";
+  fields.allocationCode.focus({ preventScroll: true });
+}
+function focusAfterLocations() {
+  fields.observation.focus();
+}
+function resolveLocationId(name, rawValue = fields[name].value) {
+  const value = rawValue.trim().toLocaleLowerCase("es");
+  return locations[name].find(item => item.codigo.trim().toLocaleLowerCase("es") === value || String(item.idUbicacion) === value)?.idUbicacion || null;
+}
+function showFeedback(id, text, isError) { const target = byId(id); target.textContent = text; target.dataset.kind = isError ? "error" : "success"; }
+function showError(text) { message.textContent = text; message.className = "alert alert-danger"; byId("registration-title").textContent = "No se pudo cargar la guía"; showApiFailure(text); }
+function showApiFailure(text, feedbackId = null) {
+  if (feedbackId) showFeedback(feedbackId, text, true);
+  if (window.Swal?.fire) { void window.Swal.fire({ icon: "error", title: "No se pudo completar", text }); return; }
+  byId("api-error-text").textContent = text;
+  if (!byId("api-error-dialog").open) byId("api-error-dialog").showModal();
 }
 
 function openFinalizeConfirmation() {
-  const summary = document.querySelector("#finalize-summary");
-  summary.replaceChildren();
-  for (const line of guide.detalles || []) {
-    const product = products.find(item => Number(item.idProducto) === Number(line.idProducto));
-    const counted = totalFor(line.idProducto); const expected = Number(line.cantidadEsperada);
-    const row = document.createElement("p");
-    row.textContent = `${product?.codigo || `Producto #${line.idProducto}`}: esperado ${expected}, leído ${counted}, diferencia ${counted - expected}`;
-    summary.append(row);
+  const summary = byId("finalize-summary"); summary.replaceChildren();
+  const missing = (guide.detalles || []).filter(line => totalFor(line.idProducto) === 0);
+  if (missing.length) { showFeedback("consolidated-feedback", "Registra una distribución para cada producto de la guía antes de finalizar.", true); return; }
+  if (isDispatch() && (guide.detalles || []).some(line => capturedTotal(line.idProducto) !== totalFor(line.idProducto))) {
+    showApiFailure("La cantidad depositada debe coincidir exactamente con la cantidad extraída para cada producto.", "consolidated-feedback"); return;
   }
-  document.querySelector("#finalize-dialog").showModal();
+  const unassigned = flow.captured.filter(item => capturedTotal(item.idProducto) !== totalFor(item.idProducto));
+  if (unassigned.length) { showFeedback("consolidated-feedback", "Distribuye toda la cantidad capturada entre las ubicaciones antes de finalizar.", true); return; }
+  for (const line of guide.detalles || []) {
+    const product = productById(line.idProducto); const placed = totalFor(line.idProducto); const expected = Number(line.cantidadEsperada);
+    const row = document.createElement("p"); row.textContent = `${product?.codigo || `Producto #${line.idProducto}`}: esperado ${expected}, distribuido ${placed}, diferencia ${placed - expected}`; summary.append(row);
+  }
+  byId("finalize-dialog").showModal();
 }
 
 async function finalize() {
-  const button = document.querySelector("#finalize-confirm");
-  button.disabled = true;
+  const button = byId("finalize-confirm"); button.disabled = true;
   try {
     await finalizeGuideReadings(guideId);
+    localStorage.removeItem(flowKey);
     location.replace(`/modules/operaciones/guias/detalle.html?id=${encodeURIComponent(guideId)}`);
   } catch (error) {
-    if (error.status === 401) { location.replace("/"); return; }
-    document.querySelector("#finalize-dialog").close(); feedback(showApiError(error), true);
+    byId("finalize-dialog").close(); showApiFailure(showApiError(error), "consolidated-feedback");
   } finally { button.disabled = false; }
 }
 
 async function startCamera() {
   if (!("BarcodeDetector" in window) || !navigator.mediaDevices?.getUserMedia) {
-    document.querySelector("#camera-status").textContent = "Este navegador no ofrece lectura de códigos con cámara. Puedes usar PDA o escribir el código.";
-    return;
+    byId("camera-status").textContent = "Este navegador no ofrece lectura con cámara. Puedes usar PDA o escribir el código."; return;
   }
   try {
+    lastCameraCode = null; cameraMissFrames = 0;
     const supported = await BarcodeDetector.getSupportedFormats();
     const formats = ["qr_code", "code_128", "code_39", "ean_13", "ean_8", "upc_a", "upc_e", "itf", "codabar"].filter(value => supported.includes(value));
     if (!formats.length) throw new Error("El navegador no reconoce formatos de códigos compatibles.");
     detector = new BarcodeDetector({ formats });
     cameraStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: "environment" }, width: { ideal: 640 }, height: { ideal: 480 } }, audio: false });
-    const video = document.querySelector("#camera-preview"); video.srcObject = cameraStream; video.hidden = false;
-    await video.play();
-    document.querySelector("#camera-start").hidden = true;
-    document.querySelector("#camera-stop").hidden = false;
-    document.querySelector("#camera-status").textContent = "Cámara activa. Enfoca el código de un producto de la guía.";
-    scanFrame();
-  } catch (error) {
-    stopCamera();
-    document.querySelector("#camera-status").textContent = error.name === "NotAllowedError" ? "Permite el acceso a la cámara para escanear." : error.message || "No se pudo iniciar la cámara.";
-  }
+    const video = byId("camera-preview"); video.srcObject = cameraStream; video.hidden = false; await video.play();
+    byId("camera-start").hidden = true; byId("camera-stop").hidden = false;
+    byId("camera-status").textContent = "Cámara activa. Enfoca el código que quieras registrar."; scanFrame();
+  } catch (error) { stopCamera(); byId("camera-status").textContent = error.name === "NotAllowedError" ? "Permite el acceso a la cámara para escanear." : error.message || "No se pudo iniciar la cámara."; }
 }
 
 async function scanFrame() {
-  const video = document.querySelector("#camera-preview");
-  if (!cameraStream || document.hidden) return;
+  const video = byId("camera-preview"); if (!cameraStream || document.hidden) return;
   try {
     if (!detecting && video.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA && Date.now() >= cameraPausedUntil) {
-      detecting = true;
-      const matches = await detector.detect(video);
-      if (matches[0]?.rawValue) {
-        const value = matches[0].rawValue;
-        cameraMissFrames = 0;
-        if (value !== lastCameraCode) { lastCameraCode = value; processScannedCode(value); }
-      } else if (++cameraMissFrames >= 5) lastCameraCode = null;
+      detecting = true; const matches = await detector.detect(video);
+      if (matches[0]?.rawValue) { const value = matches[0].rawValue; cameraMissFrames = 0; if (value !== lastCameraCode) { lastCameraCode = value; processScannedCode(value); } }
+      else if (++cameraMissFrames >= 5) lastCameraCode = null;
     }
   } catch { /* Un frame sin lectura no interrumpe el escaneo. */ }
-  finally {
-    detecting = false;
-    if (cameraStream && !document.hidden) cameraTimer = window.setTimeout(scanFrame, 220);
-  }
+  finally { detecting = false; if (cameraStream && !document.hidden) cameraTimer = window.setTimeout(scanFrame, 250); }
 }
 
 function stopCamera() {
-  if (cameraTimer) window.clearTimeout(cameraTimer);
-  cameraTimer = undefined;
+  if (cameraTimer) window.clearTimeout(cameraTimer); cameraTimer = undefined;
   cameraStream?.getTracks().forEach(track => track.stop()); cameraStream = undefined;
-  const video = document.querySelector("#camera-preview");
-  if (video) { video.pause(); video.srcObject = null; video.hidden = true; }
-  const start = document.querySelector("#camera-start"); const stop = document.querySelector("#camera-stop");
-  if (start && mode === "camera") start.hidden = false;
-  if (stop) stop.hidden = true;
-}
-
-function clearFields() {
-  fields.code.value = ""; fields.product.value = ""; fields.quantity.value = "";
-  fields.lot.value = ""; fields.serial.value = ""; fields.observation.value = "";
-  feedback("Campos de lectura limpiados. Las ubicaciones bloqueadas se conservan.", false);
-  fields.code.focus({ preventScroll: true });
-}
-
-function focusNext(current) { if (current === "product") fields.quantity.focus(); }
-function feedback(text, isError) {
-  const target = document.querySelector("#scan-feedback"); target.textContent = text; target.dataset.kind = isError ? "error" : "success";
-}
-function showError(text) { message.textContent = text; message.className = "alert alert-danger"; document.querySelector("#registration-title").textContent = "No se pudo cargar el registro"; }
-
-function restoreLocationDefaults() {
-  const last = history.find(item => item.idUbicacionOrigen || item.idUbicacionDestino);
-  if (last?.ubicacionOrigen) fields.origin.value = last.ubicacionOrigen;
-  if (last?.ubicacionDestino) fields.destination.value = last.ubicacionDestino;
-  updateLocationLock("origin"); updateLocationLock("destination");
-}
-function persistLocationDefaults() {
-  const current = history[0];
-  if (current?.idUbicacionOrigen) fields.origin.value = locations.origin.find(item => item.idUbicacion === current.idUbicacionOrigen)?.codigo || current.ubicacionOrigen || "";
-  if (current?.idUbicacionDestino) fields.destination.value = locations.destination.find(item => item.idUbicacion === current.idUbicacionDestino)?.codigo || current.ubicacionDestino || "";
-  updateLocationLock("origin"); updateLocationLock("destination");
-}
-function toggleLocationLock(name) { locationLocked[name] = !locationLocked[name]; updateLocationLock(name); }
-function updateLocationLock(name) {
-  const field = fields[name]; const button = document.querySelector(`#${name}-lock`);
-  const hasValue = Boolean(field.value);
-  field.disabled = locationLocked[name] && hasValue;
-  button.textContent = locationLocked[name] ? "🔒" : "🔓";
-  button.setAttribute("aria-pressed", String(locationLocked[name]));
-  button.title = locationLocked[name] ? "Desbloquear ubicación" : "Bloquear ubicación";
-}
-function resolveLocationId(name) {
-  const value = fields[name].value.trim().toLowerCase();
-  return locations[name].find(item => item.codigo.trim().toLowerCase() === value || String(item.idUbicacion) === value)?.idUbicacion || null;
+  const video = byId("camera-preview"); if (video) { video.pause(); video.srcObject = null; video.hidden = true; }
+  byId("camera-start").hidden = mode !== "camera"; byId("camera-stop").hidden = true;
 }
 
 function toggleNote() {
-  const note = document.querySelector("#guide-note"); const opening = note.getAttribute("aria-hidden") !== "false";
-  note.setAttribute("aria-hidden", String(!opening));
-  document.querySelector("#guide-note-toggle").setAttribute("aria-expanded", String(opening));
+  const note = byId("guide-note"); const opening = note.getAttribute("aria-hidden") !== "false";
+  note.setAttribute("aria-hidden", String(!opening)); byId("guide-note-toggle").setAttribute("aria-expanded", String(opening));
 }
-function closeNote() {
-  document.querySelector("#guide-note").setAttribute("aria-hidden", "true");
-  document.querySelector("#guide-note-toggle").setAttribute("aria-expanded", "false");
-}
+function closeNote() { byId("guide-note").setAttribute("aria-hidden", "true"); byId("guide-note-toggle").setAttribute("aria-expanded", "false"); }

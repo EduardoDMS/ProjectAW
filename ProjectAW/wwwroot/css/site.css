@@ -168,7 +168,9 @@ a:hover {
 	font-weight: 700;
 }
 .sidebar-link svg,
-.sidebar-group-toggle > svg:first-child {
+.sidebar-group-toggle > svg:first-child,
+.sidebar-link > .ti,
+.sidebar-group-toggle > .ti:first-child {
 	width: 19px;
 	height: 19px;
 	flex: 0 0 19px;
@@ -176,6 +178,8 @@ a:hover {
 	stroke-linecap: round;
 	stroke-linejoin: round;
 	stroke-width: 1.55;
+	font-size: 19px;
+	line-height: 1;
 }
 .sidebar-group-toggle {
 	margin-top: 12px;
@@ -191,6 +195,8 @@ a:hover {
 	stroke-linejoin: round;
 	stroke-width: 1.7;
 	transition: transform 0.2s ease;
+	font-size: 15px;
+	line-height: 1;
 }
 .sidebar-group-toggle[aria-expanded="false"] .sidebar-chevron {
 	transform: rotate(-90deg);
@@ -342,13 +348,16 @@ a:hover {
 	border-radius: 12px;
 	box-shadow: 0 7px 15px rgba(0, 69, 150, 0.2);
 }
-.brand-mark svg {
+.brand-mark svg,
+.brand-mark .ti {
 	width: 22px;
 	height: 22px;
 	stroke: currentColor;
 	stroke-linecap: round;
 	stroke-linejoin: round;
 	stroke-width: 1.5;
+	font-size: 22px;
+	line-height: 1;
 }
 .app-account {
 	position: relative;
@@ -1334,13 +1343,16 @@ a:hover {
 	border-color: #98b5d8;
 	box-shadow: 0 0 0 3px rgba(0, 69, 150, 0.07);
 }
-.guide-search svg {
+.guide-search svg,
+.guide-search .ti {
 	width: 17px;
 	height: 17px;
 	flex: 0 0 17px;
 	stroke: #91a0b2;
 	stroke-linecap: round;
 	stroke-width: 1.5;
+	font-size: 17px;
+	line-height: 1;
 }
 .guide-search input {
 	width: 100%;

@@ -4,5 +4,7 @@ namespace ProjectAW.Modules.Stocks.Services;
 
 public interface IStockService
 {
-    Task<IReadOnlyList<StockAlmacenDto>> ListarAsync(int? idAlmacen, int? idProducto, CancellationToken ct = default);
+    Task<IReadOnlyList<StockAlmacenDto>> ListarAsync(int? idAlmacen, int? idProducto, string? codigoUbicacion, CancellationToken ct = default);
+    Task<IReadOnlyDictionary<int, long>> ObtenerDisponibilidadAsync(
+        int idAlmacen, IReadOnlyCollection<int> idsProductos, CancellationToken ct = default);
 }

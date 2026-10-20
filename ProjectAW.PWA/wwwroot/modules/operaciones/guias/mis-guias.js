@@ -1,4 +1,4 @@
-import { logout } from "/shared/js/session.js";
+import "/shared/js/navigation.js";
 import { formatScheduledAt, getMyGuides, OPERATIONS, showApiError } from "/modules/operaciones/guias.js";
 
 const section = document.querySelector(".my-guides-page");
@@ -9,11 +9,6 @@ const tabs = [...document.querySelectorAll("[role='tab']")];
 let selectedStatus = 2;
 
 document.querySelector("#current-year").textContent = String(new Date().getFullYear());
-document.querySelector("#logout-button").addEventListener("click", event => {
-  event.currentTarget.disabled = true;
-  void logout(message);
-});
-
 for (const tab of tabs) {
   tab.addEventListener("click", () => {
     selectedStatus = Number(tab.dataset.status);

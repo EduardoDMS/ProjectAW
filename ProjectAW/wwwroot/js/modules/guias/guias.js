@@ -33,12 +33,15 @@ document.addEventListener("DOMContentLoaded", () => {
 		window.bootstrap?.Modal.getOrCreateInstance(detailElement);
 	let guides = [];
 	let products = [];
+	let productsWithOriginStock = null;
+	let stockLookupVersion = 0;
 	let warehouses = [];
 	let clients = [];
 	let suppliers = [];
 	let lookupsReady = false;
 	let lookupWarning = null;
 	let editingId = null;
+	let loadingGuides = false;
 
 	// Envía fetch a los endpoints de Guías y convierte respuestas de error en mensajes.
 	async function fetchApi(url, options = {}) {
@@ -360,9 +363,11 @@ document.addEventListener("DOMContentLoaded", () => {
 	}
 
 	// Consulta GET /api/guias con los filtros elegidos y actualiza listado y resumen.
-	async function loadGuides() {
+	async function loadGuides(silent = false) {
+		if (loadingGuides) return;
+		loadingGuides = true;
 		clearAlert();
-		rows.innerHTML =
+		if (!silent) rows.innerHTML =
 			'<tr><td class="guide-empty" colspan="6">Consultando guías...</td></tr>';
 		const params = new URLSearchParams();
 		if (operationFilter.value)
@@ -383,6 +388,8 @@ document.addEventListener("DOMContentLoaded", () => {
 			updateSummary();
 			select("#guide-count").textContent = "";
 			window.showAppError(error.message || "No se pudieron consultar las guías.");
+		} finally {
+			loadingGuides = false;
 		}
 	}
 
@@ -413,6 +420,63 @@ document.addEventListener("DOMContentLoaded", () => {
 		}
 	}
 
+	// En salidas y traslados limita el catálogo al stock disponible en el origen.
+	async function refreshProductChoices() {
+		const operation = Number(select("#guide-operation").value);
+		const originId = Number(select("#guide-origin").value);
+		const requiresOriginStock = operation === 2 || operation === 3;
+		const version = ++stockLookupVersion;
+
+		if (!requiresOriginStock) {
+			productsWithOriginStock = null;
+			updateProductSelects();
+			return;
+		}
+
+		productsWithOriginStock = new Set();
+		updateProductSelects();
+		if (!originId) return;
+
+		try {
+			const stock = await fetchApi(`/api/stocks?idAlmacen=${encodeURIComponent(originId)}`);
+			if (version !== stockLookupVersion) return;
+			productsWithOriginStock = new Set(
+				stock.filter((item) => Number(item.cantidadActual) > 0)
+					.map((item) => Number(item.idProducto)),
+			);
+			updateProductSelects();
+		} catch (error) {
+			if (version !== stockLookupVersion) return;
+			productsWithOriginStock = new Set();
+			updateProductSelects();
+			window.showAppError(error.message || "No se pudo consultar el stock del almacén de origen.", "Stock no disponible");
+		}
+	}
+
+	// Actualiza las líneas preservando la selección si el producto sigue disponible.
+	function updateProductSelects() {
+		const choices = productsWithOriginStock === null
+			? products
+			: products.filter((item) => productsWithOriginStock.has(Number(item.idProducto)));
+		for (const product of document.querySelectorAll(".guide-line__product")) {
+			const selectedId = product.value;
+			product.replaceChildren(new Option(
+				productsWithOriginStock === null || !select("#guide-origin").value
+					? "Selecciona un producto"
+					: choices.length ? "Selecciona un producto con stock" : "Sin productos con stock en el origen",
+				"",
+			));
+			for (const item of choices) {
+				product.append(new Option(
+					`${item.codigo} · ${item.descripcion}${item.activo === false ? " (inactivo)" : ""}`,
+					String(item.idProducto),
+				));
+			}
+			if (choices.some((item) => Number(item.idProducto) === Number(selectedId)))
+				product.value = selectedId;
+		}
+	}
+
 	// Agrega una línea de producto y cantidad al formulario, evitando productos repetidos.
 	function addLine(productId = "", quantity = "") {
 		const line = document.createElement("div");
@@ -421,7 +485,10 @@ document.addEventListener("DOMContentLoaded", () => {
 		product.className = "form-select guide-line__product";
 		product.required = true;
 		product.append(new Option("Selecciona un producto", ""));
-		for (const item of products)
+		const choices = productsWithOriginStock === null
+			? products
+			: products.filter((item) => productsWithOriginStock.has(Number(item.idProducto)));
+		for (const item of choices)
 			product.append(
 				new Option(
 					`${item.codigo} · ${item.descripcion}${item.activo === false ? " (inactivo)" : ""}`,
@@ -430,7 +497,7 @@ document.addEventListener("DOMContentLoaded", () => {
 			);
 		if (
 			productId &&
-			!products.some(
+			!choices.some(
 				(item) => Number(item.idProducto) === Number(productId),
 			)
 		) {
@@ -516,6 +583,8 @@ document.addEventListener("DOMContentLoaded", () => {
 	// Limpia el modal y prepara una guía nueva con fecha de hoy y una línea inicial.
 	function resetForm() {
 		editingId = null;
+		productsWithOriginStock = null;
+		stockLookupVersion++;
 		form.reset();
 		select("#guide-editor-title").textContent = "Registrar guía";
 		select("#guide-editor-hint").textContent =
@@ -598,6 +667,7 @@ document.addEventListener("DOMContentLoaded", () => {
 				guide.numeroDocumentoReferencia || "";
 			select("#guide-observation").value = guide.observacion || "";
 			select("#guide-lines").replaceChildren();
+			await refreshProductChoices();
 			for (const line of guide.detalles || [])
 				addLine(line.idProducto, line.cantidadEsperada);
 			editorElement.querySelector(".modal-body").scrollTop = 0;
@@ -858,9 +928,13 @@ document.addEventListener("DOMContentLoaded", () => {
 	setMinimumProgramDate();
 	setupFilters();
 	// Actualiza los campos requeridos al cambiar el tipo de operación.
-	select("#guide-operation").addEventListener("change", (event) =>
-		setOperationFields(event.target.value),
-	);
+	select("#guide-operation").addEventListener("change", (event) => {
+		setOperationFields(event.target.value);
+		void refreshProductChoices();
+	});
+	select("#guide-origin").addEventListener("change", () => {
+		void refreshProductChoices();
+	});
 	// Abre el formulario de creación de una guía.
 	select("#new-guide").addEventListener("click", openCreate);
 	// Agrega una línea vacía para seleccionar producto y cantidad.
@@ -882,4 +956,8 @@ document.addEventListener("DOMContentLoaded", () => {
 		await loadGuides();
 		if (app.dataset.openCreate === "true" && lookupsReady) openCreate();
 	})();
+	window.setInterval(() => {
+		if (document.hidden || editorElement.classList.contains("show") || detailElement.classList.contains("show")) return;
+		void loadGuides(true);
+	}, 15000);
 });

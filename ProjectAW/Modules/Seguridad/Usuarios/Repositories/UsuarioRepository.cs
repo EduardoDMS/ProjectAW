@@ -15,7 +15,7 @@ namespace ProjectAW.Modules.Seguridad.Usuarios.Repositories
 
         public async Task ActualizarAsync(Usuario usuario)
         {
-            _context.Usuarios.Update(usuario);
+            _context.Entry(usuario).State = EntityState.Modified;
             await _context.SaveChangesAsync();
         }
 
@@ -27,17 +27,19 @@ namespace ProjectAW.Modules.Seguridad.Usuarios.Repositories
 
         public async Task<List<Usuario>> GetAllAsync()
         {
-            return await _context.Usuarios.AsNoTracking().ToListAsync();
+            return await _context.Usuarios.AsNoTracking().Include(u => u.rol).ToListAsync();
         }
 
         public async Task<Usuario?> GetByIdAsync(int id)
         {
-            return await _context.Usuarios.AsNoTracking().FirstOrDefaultAsync(u => u.IdRol == id);
+            return await _context.Usuarios.AsNoTracking().Include(u => u.rol)
+                .FirstOrDefaultAsync(u => u.IdUsuario == id);
         }
 
         public async Task<Usuario?> ObtenerPorUsernameAsync(string username)
         {
-            return await _context.Usuarios.AsNoTracking().FirstOrDefaultAsync( u => u.Username== username);
+            return await _context.Usuarios.AsNoTracking().Include(u => u.rol)
+                .FirstOrDefaultAsync(u => u.Username == username);
         }
     }
 }

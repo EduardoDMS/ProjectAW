@@ -82,3 +82,7 @@ export function postJson(path, body) {
 export function post(path) {
   return requestJson(path, { method: "POST" });
 }
+
+export function deleteJson(path) {
+  return requestJson(path, { method: "DELETE" });
+}

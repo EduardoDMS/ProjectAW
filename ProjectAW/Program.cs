@@ -34,6 +34,9 @@ using ProjectAW.Modules.Maestros.TipoDocumentos.Services;
 using ProjectAW.Infrastructure.Errors;
 using ProjectAW.Modules.Stocks.Repositories;
 using ProjectAW.Modules.Stocks.Services;
+using ProjectAW.Modules.Recepcion.Services;
+using ProjectAW.Modules.Despacho.Services;
+using ProjectAW.Modules.Traslado.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -80,7 +83,7 @@ builder.Services.AddCors(options => options.AddPolicy("PwaRead", policy =>
         .AllowCredentials()));
 builder.Services.AddCors(options => options.AddPolicy("PwaOperations", policy =>
     policy.WithOrigins(pwaOrigins)
-        .WithMethods("GET", "POST")
+        .WithMethods("GET", "POST", "DELETE")
         .WithHeaders("Accept", "Content-Type")
         .AllowCredentials()));
 
@@ -130,6 +133,10 @@ builder.Services.AddScoped<IStockRepository, StockRepository>();
 builder.Services.AddScoped<IStockService, StockService>();
 builder.Services.AddScoped<IMovimientoStockRepository, MovimientoStockRepository>();
 builder.Services.AddScoped<IMovimientoStockService, MovimientoStockService>();
+builder.Services.AddScoped<IStockBalanceRepository, StockBalanceRepository>();
+builder.Services.AddScoped<IGuiaStockProcessor, RecepcionStockProcessor>();
+builder.Services.AddScoped<IGuiaStockProcessor, DespachoStockProcessor>();
+builder.Services.AddScoped<IGuiaStockProcessor, TrasladoStockProcessor>();
 
 // builder.Services.AddScoped
 // token api 

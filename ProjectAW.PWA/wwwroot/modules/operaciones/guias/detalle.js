@@ -1,4 +1,4 @@
-import { logout } from "/shared/js/session.js";
+import "/shared/js/navigation.js";
 import {
   formatScheduledAt,
   getMyGuideById,
@@ -12,11 +12,6 @@ const message = document.querySelector("#guide-detail-message");
 const guideId = Number(new URLSearchParams(window.location.search).get("id"));
 
 document.querySelector("#current-year").textContent = String(new Date().getFullYear());
-document.querySelector("#logout-button").addEventListener("click", event => {
-  event.currentTarget.disabled = true;
-  void logout(message);
-});
-
 if (!Number.isSafeInteger(guideId) || guideId <= 0) {
   showError("El identificador de la guía no es válido.");
 } else {

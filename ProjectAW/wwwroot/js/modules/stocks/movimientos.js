@@ -62,6 +62,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 				{ data: "producto", render: text },
 				{ data: "origen", render: text },
 				{ data: "destino", render: text },
+				{ data: "cantidadEsperada", className: "text-end", render: DataTable.render.number(".", ",", 0) },
 				{ data: "cantidad", className: "text-end", render: DataTable.render.number(".", ",", 0) },
 				{ data: "cantidadDiferenciada", className: "text-end", render: (value, type) => type === "display" && value > 0 ? `+${value}` : value },
 				{ data: "operador", render: text },
@@ -73,7 +74,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 				grid = new DataTable(table, {
 					data: records,
 					columns,
-					order: [[10, "desc"]],
+					order: [[11, "desc"]],
 					pageLength: 10,
 					lengthMenu: [10, 25, 50],
 					autoWidth: false,
