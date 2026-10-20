@@ -1,5 +1,7 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
+using ProjectAW.Modules.Seguridad.Security.HttpAuth;
 using ProjectAW.Modules.Seguridad.Usuarios.DTOs.Requests;
 using ProjectAW.Modules.Seguridad.Usuarios.Services;
 
@@ -7,6 +9,7 @@ namespace ProjectAW.Modules.Seguridad.Usuarios.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize(AuthenticationSchemes = AuthCookieSchemes.Admin)]
     public class UsuarioApiController : ControllerBase
     {
         private readonly IUsuarioService _service;

@@ -4,12 +4,11 @@ using Microsoft.AspNetCore.Mvc;
 using ProjectAW.Modules.Stocks.DTOs.Requests;
 using ProjectAW.Modules.Stocks.Services;
 
-namespace ProjectAW.Modules.Simulacion.Controllers;
-
+namespace ProjectAW.Modules.Stocks.Controllers;
 
 /// <summary>
-/// API de captura de lecturas por operador. Las capturas quedan en historial y el stock
-/// se aplica de forma transaccional únicamente al finalizar la guía.
+/// API compartida de captura operativa. Las reglas específicas de inventario
+/// se resuelven en el procesador de Recepción, Despacho o Traslado.
 /// </summary>
 [Authorize]
 [ApiController]
@@ -31,9 +30,7 @@ public sealed class LecturasApiController : ControllerBase
     public async Task<IActionResult> MiGuia(int idGuia, CancellationToken ct) =>
         Ok(await _service.ObtenerMiGuiaAsync(idGuia, ct));
 
-    /// <summary>
-    /// El operador toma una guía pendiente y pasa a ser su responsable hasta terminarla.
-    /// </summary>
+    /// <summary>Asigna al operador autenticado una guía que siga pendiente.</summary>
     [HttpPost("{idGuia:int}/tomar")]
     public async Task<IActionResult> Tomar(int idGuia, CancellationToken ct)
     {
@@ -41,9 +38,10 @@ public sealed class LecturasApiController : ControllerBase
         return NoContent();
     }
 
-    /// <summary>Guarda una captura individual sin cerrar la guía ni modificar el inventario.</summary>
+    /// <summary>Guarda una captura individual sin cerrar la guía ni modificar inventario.</summary>
     [HttpPost("{idGuia:int}/lecturas")]
-    public async Task<IActionResult> RegistrarLectura(int idGuia, [FromBody] RegistrarLecturaRequest request, CancellationToken ct) =>
+    public async Task<IActionResult> RegistrarLectura(
+        int idGuia, [FromBody] RegistrarLecturaRequest request, CancellationToken ct) =>
         Ok(await _service.RegistrarLecturaAsync(idGuia, request, ct));
 
     /// <summary>Devuelve el historial persistido de la guía del operador autenticado.</summary>
@@ -51,9 +49,16 @@ public sealed class LecturasApiController : ControllerBase
     public async Task<IActionResult> Historial(int idGuia, CancellationToken ct) =>
         Ok(await _service.ListarLecturasAsync(idGuia, ct));
 
-    /// <summary>
-    /// Aplica el historial acumulado en una transacción, genera movimientos y atiende la guía.
-    /// </summary>
+    /// <summary>Quita una lectura pendiente para corregir una asignación antes de finalizar la guía.</summary>
+    [HttpDelete("{idGuia:int}/lecturas/{idLecturaGuia:long}")]
+    public async Task<IActionResult> EliminarLectura(int idGuia, long idLecturaGuia, CancellationToken ct)
+    {
+        if (!await _service.EliminarLecturaAsync(idGuia, idLecturaGuia, ct))
+            return NotFound();
+        return NoContent();
+    }
+
+    /// <summary>Aplica el historial en una transacción, genera movimientos y atiende la guía.</summary>
     [HttpPost("{idGuia:int}/finalizar")]
     public async Task<IActionResult> Finalizar(int idGuia, CancellationToken ct)
     {

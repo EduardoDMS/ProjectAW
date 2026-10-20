@@ -8,7 +8,7 @@
         public string Username { get; set; } = string.Empty;
       //  public string Password { get; set; } = string.Empty;
         public int IdRol { get; set; }
-       // public string NombreRol { get; set; } = string.Empty;
+        public string NombreRol { get; set; } = string.Empty;
         public bool Activo { get; set; }
     }
 }

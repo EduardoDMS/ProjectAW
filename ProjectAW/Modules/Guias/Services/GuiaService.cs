@@ -12,6 +12,7 @@ using ProjectAW.Modules.Maestros.Proveedores.Entities;
 using ProjectAW.Modules.Maestros.Operaciones.Entities;
 using ProjectAW.Modules.Seguridad.Security.HttpAuth;
 using ProjectAW.Infrastructure.Errors;
+using ProjectAW.Modules.Stocks.Services;
 
 
 namespace ProjectAW.Modules.Guias.Services
@@ -21,11 +22,13 @@ namespace ProjectAW.Modules.Guias.Services
     {
         private readonly IGuiaRepository _repo;
         private readonly ICurrentUserService _currentUser;
+        private readonly IStockService _stockService;
 
-        public GuiaService(IGuiaRepository repo, ICurrentUserService currentUser)
+        public GuiaService(IGuiaRepository repo, ICurrentUserService currentUser, IStockService stockService)
         {
             _repo = repo;
             _currentUser = currentUser;
+            _stockService = stockService;
         } 
 
         public async Task<GuiaResponse> CrearAsync(CrearGuiaRequest request, CancellationToken ct = default)
@@ -33,6 +36,7 @@ namespace ProjectAW.Modules.Guias.Services
             ValidarCabecera(request.IdTipoOperacionGuia, request);
             ValidarDetalles(request.Detalles);
             await ValidarReferenciasAsync(request, ct);
+            await ValidarDisponibilidadAsync(request.IdTipoOperacionGuia, request, ct);
 
             var guia = new CabeceraGuia
             {
@@ -67,6 +71,7 @@ namespace ProjectAW.Modules.Guias.Services
             ValidarCabecera(guia.IdTipoOperacionGuia, request);
             ValidarDetalles(request.Detalles);
             await ValidarReferenciasAsync(request, ct);
+            await ValidarDisponibilidadAsync(guia.IdTipoOperacionGuia, request, ct);
 
             AplicarDatos(guia, request);
             RegistrarModificacion(guia); // nuevo api 
@@ -144,6 +149,29 @@ namespace ProjectAW.Modules.Guias.Services
 
             foreach (var idProducto in r.Detalles.Select(d => d.IdProducto).Distinct())
                 Exigir(await _repo.ExisteAsync<Producto>(idProducto, ct), $"El producto {idProducto} no existe.");
+        }
+
+        private async Task ValidarDisponibilidadAsync(
+            int idTipoOperacionGuia, ActualizarGuiaRequest request, CancellationToken ct)
+        {
+            if (idTipoOperacionGuia is not (TipoOperacionGuiaIds.Salida or TipoOperacionGuiaIds.Traslado))
+                return;
+
+            // ValidarCabecera garantiza almacén de origen para salida y traslado.
+            var idAlmacenOrigen = request.IdAlmacenOrigen!.Value;
+            var idsProductos = request.Detalles.Select(d => d.IdProducto).Distinct().ToArray();
+            var disponibilidad = await _stockService.ObtenerDisponibilidadAsync(idAlmacenOrigen, idsProductos, ct);
+
+            foreach (var detalle in request.Detalles)
+            {
+                var disponible = disponibilidad.TryGetValue(detalle.IdProducto, out var cantidad)
+                    ? cantidad
+                    : 0;
+
+                Exigir(disponible >= detalle.CantidadEsperada,
+                    $"Stock insuficiente para el producto {detalle.IdProducto} en el almacén {idAlmacenOrigen}. " +
+                    $"Disponible: {disponible}; solicitado: {detalle.CantidadEsperada}.");
+            }
         }
 
         private static void Exigir(bool condicion, string mensaje)

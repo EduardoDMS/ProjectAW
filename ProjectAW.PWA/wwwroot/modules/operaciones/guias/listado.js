@@ -1,4 +1,4 @@
-import { logout } from "/shared/js/session.js";
+import "/shared/js/navigation.js";
 import {
   formatScheduledAt,
   getGuideById,
@@ -18,11 +18,6 @@ const operationEntry = Object.entries(OPERATIONS).find(([, operation]) =>
   operation.id === Number(new URLSearchParams(window.location.search).get("tipo")));
 
 document.querySelector("#current-year").textContent = String(new Date().getFullYear());
-document.querySelector("#logout-button").addEventListener("click", event => {
-  event.currentTarget.disabled = true;
-  void logout(message);
-});
-
 if (!operationEntry) {
   window.location.replace("/modules/operaciones/inicio/index.html");
 } else {

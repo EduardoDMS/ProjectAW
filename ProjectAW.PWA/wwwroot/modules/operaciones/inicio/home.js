@@ -1,17 +1,14 @@
 import { ApiError } from "/shared/js/api-client.js";
-import { logout, returnToLogin } from "/shared/js/session.js";
+import "/shared/js/navigation.js";
+import { returnToLogin } from "/shared/js/session.js";
 import { getGuides, isUnauthorized, OPERATIONS, showApiError } from "/modules/operaciones/guias.js";
 
 const cardContainer = document.querySelector("#operation-cards");
 const status = document.querySelector("#home-status");
 const message = document.querySelector("#home-message");
+let loadingCounts = false;
 
 document.querySelector("#current-year").textContent = String(new Date().getFullYear());
-document.querySelector("#logout-button").addEventListener("click", event => {
-  event.currentTarget.disabled = true;
-  void logout(message);
-});
-
 function createCard(key, operation) {
   const article = document.createElement("article");
   article.className = `operation-card ${operation.color}`;
@@ -21,9 +18,8 @@ function createCard(key, operation) {
   link.setAttribute("aria-label", `Abrir ${operation.title}`);
 
   const icon = document.createElement("span");
-  icon.className = "operation-icon";
+  icon.className = `operation-icon ti ${operation.icon} ${operation.color}`;
   icon.setAttribute("aria-hidden", "true");
-  icon.textContent = operation.icon;
   const heading = document.createElement("h2");
   heading.textContent = operation.title;
   const subtitle = document.createElement("p");
@@ -39,7 +35,7 @@ function createCard(key, operation) {
   pendingLabel.textContent = "pendientes";
   const action = document.createElement("span");
   action.className = "operation-action";
-  action.innerHTML = 'Ver guías <span aria-hidden="true">→</span>';
+  action.innerHTML = 'Ver guías <i class="ti ti-arrow-right" aria-hidden="true"></i>';
   link.append(icon, heading, subtitle, count, pendingLabel, action);
   article.append(link);
   return article;
@@ -47,14 +43,9 @@ function createCard(key, operation) {
 
 for (const [key, operation] of Object.entries(OPERATIONS)) cardContainer.append(createCard(key, operation));
 
-const settingsCard = document.createElement("a");
-settingsCard.className = "operation-card settings-card";
-settingsCard.href = "/modules/operaciones/ajustes/index.html";
-settingsCard.setAttribute("aria-label", "Configurar lector PDA o cámara");
-settingsCard.innerHTML = '<span class="settings-card-icon" aria-hidden="true">⚙</span><span><strong>Ajustes de lectura</strong><small>Elige entre PDA y cámara para escanear.</small></span><span class="my-guides-shortcut__arrow" aria-hidden="true">→</span>';
-cardContainer.append(settingsCard);
-
 async function loadPendingCounts() {
+  if (loadingCounts) return;
+  loadingCounts = true;
   cardContainer.setAttribute("aria-busy", "true");
   message.className = "alert d-none";
   const entries = Object.entries(OPERATIONS);
@@ -84,6 +75,10 @@ async function loadPendingCounts() {
   if (hasErrors && !message.textContent) message.textContent = "No se pudieron consultar algunas guías. Comprueba la conexión e inténtalo de nuevo.";
   if (hasErrors) message.className = "alert alert-warning";
   cardContainer.setAttribute("aria-busy", "false");
+  loadingCounts = false;
 }
 
 void loadPendingCounts();
+window.setInterval(() => {
+  if (!document.hidden) void loadPendingCounts();
+}, 15000);

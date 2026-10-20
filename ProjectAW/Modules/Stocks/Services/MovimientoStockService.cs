@@ -14,11 +14,16 @@ public sealed class MovimientoStockService : IMovimientoStockService
 {
     private readonly IMovimientoStockRepository _repository;
     private readonly ICurrentUserService _currentUser;
+    private readonly IReadOnlyDictionary<int, IGuiaStockProcessor> _stockProcessors;
 
-    public MovimientoStockService(IMovimientoStockRepository repository, ICurrentUserService currentUser)
+    public MovimientoStockService(
+        IMovimientoStockRepository repository,
+        ICurrentUserService currentUser,
+        IEnumerable<IGuiaStockProcessor> stockProcessors)
     {
         _repository = repository;
         _currentUser = currentUser;
+        _stockProcessors = stockProcessors.ToDictionary(processor => processor.IdTipoOperacionGuia);
     }
 
     public async Task TomarGuiaAsync(int idGuia, CancellationToken ct = default)
@@ -60,6 +65,12 @@ public sealed class MovimientoStockService : IMovimientoStockService
         return lecturas.Select(ToLecturaDto).ToList();
     }
 
+    public async Task<bool> EliminarLecturaAsync(int idGuia, long idLecturaGuia, CancellationToken ct = default)
+    {
+        await ExigirOperadorAsync(ct);
+        return await _repository.EliminarLecturaAsync(idGuia, idLecturaGuia, _currentUser.IdUsuario, ct);
+    }
+
     public async Task FinalizarLecturaAsync(int idGuia, CancellationToken ct = default)
     {
         await ExigirOperadorAsync(ct);
@@ -68,19 +79,7 @@ public sealed class MovimientoStockService : IMovimientoStockService
         if (guia.Detalles.Count == 0 || guia.Detalles.GroupBy(d => d.IdProducto).Any(g => g.Count() > 1))
             throw new ReglaNegocioException("La guía no tiene productos válidos para procesar.");
 
-        if (guia.IdTipoOperacionGuia is not (TipoOperacionGuiaIds.Entrada or TipoOperacionGuiaIds.Salida or TipoOperacionGuiaIds.Traslado))
-            throw new ReglaNegocioException("La guía tiene un tipo de operación inválido.");
-
-        var tieneAlmacenes = guia.IdTipoOperacionGuia switch
-        {
-            TipoOperacionGuiaIds.Entrada => guia.IdAlmacenDestino.HasValue,
-            TipoOperacionGuiaIds.Salida => guia.IdAlmacenOrigen.HasValue,
-            TipoOperacionGuiaIds.Traslado => guia.IdAlmacenOrigen.HasValue &&
-                guia.IdAlmacenDestino.HasValue && guia.IdAlmacenOrigen != guia.IdAlmacenDestino,
-            _ => false
-        };
-        if (!tieneAlmacenes)
-            throw new ReglaNegocioException("La guía no tiene los almacenes requeridos para su tipo de operación.");
+        ObtenerProcesador(guia.IdTipoOperacionGuia).ValidarGuia(guia);
 
         if (guia.Detalles.Any(d => d.CantidadEsperada != decimal.Truncate(d.CantidadEsperada) || d.CantidadEsperada > int.MaxValue))
             throw new ReglaNegocioException("Esta guía contiene cantidades fraccionarias, pero el stock actual registra unidades enteras. No se aplicó ningún movimiento.");
@@ -103,6 +102,7 @@ public sealed class MovimientoStockService : IMovimientoStockService
             m.IdAlmacen,
             m.IdTipoOperacion == TipoOperacionGuiaIds.Entrada ? m.Guia?.Proveedor?.RazonSocial ?? "Proveedor" : m.Almacen?.Descripcion ?? "Almacén",
             m.IdTipoOperacion == TipoOperacionGuiaIds.Salida ? m.Guia?.Cliente?.RazonSocial ?? "Cliente" : m.IdTipoOperacion == TipoOperacionGuiaIds.Entrada ? m.Guia?.AlmacenDestino?.Descripcion ?? "Almacén" : m.Guia?.AlmacenDestino?.Descripcion ?? "Almacén",
+            m.Guia?.Detalles.FirstOrDefault(d => d.IdProducto == m.IdProducto)?.CantidadEsperada ?? 0,
             m.Cantidad,
             m.CantidadDiferenciada,
             m.Observacion,
@@ -120,6 +120,11 @@ public sealed class MovimientoStockService : IMovimientoStockService
         if (!await _repository.EsOperadorAsync(_currentUser.IdUsuario, ct))
             throw new ReglaNegocioException("Solo un usuario activo con rol Operador puede realizar lecturas de guías.");
     }
+
+    private IGuiaStockProcessor ObtenerProcesador(int idTipoOperacionGuia) =>
+        _stockProcessors.TryGetValue(idTipoOperacionGuia, out var processor)
+            ? processor
+            : throw new ReglaNegocioException("La guía tiene un tipo de operación inválido.");
 
     private async Task<Modules.Guias.Entities.CabeceraGuia> ObtenerGuiaAsync(int idGuia, CancellationToken ct) =>
         await _repository.ObtenerGuiaParaLecturaAsync(idGuia, ct)

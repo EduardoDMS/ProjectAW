@@ -1,9 +1,9 @@
-import { getJson, post, postJson } from "/shared/js/api-client.js";
+import { deleteJson, getJson, post, postJson } from "/shared/js/api-client.js";
 
 export const OPERATIONS = Object.freeze({
-  recepcion: { id: 1, title: "Recepción", subtitle: "Guías de entrada", icon: "↓", color: "reception" },
-  despacho: { id: 2, title: "Despacho", subtitle: "Guías de salida", icon: "↑", color: "dispatch" },
-  traslado: { id: 3, title: "Traslado", subtitle: "Movimientos entre almacenes", icon: "⇄", color: "transfer" }
+  recepcion: { id: 1, title: "Recepción", subtitle: "Guías de entrada", icon: "ti-arrow-down", color: "reception" },
+  despacho: { id: 2, title: "Despacho", subtitle: "Guías de salida", icon: "ti-arrow-up", color: "dispatch" },
+  traslado: { id: 3, title: "Traslado", subtitle: "Movimientos entre almacenes", icon: "ti-arrows-left-right", color: "transfer" }
 });
 
 export const PENDING_STATUS_ID = 1;
@@ -44,6 +44,10 @@ export async function registerGuideReading(id, reading) {
 
 export async function getGuideReadingHistory(id) {
   return getJson(`api/simulacion/guias/${encodeURIComponent(id)}/lecturas`);
+}
+
+export async function deleteGuideReading(id, readingId) {
+  return deleteJson(`api/simulacion/guias/${encodeURIComponent(id)}/lecturas/${encodeURIComponent(readingId)}`);
 }
 
 export async function finalizeGuideReadings(id) {

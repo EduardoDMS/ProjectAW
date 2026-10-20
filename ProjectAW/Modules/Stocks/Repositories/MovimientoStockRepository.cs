@@ -7,6 +7,7 @@ using ProjectAW.Modules.Maestros.Operaciones.Entities;
 using ProjectAW.Modules.Seguridad.Usuarios.Entitites;
 using ProjectAW.Modules.Stocks.Entities;
 using ProjectAW.Modules.Stocks.DTOs.Requests;
+using ProjectAW.Modules.Stocks.Services;
 using ProjectAW.Infrastructure.Errors;
 using ProjectAW.Models;
 
@@ -15,8 +16,13 @@ namespace ProjectAW.Modules.Stocks.Repositories;
 public sealed class MovimientoStockRepository : IMovimientoStockRepository
 {
     private readonly AppDbContext _context;
+    private readonly IReadOnlyDictionary<int, IGuiaStockProcessor> _stockProcessors;
 
-    public MovimientoStockRepository(AppDbContext context) => _context = context;
+    public MovimientoStockRepository(AppDbContext context, IEnumerable<IGuiaStockProcessor> stockProcessors)
+    {
+        _context = context;
+        _stockProcessors = stockProcessors.ToDictionary(processor => processor.IdTipoOperacionGuia);
+    }
 
     public Task<CabeceraGuia?> ObtenerGuiaParaLecturaAsync(int idGuia, CancellationToken ct = default) =>
         _context.CabeceraGuia
@@ -81,6 +87,18 @@ public sealed class MovimientoStockRepository : IMovimientoStockRepository
         if (!string.Equals(producto.Codigo.Trim(), request.CodigoLeido.Trim(), StringComparison.OrdinalIgnoreCase))
             throw new ReglaNegocioException("El código leído no corresponde al producto seleccionado.");
         await ValidarUbicacionesAsync(guia, request.IdUbicacionOrigen, request.IdUbicacionDestino, ct);
+        if (guia.IdTipoOperacionGuia == TipoOperacionGuiaIds.Salida)
+        {
+            var stockActual = await _context.StockUbicacion.AsNoTracking()
+                .Where(s => s.IdUbicacion == request.IdUbicacionOrigen && s.IdProducto == request.IdProducto)
+                .Select(s => (long?)s.CantidadActual).FirstOrDefaultAsync(ct) ?? 0;
+            var yaRegistrado = await _context.LecturasGuia.AsNoTracking()
+                .Where(l => l.IdGuia == idGuia && l.IdProducto == request.IdProducto &&
+                            l.IdUbicacionOrigen == request.IdUbicacionOrigen)
+                .SumAsync(l => (long?)l.Cantidad, ct) ?? 0;
+            if (yaRegistrado + request.Cantidad > stockActual)
+                throw new ReglaNegocioException($"La ubicación de origen solo tiene {Math.Max(stockActual - yaRegistrado, 0)} unidades disponibles de este producto.");
+        }
 
         var lectura = new LecturaGuia
         {
@@ -113,6 +131,24 @@ public sealed class MovimientoStockRepository : IMovimientoStockRepository
             .OrderByDescending(x => x.FechaRegistroUtc).ThenByDescending(x => x.IdLecturaGuia).ToListAsync(ct);
     }
 
+    public async Task<bool> EliminarLecturaAsync(
+        int idGuia, long idLecturaGuia, int idOperador, CancellationToken ct = default)
+    {
+        await using var transaction = await _context.Database.BeginTransactionAsync(IsolationLevel.Serializable, ct);
+        var guia = await ObtenerGuiaParaLecturaAsync(idGuia, ct)
+            ?? throw new NoEncontradoException($"La guía {idGuia} no existe.");
+        ValidarGuiaEnProceso(guia, idOperador);
+
+        var lectura = await _context.LecturasGuia.FirstOrDefaultAsync(
+            x => x.IdLecturaGuia == idLecturaGuia && x.IdGuia == idGuia && x.IdUsuarioOperador == idOperador, ct);
+        if (lectura is null) return false;
+
+        _context.LecturasGuia.Remove(lectura);
+        await _context.SaveChangesAsync(ct);
+        await transaction.CommitAsync(ct);
+        return true;
+    }
+
     public async Task FinalizarLecturaAsync(
         int idGuia,
         int idOperador,
@@ -130,14 +166,7 @@ public sealed class MovimientoStockRepository : IMovimientoStockRepository
         var productosLeidos = lecturas.Select(x => x.IdProducto).ToHashSet();
         if (!actual.Detalles.Select(x => x.IdProducto).ToHashSet().SetEquals(productosLeidos))
             throw new ReglaNegocioException("Registra al menos una lectura para cada producto de la guía antes de finalizar.");
-        var tipoOperacion = actual.IdTipoOperacionGuia;
-        int? almacenOrigen = actual.IdAlmacenOrigen;
-        int? almacenDestino = actual.IdAlmacenDestino;
-        var requiereOrigen = tipoOperacion is TipoOperacionGuiaIds.Salida or TipoOperacionGuiaIds.Traslado;
-        var requiereDestino = tipoOperacion is TipoOperacionGuiaIds.Entrada or TipoOperacionGuiaIds.Traslado;
-        var idAlmacenMovimiento = tipoOperacion == TipoOperacionGuiaIds.Entrada
-            ? actual.IdAlmacenDestino!.Value
-            : actual.IdAlmacenOrigen!.Value;
+        var processor = ObtenerProcesador(actual.IdTipoOperacionGuia);
 
         foreach (var detalle in actual.Detalles)
         {
@@ -146,45 +175,27 @@ public sealed class MovimientoStockRepository : IMovimientoStockRepository
             if (totalLeido > int.MaxValue) throw new ConflictoNegocioException("La suma leída supera el máximo permitido por el inventario.");
             foreach (var linea in lineas)
             {
-                if (requiereOrigen != linea.IdUbicacionOrigen.HasValue || requiereDestino != linea.IdUbicacionDestino.HasValue)
+                var salida = actual.IdTipoOperacionGuia == TipoOperacionGuiaIds.Salida;
+                if (processor.RequiereUbicacionOrigen != linea.IdUbicacionOrigen.HasValue ||
+                    (salida ? !linea.IdUbicacionDestino.HasValue : processor.RequiereUbicacionDestino != linea.IdUbicacionDestino.HasValue))
                     throw new ReglaNegocioException($"La lectura del producto {detalle.IdProducto} no tiene las ubicaciones requeridas.");
-                if (requiereOrigen && !await _context.Ubicaciones.AnyAsync(u => u.IdUbicacion == linea.IdUbicacionOrigen && u.IdAlmacen == almacenOrigen && u.Activo, ct))
+                if (processor.RequiereUbicacionOrigen && !await _context.Ubicaciones.AnyAsync(
+                        u => u.IdUbicacion == linea.IdUbicacionOrigen && u.IdAlmacen == actual.IdAlmacenOrigen && u.Activo, ct))
                     throw new ReglaNegocioException($"La ubicación de origen del producto {detalle.IdProducto} dejó de estar activa o no pertenece al almacén.");
-                if (requiereDestino && !await _context.Ubicaciones.AnyAsync(u => u.IdUbicacion == linea.IdUbicacionDestino && u.IdAlmacen == almacenDestino && u.Activo, ct))
+                if ((processor.RequiereUbicacionDestino || salida) && !await _context.Ubicaciones.AnyAsync(
+                        u => u.IdUbicacion == linea.IdUbicacionDestino &&
+                             u.IdAlmacen == (salida ? actual.IdAlmacenOrigen : actual.IdAlmacenDestino) && u.Activo, ct))
                     throw new ReglaNegocioException($"La ubicación de destino del producto {detalle.IdProducto} dejó de estar activa o no pertenece al almacén.");
             }
+
+            await processor.AplicarProductoAsync(actual, detalle, lineas, ct);
             var cantidadEsperada = checked((int)detalle.CantidadEsperada);
-            if (tipoOperacion == TipoOperacionGuiaIds.Entrada)
-            {
-                foreach (var grupo in lineas.GroupBy(x => x.IdUbicacionDestino!.Value))
-                {
-                    var cantidad = checked((int)grupo.Sum(x => (long)x.Cantidad));
-                    await AjustarStockUbicacionAsync(grupo.Key, detalle.IdProducto, cantidad, ct);
-                    await SincronizarStockAlmacenAsync(actual.IdAlmacenDestino!.Value, detalle.IdProducto, ct);
-                }
-            }
-            else
-            {
-                foreach (var grupo in lineas.GroupBy(x => x.IdUbicacionOrigen!.Value))
-                {
-                    var cantidad = checked((int)grupo.Sum(x => (long)x.Cantidad));
-                    await AjustarStockUbicacionAsync(grupo.Key, detalle.IdProducto, -cantidad, ct);
-                    await SincronizarStockAlmacenAsync(actual.IdAlmacenOrigen!.Value, detalle.IdProducto, ct);
-                }
-                if (tipoOperacion == TipoOperacionGuiaIds.Traslado)
-                    foreach (var grupo in lineas.GroupBy(x => x.IdUbicacionDestino!.Value))
-                    {
-                        var cantidad = checked((int)grupo.Sum(x => (long)x.Cantidad));
-                        await AjustarStockUbicacionAsync(grupo.Key, detalle.IdProducto, cantidad, ct);
-                        await SincronizarStockAlmacenAsync(actual.IdAlmacenDestino!.Value, detalle.IdProducto, ct);
-                    }
-            }
 
             _context.MovimientoStock.Add(new MovimientoStock
             {
                 IdProducto = detalle.IdProducto,
-                IdAlmacen = idAlmacenMovimiento,
-                IdTipoOperacion = tipoOperacion,
+                IdAlmacen = processor.ObtenerAlmacenMovimiento(actual),
+                IdTipoOperacion = processor.IdTipoOperacionGuia,
                 IdGuia = actual.IdGuia,
                 IdUsuarioOperador = idOperador,
                 Cantidad = (int)totalLeido,
@@ -214,15 +225,25 @@ public sealed class MovimientoStockRepository : IMovimientoStockRepository
 
     private async Task ValidarUbicacionesAsync(CabeceraGuia guia, int? origen, int? destino, CancellationToken ct)
     {
-        var requiereOrigen = guia.IdTipoOperacionGuia is TipoOperacionGuiaIds.Salida or TipoOperacionGuiaIds.Traslado;
-        var requiereDestino = guia.IdTipoOperacionGuia is TipoOperacionGuiaIds.Entrada or TipoOperacionGuiaIds.Traslado;
-        if (requiereOrigen != (origen is > 0) || requiereDestino != (destino is > 0))
+        var processor = ObtenerProcesador(guia.IdTipoOperacionGuia);
+        var salida = guia.IdTipoOperacionGuia == TipoOperacionGuiaIds.Salida;
+        if (processor.RequiereUbicacionOrigen != (origen is > 0) ||
+            (salida ? destino is not > 0 : processor.RequiereUbicacionDestino != (destino is > 0)))
             throw new ReglaNegocioException("Indica las ubicaciones correspondientes al tipo de operación de esta guía.");
-        if (requiereOrigen && !await _context.Ubicaciones.AnyAsync(u => u.IdUbicacion == origen && u.IdAlmacen == guia.IdAlmacenOrigen && u.Activo, ct))
+        if (processor.RequiereUbicacionOrigen && !await _context.Ubicaciones.AnyAsync(
+                u => u.IdUbicacion == origen && u.IdAlmacen == guia.IdAlmacenOrigen && u.Activo, ct))
             throw new ReglaNegocioException("La ubicación de origen no está activa o no pertenece al almacén de origen.");
-        if (requiereDestino && !await _context.Ubicaciones.AnyAsync(u => u.IdUbicacion == destino && u.IdAlmacen == guia.IdAlmacenDestino && u.Activo, ct))
-            throw new ReglaNegocioException("La ubicación de destino no está activa o no pertenece al almacén de destino.");
+        if ((processor.RequiereUbicacionDestino || salida) && !await _context.Ubicaciones.AnyAsync(
+                u => u.IdUbicacion == destino && u.IdAlmacen == (salida ? guia.IdAlmacenOrigen : guia.IdAlmacenDestino) && u.Activo, ct))
+            throw new ReglaNegocioException(salida
+                ? "La ubicación de despacho no está activa o no pertenece al almacén de origen."
+                : "La ubicación de destino no está activa o no pertenece al almacén de destino.");
     }
+
+    private IGuiaStockProcessor ObtenerProcesador(int idTipoOperacionGuia) =>
+        _stockProcessors.TryGetValue(idTipoOperacionGuia, out var processor)
+            ? processor
+            : throw new ReglaNegocioException("La guía tiene un tipo de operación no compatible con el inventario.");
 
     private static string? Normalizar(string? valor) => string.IsNullOrWhiteSpace(valor) ? null : valor.Trim();
 
@@ -234,6 +255,8 @@ public sealed class MovimientoStockRepository : IMovimientoStockRepository
             .Include(m => m.Almacen)
             .Include(m => m.Guia)
                 .ThenInclude(g => g!.Proveedor)
+            .Include(m => m.Guia)
+                .ThenInclude(g => g!.Detalles)
             .Include(m => m.Guia).ThenInclude(g => g!.Cliente)
             .Include(m => m.Guia).ThenInclude(g => g!.AlmacenOrigen)
             .Include(m => m.Guia).ThenInclude(g => g!.AlmacenDestino)
@@ -250,71 +273,4 @@ public sealed class MovimientoStockRepository : IMovimientoStockRepository
         return await query.OrderByDescending(m => m.FchMovimiento).ToListAsync(ct);
     }
 
-    private async Task AjustarStockUbicacionAsync(int idUbicacion, int idProducto, int diferencia, CancellationToken ct)
-    {
-        if (diferencia == 0) return;
-        var saldos = await _context.StockUbicacion.Where(s => s.IdUbicacion == idUbicacion && s.IdProducto == idProducto).ToListAsync(ct);
-        if (saldos.Count > 1) throw new ConflictoNegocioException("Hay saldos duplicados para el producto y la ubicación.");
-        var saldo = saldos.SingleOrDefault();
-        if (saldo is null)
-        {
-            if (diferencia < 0) throw new ConflictoNegocioException("No existe stock suficiente en la ubicación de origen.");
-            _context.StockUbicacion.Add(new StockUbicacion { IdUbicacion = idUbicacion, IdProducto = idProducto, CantidadActual = diferencia, FechaUltimoRegistro = DateTime.UtcNow });
-            return;
-        }
-        var nuevaCantidad = (long)saldo.CantidadActual + diferencia;
-        if (nuevaCantidad < 0) throw new ConflictoNegocioException($"Stock insuficiente del producto {idProducto} en la ubicación {idUbicacion}. Disponible: {saldo.CantidadActual}.");
-        if (nuevaCantidad > int.MaxValue) throw new ConflictoNegocioException("La cantidad supera el máximo soportado por el inventario.");
-        saldo.CantidadActual = (int)nuevaCantidad;
-        saldo.FechaUltimoRegistro = DateTime.UtcNow;
-    }
-
-    private async Task SincronizarStockAlmacenAsync(int idAlmacen, int idProducto, CancellationToken ct)
-    {
-        var saldosGuardados = await _context.StockUbicacion
-            .Include(s => s.Ubicacion)
-            .Where(s => s.IdProducto == idProducto && s.Ubicacion!.IdAlmacen == idAlmacen)
-            .ToListAsync(ct);
-
-        var ubicacionesDeNuevosSaldos = new HashSet<int>();
-        foreach (var saldoNuevo in _context.ChangeTracker.Entries<StockUbicacion>()
-                     .Where(e => e.State == EntityState.Added && e.Entity.IdProducto == idProducto)
-                     .Select(e => e.Entity)
-                     .Where(e => saldosGuardados.All(s => s.IdStockUbicacion != e.IdStockUbicacion)))
-        {
-            if (await _context.Ubicaciones.AnyAsync(u => u.IdUbicacion == saldoNuevo.IdUbicacion && u.IdAlmacen == idAlmacen, ct))
-                ubicacionesDeNuevosSaldos.Add(saldoNuevo.IdUbicacion);
-        }
-
-        var total = saldosGuardados.Sum(s => (long)s.CantidadActual)
-            + _context.ChangeTracker.Entries<StockUbicacion>()
-                .Where(e => e.State == EntityState.Added && e.Entity.IdProducto == idProducto && ubicacionesDeNuevosSaldos.Contains(e.Entity.IdUbicacion))
-                .Sum(e => (long)e.Entity.CantidadActual);
-
-        if (total > int.MaxValue)
-            throw new ConflictoNegocioException($"El stock total del producto {idProducto} supera el máximo soportado en el almacén {idAlmacen}.");
-
-        var stocksAlmacen = await _context.StockAlmacen
-            .Where(s => s.IdAlmacen == idAlmacen && s.IdProducto == idProducto)
-            .ToListAsync(ct);
-        if (stocksAlmacen.Count > 1)
-            throw new ConflictoNegocioException("Hay más de un saldo para el mismo producto y almacén. Debe corregirse el stock duplicado antes de continuar.");
-
-        var stockAlmacen = stocksAlmacen.SingleOrDefault();
-        if (stockAlmacen is null && total > 0)
-        {
-            _context.StockAlmacen.Add(new StockAlmacen
-            {
-                IdAlmacen = idAlmacen,
-                IdProducto = idProducto,
-                CantidadActual = (int)total,
-                FechaUltimoRegistro = DateTime.UtcNow
-            });
-        }
-        else if (stockAlmacen is not null)
-        {
-            stockAlmacen.CantidadActual = (int)total;
-            stockAlmacen.FechaUltimoRegistro = DateTime.UtcNow;
-        }
-    }
 }
