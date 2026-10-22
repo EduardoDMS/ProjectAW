@@ -14,9 +14,9 @@
 </section>
 <section class="content-card maestro-card">
 	<div class="maestro-toolbar">
-		<label class="status-filter" for="location-status"
+		<label class="status-filter form-label" for="location-status"
 			><span>Disponibilidad</span
-			><select id="location-status">
+			><select id="location-status" class="form-select">
 				<option value="">Todas</option>
 				<option value="true">Activas</option>
 				<option value="false">Inactivas</option>
@@ -77,7 +77,7 @@
 					></div>
 					<div class="maestro-form-grid">
 						<div class="maestro-field">
-							<label for="location-code">Código *</label
+							<label for="location-code" class="form-label">Código *</label
 							><input
 								class="form-control"
 								id="location-code"
@@ -87,7 +87,7 @@
 							/>
 						</div>
 						<div class="maestro-field">
-							<label for="location-warehouse">Almacén *</label
+							<label for="location-warehouse" class="form-label">Almacén *</label
 							><select
 								class="form-select"
 								id="location-warehouse"
@@ -96,7 +96,7 @@
 							></select>
 						</div>
 						<div class="maestro-field">
-							<label for="location-description">Descripción</label
+							<label for="location-description" class="form-label">Descripción</label
 							><input
 								class="form-control"
 								id="location-description"
@@ -104,14 +104,14 @@
 								maxlength="150"
 							/>
 						</div>
-						<div class="maestro-field maestro-field--check">
+						<div class="maestro-field maestro-field--check form-check">
 							<input
 								class="form-check-input"
 								id="location-active"
 								name="activo"
 								type="checkbox"
 							/><label for="location-active"
-								>Ubicación activa</label
+								 class="form-check-label">Ubicación activa</label
 							>
 						</div>
 					</div>
@@ -138,13 +138,13 @@
 @section Styles {
 <link
 	rel="stylesheet"
-	href="~/lib/datatables/dataTables.dataTables.min.css"
+	href="~/libs/datatables/dataTables.dataTables.min.css"
 	asp-append-version="true"
 />
 }
 @section Scripts {
 <script
-	src="~/lib/datatables/dataTables.min.js"
+	src="~/libs/datatables/dataTables.min.js"
 	asp-append-version="true"
 ></script>
 <script
@@ -152,5 +152,4 @@
 	asp-append-version="true"
 ></script>
 }
-
 

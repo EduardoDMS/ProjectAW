@@ -14,9 +14,9 @@
 </section>
 <section class="content-card maestro-card">
 	<div class="maestro-toolbar">
-		<label class="status-filter" for="warehouse-status"
+		<label class="status-filter form-label" for="warehouse-status"
 			><span>Disponibilidad</span
-			><select id="warehouse-status">
+			><select id="warehouse-status" class="form-select">
 				<option value="">Todos</option>
 				<option value="true">Activos</option>
 				<option value="false">Inactivos</option>
@@ -77,7 +77,7 @@
 					></div>
 					<div class="maestro-form-grid">
 						<div class="maestro-field">
-							<label for="warehouse-code">Código *</label
+							<label for="warehouse-code" class="form-label">Código *</label
 							><input
 								class="form-control"
 								id="warehouse-code"
@@ -88,7 +88,7 @@
 						</div>
 						<div class="maestro-field">
 							<label for="warehouse-description"
-								>Descripción *</label
+								 class="form-label">Descripción *</label
 							><input
 								class="form-control"
 								id="warehouse-description"
@@ -97,22 +97,22 @@
 								required
 							/>
 						</div>
-						<div class="maestro-field maestro-field--check">
+						<div class="maestro-field maestro-field--check form-check">
 							<input
 								class="form-check-input"
 								id="warehouse-active"
 								name="activo"
 								type="checkbox"
 							/><label for="warehouse-active"
-								>Almacén activo</label
+								 class="form-check-label">Almacén activo</label
 							>
 						</div>
-						<div class="maestro-field maestro-field--check">
+						<div class="maestro-field maestro-field--check form-check">
 							<input class="form-check-input" id="warehouse-dispatch-toggle" type="checkbox" />
-							<label for="warehouse-dispatch-toggle">Ubicaciones de despacho</label>
+							<label for="warehouse-dispatch-toggle" class="form-check-label">Ubicaciones de despacho</label>
 						</div>
 						<div class="maestro-field warehouse-dispatch-field" id="warehouse-dispatch-locations-wrap" hidden>
-							<label for="warehouse-dispatch-locations">Selecciona las ubicaciones habilitadas para despacho</label>
+							<label for="warehouse-dispatch-locations" class="form-label">Selecciona las ubicaciones habilitadas para despacho</label>
 							<div class="warehouse-dispatch-list" id="warehouse-dispatch-locations" role="group" aria-describedby="warehouse-dispatch-hint"></div>
 							<small id="warehouse-dispatch-hint" class="text-secondary">Solo aparecen ubicaciones de este almacén. Puedes seleccionar varias.</small>
 						</div>
@@ -140,13 +140,13 @@
 @section Styles {
 <link
 	rel="stylesheet"
-	href="~/lib/datatables/dataTables.dataTables.min.css"
+	href="~/libs/datatables/dataTables.dataTables.min.css"
 	asp-append-version="true"
 />
 }
 @section Scripts {
 <script
-	src="~/lib/datatables/dataTables.min.js"
+	src="~/libs/datatables/dataTables.min.js"
 	asp-append-version="true"
 ></script>
 <script
@@ -154,5 +154,4 @@
 	asp-append-version="true"
 ></script>
 }
-
 

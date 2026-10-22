@@ -40,10 +40,6 @@
 	background: #fff;
 }
 
-.motives-search-icon {
-	color: #91a0b2;
-}
-
 .maestro-search .ti-search {
 	flex: 0 0 auto;
 	color: #8293a8;
@@ -76,7 +72,7 @@
 	font-size: 10px;
 	font-weight: 700;
 	letter-spacing: 0.045em;
-	text-transform: uppercase;
+	text-transform: none;
 	white-space: nowrap;
 }
 
@@ -155,14 +151,6 @@
 
 .motives-actions .table-action--danger:hover {
 	background: #fff0f1;
-}
-
-.motives-table-footer {
-	font-size: 10px;
-}
-
-.motives-table-footer strong {
-	color: var(--aw-ink);
 }
 
 .motives-load-error {
@@ -286,15 +274,6 @@
 
 	.motives-filters .status-filter select {
 		min-width: 90px;
-	}
-
-	.motives-table-footer {
-		align-items: flex-start;
-		flex-direction: column;
-		justify-content: center;
-		gap: 4px;
-		padding-top: 9px;
-		padding-bottom: 9px;
 	}
 
 	.motives-form-grid,

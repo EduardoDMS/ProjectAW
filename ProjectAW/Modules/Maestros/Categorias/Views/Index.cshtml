@@ -14,9 +14,9 @@
 </section>
 <section class="content-card maestro-card">
 	<div class="maestro-toolbar">
-		<label class="status-filter" for="category-status"
+		<label class="status-filter form-label" for="category-status"
 			><span>Disponibilidad</span
-			><select id="category-status">
+			><select id="category-status" class="form-select">
 				<option value="">Todas</option>
 				<option value="true">Activas</option>
 				<option value="false">Inactivas</option>
@@ -77,7 +77,7 @@
 					></div>
 					<div class="maestro-form-grid">
 						<div class="maestro-field">
-							<label for="category-name">Nombre *</label
+							<label for="category-name" class="form-label">Nombre *</label
 							><input
 								class="form-control"
 								id="category-name"
@@ -88,7 +88,7 @@
 						</div>
 						<div class="maestro-field">
 							<label for="category-description"
-								>Descripción *</label
+								 class="form-label">Descripción *</label
 							><input
 								class="form-control"
 								id="category-description"
@@ -97,14 +97,14 @@
 								required
 							/>
 						</div>
-						<div class="maestro-field maestro-field--check">
+						<div class="maestro-field maestro-field--check form-check">
 							<input
 								class="form-check-input"
 								id="category-active"
 								name="activo"
 								type="checkbox"
 							/><label for="category-active"
-								>Categoría activa</label
+								 class="form-check-label">Categoría activa</label
 							>
 						</div>
 					</div>
@@ -131,13 +131,13 @@
 @section Styles {
 <link
 	rel="stylesheet"
-	href="~/lib/datatables/dataTables.dataTables.min.css"
+	href="~/libs/datatables/dataTables.dataTables.min.css"
 	asp-append-version="true"
 />
 }
 @section Scripts {
 <script
-	src="~/lib/datatables/dataTables.min.js"
+	src="~/libs/datatables/dataTables.min.js"
 	asp-append-version="true"
 ></script>
 <script
@@ -145,5 +145,4 @@
 	asp-append-version="true"
 ></script>
 }
-
 

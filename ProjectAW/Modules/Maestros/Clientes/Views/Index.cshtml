@@ -14,9 +14,9 @@
 </section>
 <section class="content-card maestro-card">
 	<div class="maestro-toolbar">
-		<label class="status-filter" for="client-status"
+		<label class="status-filter form-label" for="client-status"
 			><span>Disponibilidad</span
-			><select id="client-status">
+			><select id="client-status" class="form-select">
 				<option value="">Todos</option>
 				<option value="true">Activos</option>
 				<option value="false">Inactivos</option>
@@ -79,7 +79,7 @@
 					<div class="maestro-form-grid">
 						<div class="maestro-field">
 							<label for="client-business-name"
-								>Razón social *</label
+								 class="form-label">Razón social *</label
 							><input
 								class="form-control"
 								id="client-business-name"
@@ -90,7 +90,7 @@
 						</div>
 						<div class="maestro-field">
 							<label for="client-document-type"
-								>Tipo de documento *</label
+								 class="form-label">Tipo de documento *</label
 							><select
 								class="form-select"
 								id="client-document-type"
@@ -100,7 +100,7 @@
 						</div>
 						<div class="maestro-field">
 							<label for="client-document-number"
-								>Número de documento *</label
+								 class="form-label">Número de documento *</label
 							><input
 								class="form-control"
 								id="client-document-number"
@@ -110,7 +110,7 @@
 							/>
 						</div>
 						<div class="maestro-field">
-							<label for="client-address">Dirección *</label
+							<label for="client-address" class="form-label">Dirección *</label
 							><input
 								class="form-control"
 								id="client-address"
@@ -120,7 +120,7 @@
 							/>
 						</div>
 						<div class="maestro-field">
-							<label for="client-email">Correo</label
+							<label for="client-email" class="form-label">Correo</label
 							><input
 								class="form-control"
 								id="client-email"
@@ -130,7 +130,7 @@
 							/>
 						</div>
 						<div class="maestro-field">
-							<label for="client-phone">Teléfono</label
+							<label for="client-phone" class="form-label">Teléfono</label
 							><input
 								class="form-control"
 								id="client-phone"
@@ -138,13 +138,13 @@
 								maxlength="50"
 							/>
 						</div>
-						<div class="maestro-field maestro-field--check">
+						<div class="maestro-field maestro-field--check form-check">
 							<input
 								class="form-check-input"
 								id="client-active"
 								name="activo"
 								type="checkbox"
-							/><label for="client-active">Cliente activo</label>
+							/><label for="client-active" class="form-check-label">Cliente activo</label>
 						</div>
 					</div>
 				</div>
@@ -170,13 +170,13 @@
 @section Styles {
 <link
 	rel="stylesheet"
-	href="~/lib/datatables/dataTables.dataTables.min.css"
+	href="~/libs/datatables/dataTables.dataTables.min.css"
 	asp-append-version="true"
 />
 }
 @section Scripts {
 <script
-	src="~/lib/datatables/dataTables.min.js"
+	src="~/libs/datatables/dataTables.min.js"
 	asp-append-version="true"
 ></script>
 <script
@@ -184,5 +184,4 @@
 	asp-append-version="true"
 ></script>
 }
-
 

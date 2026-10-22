@@ -14,9 +14,9 @@
 </section>
 <section class="content-card maestro-card">
 	<div class="maestro-toolbar">
-		<label class="status-filter" for="product-status"
+		<label class="status-filter form-label" for="product-status"
 			><span>Disponibilidad</span
-			><select id="product-status">
+			><select id="product-status" class="form-select">
 				<option value="">Todos</option>
 				<option value="true">Activos</option>
 				<option value="false">Inactivos</option>
@@ -79,7 +79,7 @@
 					></div>
 					<div class="maestro-form-grid">
 						<div class="maestro-field">
-							<label for="product-code">Código *</label
+							<label for="product-code" class="form-label">Código *</label
 							><input
 								class="form-control"
 								id="product-code"
@@ -88,9 +88,9 @@
 								required
 							/>
 						</div>
-						<div class="maestro-field"><label for="product-unit">Unidad de medida *</label><select class="form-select" id="product-unit" name="idUnidadMedida" required></select></div>
+						<div class="maestro-field"><label for="product-unit" class="form-label">Unidad de medida *</label><select class="form-select" id="product-unit" name="idUnidadMedida" required></select></div>
 						<div class="maestro-field">
-							<label for="product-name">Descripción *</label
+							<label for="product-name" class="form-label">Descripción *</label
 							><input
 								class="form-control"
 								id="product-name"
@@ -100,7 +100,7 @@
 							/>
 						</div>
 						<div class="maestro-field">
-							<label for="product-category">Categoría *</label
+							<label for="product-category" class="form-label">Categoría *</label
 							><select
 								class="form-select"
 								id="product-category"
@@ -109,7 +109,7 @@
 							></select>
 						</div>
 						<div class="maestro-field">
-							<label for="product-serial">Serie</label
+							<label for="product-serial" class="form-label">Serie</label
 							><input
 								class="form-control"
 								id="product-serial"
@@ -118,7 +118,7 @@
 							/>
 						</div>
 						<div class="maestro-field">
-							<label for="product-lot">Lote</label
+							<label for="product-lot" class="form-label">Lote</label
 							><input
 								class="form-control"
 								id="product-lot"
@@ -126,14 +126,14 @@
 								maxlength="50"
 							/>
 						</div>
-						<div class="maestro-field maestro-field--check">
+						<div class="maestro-field maestro-field--check form-check">
 							<input
 								class="form-check-input"
 								id="product-active"
 								name="activo"
 								type="checkbox"
 							/><label for="product-active"
-								>Producto activo</label
+								 class="form-check-label">Producto activo</label
 							>
 						</div>
 					</div>
@@ -160,13 +160,13 @@
 @section Styles {
 <link
 	rel="stylesheet"
-	href="~/lib/datatables/dataTables.dataTables.min.css"
+	href="~/libs/datatables/dataTables.dataTables.min.css"
 	asp-append-version="true"
 />
 }
 @section Scripts {
 <script
-	src="~/lib/datatables/dataTables.min.js"
+	src="~/libs/datatables/dataTables.min.js"
 	asp-append-version="true"
 ></script>
 <script
@@ -174,5 +174,4 @@
 	asp-append-version="true"
 ></script>
 }
-
 

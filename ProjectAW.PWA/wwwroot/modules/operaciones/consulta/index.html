@@ -18,12 +18,12 @@
       <p class="eyebrow">INVENTARIO</p><h1 id="stock-consult-title">Consultar existencias</h1>
       <p class="stock-consult-intro">Escanea o escribe un código para revisar productos y ubicaciones.</p>
       <div class="stock-consult-mode" role="group" aria-label="Tipo de consulta">
-        <button type="button" data-mode="product" aria-pressed="true">Producto</button>
-        <button type="button" data-mode="location" aria-pressed="false">Ubicación</button>
+        <button type="button" data-mode="product" aria-pressed="true" class="btn">Producto</button>
+        <button type="button" data-mode="location" aria-pressed="false" class="btn">Ubicación</button>
       </div>
       <form id="stock-consult-form" class="stock-consult-form">
-        <label for="stock-consult-code" id="stock-consult-label">Código del producto</label>
-        <div><input id="stock-consult-code" autocomplete="off" inputmode="text" placeholder="Escanea o escribe el código" required><button class="btn btn-primary" type="submit">Consultar</button></div>
+        <label for="stock-consult-code" id="stock-consult-label" class="form-label">Código del producto</label>
+        <div><input id="stock-consult-code" autocomplete="off" inputmode="text" placeholder="Escanea o escribe el código" required class="form-control"><button class="btn btn-primary" type="submit">Consultar</button></div>
       </form>
       <p id="stock-consult-status" class="stock-consult-status" role="status" aria-live="polite"></p>
       <div id="stock-consult-results" class="stock-consult-results"></div>
