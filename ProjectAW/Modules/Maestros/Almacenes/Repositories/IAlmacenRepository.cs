@@ -9,5 +9,6 @@ namespace ProjectAW.Modules.Maestros.Almacenes.Repositories
         Task<Almacen?> ObtenerAlmacenPorCodigoAsync(string codigo);
         Task CrearAlmacenAsync(Almacen almacen);
         Task ActualizarAlmacenAsync(Almacen almacen);
+        Task<bool> ActualizarAlmacenAsync(Almacen almacen, IReadOnlyCollection<int> idUbicacionesDespacho);
     }
 }

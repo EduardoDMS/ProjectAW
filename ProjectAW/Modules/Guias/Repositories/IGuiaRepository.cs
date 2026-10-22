@@ -9,6 +9,7 @@ namespace ProjectAW.Modules.Guias.Repositories
         Task<string> ObtenerSiguienteNumeroAsync(int idTipoOperacionGuia, CancellationToken ct = default);
         Task<bool> ExisteAsync<T>(int id, CancellationToken ct = default) where T : class;
         Task AgregarAsync(CabeceraGuia guia, CancellationToken ct = default);
+        Task AgregarParAsync(CabeceraGuia primera, CabeceraGuia relacionada, CancellationToken ct = default);
         Task GuardarCambiosAsync(CancellationToken ct = default);
     }
 }

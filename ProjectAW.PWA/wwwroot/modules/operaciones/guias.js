@@ -2,8 +2,7 @@ import { deleteJson, getJson, post, postJson } from "/shared/js/api-client.js";
 
 export const OPERATIONS = Object.freeze({
   recepcion: { id: 1, title: "Recepción", subtitle: "Guías de entrada", icon: "ti-arrow-down", color: "reception" },
-  despacho: { id: 2, title: "Despacho", subtitle: "Guías de salida", icon: "ti-arrow-up", color: "dispatch" },
-  traslado: { id: 3, title: "Traslado", subtitle: "Movimientos entre almacenes", icon: "ti-arrows-left-right", color: "transfer" }
+  despacho: { id: 2, title: "Despacho", subtitle: "Guías de salida", icon: "ti-arrow-up", color: "dispatch" }
 });
 
 export const PENDING_STATUS_ID = 1;
@@ -61,18 +60,22 @@ export async function getActiveLocations(warehouseId) {
   return result;
 }
 
-export async function getReceptionLookups() {
-  const [providers, warehouses] = await Promise.all([
-    getJson("api/ProveedorApi"),
+export async function getGuideListLookups(guides) {
+  const needsProviders = guides.some(guide => guide.requiereProveedor ?? Number(guide.idTipoOperacionGuia) === 1);
+  const needsClients = guides.some(guide => guide.requiereCliente ?? Number(guide.idTipoOperacionGuia) === 2);
+  const [providers, clients, warehouses] = await Promise.all([
+    needsProviders ? getJson("api/ProveedorApi") : Promise.resolve([]),
+    needsClients ? getJson("api/ClienteApi") : Promise.resolve([]),
     getJson("api/AlmacenApi")
   ]);
 
-  if (!Array.isArray(providers) || !Array.isArray(warehouses)) {
+  if (!Array.isArray(providers) || !Array.isArray(clients) || !Array.isArray(warehouses)) {
     throw new Error("La API devolvió un formato de catálogos no esperado.");
   }
 
   return {
     providers: new Map(providers.map(item => [Number(item.idProveedor), item.razonSocial])),
+    clients: new Map(clients.map(item => [Number(item.idCliente), item.razonSocial])),
     warehouses: new Map(warehouses.map(item => [
       Number(item.idAlmacen),
       [item.codigo, item.descripcion].filter(Boolean).join(" · ")
@@ -80,10 +83,13 @@ export async function getReceptionLookups() {
   };
 }
 
-export async function getGuideDetailLookups(idTipoOperacionGuia, knownProducts = null) {
-  const counterpartyRequest = idTipoOperacionGuia === 1
+export async function getGuideDetailLookups(guide, knownProducts = null) {
+  const idTipoOperacionGuia = typeof guide === "object" ? Number(guide.idTipoOperacionGuia) : Number(guide);
+  const requiresProvider = typeof guide === "object" ? (guide.requiereProveedor ?? idTipoOperacionGuia === 1) : idTipoOperacionGuia === 1;
+  const requiresClient = typeof guide === "object" ? (guide.requiereCliente ?? idTipoOperacionGuia === 2) : idTipoOperacionGuia === 2;
+  const counterpartyRequest = requiresProvider
     ? getJson("api/ProveedorApi")
-    : idTipoOperacionGuia === 2
+    : requiresClient
       ? getJson("api/ClienteApi")
       : Promise.resolve(null);
   const [warehouses, products, counterparties] = await Promise.all([
@@ -105,7 +111,7 @@ export async function getGuideDetailLookups(idTipoOperacionGuia, knownProducts =
     ])),
     productItems: products,
     counterparties: new Map((counterparties || []).map(item => [
-      Number(idTipoOperacionGuia === 1 ? item.idProveedor : item.idCliente), item.razonSocial
+      Number(requiresProvider ? item.idProveedor : item.idCliente), item.razonSocial
     ]))
   };
 }

@@ -32,7 +32,7 @@ window.getApiErrorMessage = function (response, problem = {}) {
 	);
 };
 
-// Presenta errores de API o de validación sin interrumpir el flujo de la vista.
+// Presenta errores de API o validación sin bloquear la pantalla ni pedir confirmación.
 window.showAppError = function (message, title = "No se pudo completar") {
 	const text =
 		typeof message === "string" && message.trim()
@@ -41,15 +41,45 @@ window.showAppError = function (message, title = "No se pudo completar") {
 
 	if (window.Swal?.fire) {
 		return window.Swal.fire({
+			toast: true,
+			position: "top-end",
 			icon: "error",
 			title,
 			text,
-			confirmButtonText: "Entendido",
-			confirmButtonColor: "#004596",
+			showConfirmButton: false,
+			timer: 7000,
+			timerProgressBar: true,
+			showCloseButton: true,
+			customClass: { popup: "app-error-toast" },
 		});
 	}
 
-	window.alert(`${title}\n\n${text}`);
+	const previous = document.querySelector("[data-app-error-toast]");
+	previous?.remove();
+	const toast = document.createElement("section");
+	toast.dataset.appErrorToast = "true";
+	toast.setAttribute("role", "alert");
+	toast.setAttribute("aria-live", "assertive");
+	Object.assign(toast.style, {
+		position: "fixed", top: "1rem", right: "1rem", zIndex: "2000",
+		width: "min(26rem, calc(100vw - 2rem))", padding: "1rem 2.75rem 1rem 1rem",
+		background: "#fff", color: "#25364a", borderLeft: "4px solid #dc3545",
+		borderRadius: ".5rem", boxShadow: "0 8px 28px rgba(20, 40, 65, .2)",
+	});
+	const heading = document.createElement("strong");
+	heading.textContent = title;
+	const description = document.createElement("div");
+	description.textContent = text;
+	description.style.marginTop = ".25rem";
+	const close = document.createElement("button");
+	close.type = "button";
+	close.textContent = "×";
+	close.setAttribute("aria-label", "Cerrar aviso");
+	Object.assign(close.style, { position: "absolute", top: ".4rem", right: ".65rem", border: "0", background: "transparent", fontSize: "1.4rem", cursor: "pointer" });
+	close.addEventListener("click", () => toast.remove());
+	toast.append(heading, description, close);
+	document.body.append(toast);
+	window.setTimeout(() => toast.remove(), 8000);
 };
 
 // Confirma los registros y ediciones correctos con un mensaje breve y consistente.

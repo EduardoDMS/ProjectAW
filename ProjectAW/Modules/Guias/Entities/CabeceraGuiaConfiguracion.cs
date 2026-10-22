@@ -16,13 +16,11 @@ namespace ProjectAW.Modules.Guias.Entities
             builder.ToTable("CabeceraGuias", t =>
             {
                 t.HasCheckConstraint("CK_CabeceraGuia_Operacion",
-                    $@"(IdTipoOperacionGuia = {TipoOperacionGuiaIds.Entrada} AND IdProveedor IS NOT NULL AND IdAlmacenDestino IS NOT NULL
-               AND IdCliente IS NULL AND IdAlmacenOrigen IS NULL)
-          OR (IdTipoOperacionGuia = {TipoOperacionGuiaIds.Salida} AND IdAlmacenOrigen IS NOT NULL AND IdCliente IS NOT NULL
-               AND IdProveedor IS NULL AND IdAlmacenDestino IS NULL)
+                    $@"(IdTipoOperacionGuia IN ({TipoOperacionGuiaIds.Entrada}, {TipoOperacionGuiaIds.Salida})
+               AND NOT (IdProveedor IS NOT NULL AND IdCliente IS NOT NULL)
+               AND (IdAlmacenOrigen IS NULL OR IdAlmacenDestino IS NULL OR IdAlmacenOrigen <> IdAlmacenDestino))
           OR (IdTipoOperacionGuia = {TipoOperacionGuiaIds.Traslado} AND IdAlmacenOrigen IS NOT NULL AND IdAlmacenDestino IS NOT NULL
-               AND IdAlmacenOrigen <> IdAlmacenDestino
-               AND IdProveedor IS NULL AND IdCliente IS NULL)");
+               AND IdAlmacenOrigen <> IdAlmacenDestino AND IdProveedor IS NULL AND IdCliente IS NULL)");
             });
 
             builder.HasKey(x => x.IdGuia);
@@ -78,6 +76,12 @@ namespace ProjectAW.Modules.Guias.Entities
                    .WithMany()
                    .HasForeignKey(x => x.IdTipoOperacionGuia)
                    .OnDelete(DeleteBehavior.Restrict);
+
+            builder.HasOne(x => x.Motivo).WithMany(x => x.Guias)
+                   .HasForeignKey(x => x.IdMotivoGuia).OnDelete(DeleteBehavior.Restrict);
+
+            builder.HasOne(x => x.GuiaRelacionada).WithMany(x => x.GuiasRelacionadas)
+                   .HasForeignKey(x => x.IdGuiaRelacionada).OnDelete(DeleteBehavior.Restrict);
 
             builder.HasOne<EstadoGuia>()
                    .WithMany()

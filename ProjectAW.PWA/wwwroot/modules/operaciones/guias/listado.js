@@ -3,7 +3,7 @@ import {
   formatScheduledAt,
   getGuideById,
   getGuides,
-  getReceptionLookups,
+  getGuideListLookups,
   OPERATIONS,
   showApiError,
   takeGuide
@@ -53,15 +53,19 @@ function createGuideItem(guide, lookups, operationKey, operation) {
   scheduled.textContent = formatScheduledAt(guide.fechaProgramada);
   card.append(number, scheduled);
 
-  if (operationKey === "recepcion") {
-    const details = document.createElement("dl");
-    details.className = "guide-details";
-    const provider = lookups.providers.get(Number(guide.idProveedor)) || "No disponible en el catálogo";
-    const warehouse = lookups.warehouses.get(Number(guide.idAlmacenDestino)) || "No disponible en el catálogo";
-    addDetail(details, "Proveedor", provider);
-    addDetail(details, "Almacén destino", warehouse);
-    card.append(details);
+  const details = document.createElement("dl");
+  details.className = "guide-details";
+  if (guide.nombreMotivo) addDetail(details, "Motivo", guide.nombreMotivo);
+  if (guide.tipoTercero && (guide.requiereProveedor || guide.requiereCliente)) {
+    const counterparties = guide.requiereProveedor ? lookups.providers : lookups.clients;
+    const id = guide.requiereProveedor ? guide.idProveedor : guide.idCliente;
+    addDetail(details, guide.tipoTercero, guide.nombreTercero || counterparties.get(Number(id)) || "No disponible");
   }
+  const warehouses = [];
+  if (guide.requiereAlmacenOrigen) warehouses.push(["Almacén de origen", guide.nombreAlmacenOrigen || lookups.warehouses.get(Number(guide.idAlmacenOrigen))]);
+  if (guide.requiereAlmacenDestino) warehouses.push(["Almacén de destino", guide.nombreAlmacenDestino || lookups.warehouses.get(Number(guide.idAlmacenDestino))]);
+  for (const [label, value] of warehouses) if (value) addDetail(details, label, value);
+  if (details.children.length) card.append(details);
 
   card.addEventListener("click", () => void selectGuide(guide.idGuia, operationKey, operation));
   item.append(card);
@@ -115,10 +119,8 @@ async function loadGuides(operationKey, operation) {
   status.textContent = "Cargando guías desde la API…";
 
   try {
-    const [guides, lookups] = await Promise.all([
-      getGuides(operation.id),
-      operationKey === "recepcion" ? getReceptionLookups() : Promise.resolve(null)
-    ]);
+    const guides = await getGuides(operation.id);
+    const lookups = await getGuideListLookups(guides);
 
     count.textContent = `${guides.length} ${guides.length === 1 ? "guía pendiente" : "guías pendientes"}`;
     if (guides.length === 0) {

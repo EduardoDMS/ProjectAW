@@ -2,6 +2,7 @@
 {
     public class ActualizarGuiaRequest
     {
+        public int IdMotivoGuia { get; set; }
         public int? IdProveedor { get; set; }
         public int? IdCliente { get; set; }
         public int? IdAlmacenOrigen { get; set; }

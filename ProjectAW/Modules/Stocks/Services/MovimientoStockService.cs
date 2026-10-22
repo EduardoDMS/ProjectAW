@@ -48,6 +48,7 @@ public sealed class MovimientoStockService : IMovimientoStockService
         await ExigirOperadorAsync(ct);
         var guia = await _repository.ObtenerGuiaOperadorAsync(idGuia, _currentUser.IdUsuario, ct)
             ?? throw new NoEncontradoException("La guía no existe en tus guías en proceso o terminadas.");
+        ExigirOperacionOperador(guia.IdTipoOperacionGuia);
         return ToGuiaOperadorDto(guia);
     }
 
@@ -75,6 +76,7 @@ public sealed class MovimientoStockService : IMovimientoStockService
     {
         await ExigirOperadorAsync(ct);
         var guia = await ObtenerGuiaAsync(idGuia, ct);
+        ExigirOperacionOperador(guia.IdTipoOperacionGuia);
 
         if (guia.Detalles.Count == 0 || guia.Detalles.GroupBy(d => d.IdProducto).Any(g => g.Count() > 1))
             throw new ReglaNegocioException("La guía no tiene productos válidos para procesar.");
@@ -94,6 +96,7 @@ public sealed class MovimientoStockService : IMovimientoStockService
             m.IdMovimientoStock,
             m.IdGuia,
             m.Guia?.NumeroGuia ?? string.Empty,
+            m.Guia?.Motivo?.NombreMotivo ?? "—",
             m.IdTipoOperacion,
             m.OperacionGuias?.Nombre ?? string.Empty,
             m.IdProducto,
@@ -126,6 +129,12 @@ public sealed class MovimientoStockService : IMovimientoStockService
             ? processor
             : throw new ReglaNegocioException("La guía tiene un tipo de operación inválido.");
 
+    private static void ExigirOperacionOperador(int idTipoOperacionGuia)
+    {
+        if (idTipoOperacionGuia is not (TipoOperacionGuiaIds.Entrada or TipoOperacionGuiaIds.Salida))
+            throw new ReglaNegocioException("El operador solo puede atender guías de Entrada o Salida. Los movimientos internos se generan mediante guías relacionadas.");
+    }
+
     private async Task<Modules.Guias.Entities.CabeceraGuia> ObtenerGuiaAsync(int idGuia, CancellationToken ct) =>
         await _repository.ObtenerGuiaParaLecturaAsync(idGuia, ct)
         ?? throw new NoEncontradoException($"La guía {idGuia} no existe.");
@@ -134,6 +143,13 @@ public sealed class MovimientoStockService : IMovimientoStockService
         guia.IdGuia,
         guia.NumeroGuia,
         guia.IdTipoOperacionGuia,
+        guia.IdMotivoGuia,
+        guia.Motivo?.IdTipoComportamiento,
+        guia.Motivo?.NombreMotivo,
+        RequiereProveedor(guia), RequiereCliente(guia), RequiereAlmacenOrigen(guia), RequiereAlmacenDestino(guia),
+        TipoTercero(guia), NombreTercero(guia), NombreAlmacen(guia.AlmacenOrigen), NombreAlmacen(guia.AlmacenDestino),
+        guia.IdGuiaRelacionada,
+        guia.GuiaRelacionada?.NumeroGuia,
         guia.IdEstadoGuia,
         guia.IdProveedor,
         guia.IdCliente,
@@ -146,6 +162,14 @@ public sealed class MovimientoStockService : IMovimientoStockService
         guia.NumeroDocumentoReferencia,
         guia.Observacion,
         guia.Detalles.Select(d => new DetalleGuiaResponse(d.IdGuiaDetalle, d.IdProducto, d.CantidadEsperada)).ToList());
+
+    private static bool RequiereProveedor(Modules.Guias.Entities.CabeceraGuia g) => g.Motivo?.RequiereProveedor ?? g.IdTipoOperacionGuia == TipoOperacionGuiaIds.Entrada;
+    private static bool RequiereCliente(Modules.Guias.Entities.CabeceraGuia g) => g.Motivo?.RequiereCliente ?? g.IdTipoOperacionGuia == TipoOperacionGuiaIds.Salida;
+    private static bool RequiereAlmacenOrigen(Modules.Guias.Entities.CabeceraGuia g) => g.Motivo?.RequiereAlmacenOrigen ?? g.IdTipoOperacionGuia is TipoOperacionGuiaIds.Salida or TipoOperacionGuiaIds.Traslado;
+    private static bool RequiereAlmacenDestino(Modules.Guias.Entities.CabeceraGuia g) => g.Motivo?.RequiereAlmacenDestino ?? g.IdTipoOperacionGuia is TipoOperacionGuiaIds.Entrada or TipoOperacionGuiaIds.Traslado;
+    private static string? TipoTercero(Modules.Guias.Entities.CabeceraGuia g) => RequiereProveedor(g) ? "Proveedor" : RequiereCliente(g) ? "Cliente" : null;
+    private static string? NombreTercero(Modules.Guias.Entities.CabeceraGuia g) => RequiereProveedor(g) ? g.Proveedor?.RazonSocial : RequiereCliente(g) ? g.Cliente?.RazonSocial : null;
+    private static string? NombreAlmacen(Modules.Maestros.Almacenes.Entities.Almacen? almacen) => almacen is null ? null : string.Join(" · ", new[] { almacen.Codigo, almacen.Descripcion }.Where(x => !string.IsNullOrWhiteSpace(x)));
 
     private static LecturaGuiaDto ToLecturaDto(Modules.Stocks.Entities.LecturaGuia l) => new(
         l.IdLecturaGuia, l.IdGuia, l.IdProducto, l.Producto?.Codigo ?? l.CodigoLeido,

@@ -22,6 +22,7 @@ namespace ProjectAW.Infrastructure.Data
         public DbSet<Producto> Productos => Set<Producto>();
         public DbSet<Almacen> Almacenes => Set<Almacen>();
         public DbSet<Ubicacion> Ubicaciones => Set<Ubicacion>();
+        public DbSet<UbicacionDespacho> UbicacionesDespacho => Set<UbicacionDespacho>();
         public DbSet<UnidadMedida> UnidadesMedida => Set<UnidadMedida>();
         public DbSet<Categoria> Categorias => Set<Categoria>();
         public DbSet<Cliente> Clientes => Set<Cliente>();
@@ -29,6 +30,8 @@ namespace ProjectAW.Infrastructure.Data
         public DbSet<Usuario> Usuarios => Set<Usuario>();
         public DbSet<Rol> Roles => Set<Rol>();
         public DbSet<CabeceraGuia> CabeceraGuia => Set<CabeceraGuia>();
+        public DbSet<MotivoGuia> MotivosGuia => Set<MotivoGuia>();
+        public DbSet<TipoComportamientoGuia> TiposComportamientoGuia => Set<TipoComportamientoGuia>();
         public DbSet<DetalleGuia> DetalleGuia => Set<DetalleGuia>();
         public DbSet<TipoOperacionGuia> TiposOperacionesGuia => Set<TipoOperacionGuia>();
         public DbSet<EstadoGuia> EstadosGuia => Set<EstadoGuia>();

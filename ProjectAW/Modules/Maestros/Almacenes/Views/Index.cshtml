@@ -107,6 +107,15 @@
 								>Almacén activo</label
 							>
 						</div>
+						<div class="maestro-field maestro-field--check">
+							<input class="form-check-input" id="warehouse-dispatch-toggle" type="checkbox" />
+							<label for="warehouse-dispatch-toggle">Ubicaciones de despacho</label>
+						</div>
+						<div class="maestro-field warehouse-dispatch-field" id="warehouse-dispatch-locations-wrap" hidden>
+							<label for="warehouse-dispatch-locations">Selecciona las ubicaciones habilitadas para despacho</label>
+							<div class="warehouse-dispatch-list" id="warehouse-dispatch-locations" role="group" aria-describedby="warehouse-dispatch-hint"></div>
+							<small id="warehouse-dispatch-hint" class="text-secondary">Solo aparecen ubicaciones de este almacén. Puedes seleccionar varias.</small>
+						</div>
 					</div>
 				</div>
 				<div class="modal-footer">

@@ -1,6 +1,6 @@
 @{
 	ViewData["Title"] = "Guías";
-	ViewData["Description"] = "Registra y consulta entradas, salidas y traslados de inventario.";
+	ViewData["Description"] = "Registra entradas y salidas; los traslados internos se generan desde una salida.";
 	ViewData["Glyph"] = "G";
 	Layout = "~/Views/Shared/_Layout.cshtml";
 }
@@ -18,6 +18,7 @@
 		>
 			<span aria-hidden="true">＋</span> Registrar guía
 		</button>
+		<a class="btn btn-outline-primary" asp-controller="Guia" asp-action="Motivos"><i class="ti ti-adjustments-cog" aria-hidden="true"></i> Motivos de guía</a>
 	</section>
 
 	<div class="guide-summary" aria-label="Resumen de guías">
@@ -192,6 +193,11 @@
 									id="guide-operation"
 									required
 								></select>
+							</div>
+							<div class="guide-field guide-field--wide">
+								<label for="guide-motive">Motivo de la guía <b>*</b></label>
+								<select class="form-select" id="guide-motive" required></select>
+								<small id="guide-motive-help" class="form-text">El motivo define los campos requeridos y el efecto sobre el stock.</small>
 							</div>
 							<div class="guide-field">
 								<label for="guide-date"

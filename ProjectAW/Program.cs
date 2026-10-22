@@ -125,6 +125,8 @@ builder.Services.AddScoped<IUbicacionService, UbicacionService>();
 builder.Services.AddScoped<IUbicacionRepository, UbicacionRepository>();
 builder.Services.AddScoped<IGuiaRepository, GuiaRepository>();
 builder.Services.AddScoped<IGuiaService, GuiaService>();
+builder.Services.AddScoped<IMotivoGuiaRepository, MotivoGuiaRepository>();
+builder.Services.AddScoped<IMotivoGuiaService, MotivoGuiaService>();
 builder.Services.AddScoped<IRolRepository, RolRepository>();
 builder.Services.AddScoped<IRolService, RolService>();
 builder.Services.AddScoped<ITipoDocumentoRepository, TipoDocumentoRepository>();
