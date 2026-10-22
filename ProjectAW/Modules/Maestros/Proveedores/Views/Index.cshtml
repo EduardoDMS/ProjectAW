@@ -14,9 +14,9 @@
 </section>
 <section class="content-card maestro-card">
 	<div class="maestro-toolbar">
-		<label class="status-filter" for="supplier-status"
+		<label class="status-filter form-label" for="supplier-status"
 			><span>Disponibilidad</span
-			><select id="supplier-status">
+			><select id="supplier-status" class="form-select">
 				<option value="">Todos</option>
 				<option value="true">Activos</option>
 				<option value="false">Inactivos</option>
@@ -80,7 +80,7 @@
 					<div class="maestro-form-grid">
 						<div class="maestro-field">
 							<label for="supplier-business-name"
-								>Razón social *</label
+								 class="form-label">Razón social *</label
 							><input
 								class="form-control"
 								id="supplier-business-name"
@@ -91,7 +91,7 @@
 						</div>
 						<div class="maestro-field">
 							<label for="supplier-document-type"
-								>Tipo de documento *</label
+								 class="form-label">Tipo de documento *</label
 							><select
 								class="form-select"
 								id="supplier-document-type"
@@ -101,7 +101,7 @@
 						</div>
 						<div class="maestro-field">
 							<label for="supplier-document-number"
-								>Número de documento *</label
+								 class="form-label">Número de documento *</label
 							><input
 								class="form-control"
 								id="supplier-document-number"
@@ -111,7 +111,7 @@
 							/>
 						</div>
 						<div class="maestro-field">
-							<label for="supplier-address">Dirección</label
+							<label for="supplier-address" class="form-label">Dirección</label
 							><input
 								class="form-control"
 								id="supplier-address"
@@ -121,7 +121,7 @@
 						</div>
 						<div class="maestro-field">
 							<label for="supplier-contact"
-								>Nombre de contacto</label
+								 class="form-label">Nombre de contacto</label
 							><input
 								class="form-control"
 								id="supplier-contact"
@@ -131,7 +131,7 @@
 						</div>
 						<div class="maestro-field">
 							<label for="supplier-email"
-								>Correo de contacto</label
+								 class="form-label">Correo de contacto</label
 							><input
 								class="form-control"
 								id="supplier-email"
@@ -142,7 +142,7 @@
 						</div>
 						<div class="maestro-field">
 							<label for="supplier-phone"
-								>Teléfono de contacto</label
+								 class="form-label">Teléfono de contacto</label
 							><input
 								class="form-control"
 								id="supplier-phone"
@@ -150,14 +150,14 @@
 								maxlength="50"
 							/>
 						</div>
-						<div class="maestro-field maestro-field--check">
+						<div class="maestro-field maestro-field--check form-check">
 							<input
 								class="form-check-input"
 								id="supplier-active"
 								name="activo"
 								type="checkbox"
 							/><label for="supplier-active"
-								>Proveedor activo</label
+								 class="form-check-label">Proveedor activo</label
 							>
 						</div>
 					</div>
@@ -184,13 +184,13 @@
 @section Styles {
 <link
 	rel="stylesheet"
-	href="~/lib/datatables/dataTables.dataTables.min.css"
+	href="~/libs/datatables/dataTables.dataTables.min.css"
 	asp-append-version="true"
 />
 }
 @section Scripts {
 <script
-	src="~/lib/datatables/dataTables.min.js"
+	src="~/libs/datatables/dataTables.min.js"
 	asp-append-version="true"
 ></script>
 <script
@@ -198,5 +198,4 @@
 	asp-append-version="true"
 ></script>
 }
-
 

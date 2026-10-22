@@ -88,7 +88,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 						searchable: false,
 						className: "text-end",
 						render: (_value, _type, row) =>
-							`<button type="button" class="table-action" data-action="edit" data-id="${row.idProducto}">Editar</button><button type="button" class="table-action table-action--muted" data-action="status" data-id="${row.idProducto}">${row.activo ? "Desactivar" : "Activar"}</button>`,
+							`<button type="button" class="btn table-action" data-action="edit" data-id="${row.idProducto}">Editar</button><button type="button" class="btn table-action table-action--muted" data-action="status" data-id="${row.idProducto}">${row.activo ? "Desactivar" : "Activar"}</button>`,
 					},
 				],
 				order: [[0, "asc"]],

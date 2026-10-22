@@ -40,10 +40,8 @@ document.addEventListener("DOMContentLoaded", async () => {
 	// Construye la URL de lectura solo con filtros ingresados por el usuario.
 	function getApiUrl() {
 		const query = new URLSearchParams();
-		const guideId = document.querySelector("#movement-guide-filter").value.trim();
 		const warehouseId = document.querySelector("#movement-warehouse-filter").value.trim();
 		const operationId = document.querySelector("#movement-operation-filter").value.trim();
-		if (guideId) query.set("idGuia", guideId);
 		if (warehouseId) query.set("idAlmacen", warehouseId);
 		if (operationId) query.set("idOperacion", operationId);
 		return `/api/movimientos-stock${query.size ? `?${query}` : ""}`;
@@ -93,13 +91,13 @@ document.addEventListener("DOMContentLoaded", async () => {
 		}
 	}
 
-	// Pobla los selectores con recursos activos y guías disponibles.
+	// Pobla el selector con los almacenes activos.
 	try {
-		const [warehouses, guides] = await Promise.all([fetchJson("/api/AlmacenApi"), fetchJson("/api/guias")]);
+		const warehouses = await fetchJson("/api/AlmacenApi");
 		for (const item of warehouses.filter(x => x.activo)) document.querySelector("#movement-warehouse-filter").add(new Option(`${item.codigo} · ${item.descripcion || ""}`, item.idAlmacen));
-		for (const item of guides) document.querySelector("#movement-guide-filter").add(new Option(item.numeroGuia, item.idGuia));
 	} catch (error) { showError(error.message || "No fue posible cargar los filtros."); }
-	// Ejecuta la consulta filtrada cuando el usuario solicita aplicar los filtros.
-	document.querySelector("#movement-filter").addEventListener("click", loadMovements);
+	// Actualiza el historial inmediatamente al cambiar cualquiera de los filtros disponibles.
+	document.querySelector("#movement-operation-filter").addEventListener("change", loadMovements);
+	document.querySelector("#movement-warehouse-filter").addEventListener("change", loadMovements);
 	await loadMovements();
 });

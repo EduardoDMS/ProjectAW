@@ -12,24 +12,23 @@
 			<p>Define qué datos pide cada guía y cómo afecta al inventario.</p>
 		</div>
 		<div class="motives-heading__actions">
-			<a class="btn btn-outline-primary" asp-controller="Guia" asp-action="Index"><i class="ti ti-arrow-left" aria-hidden="true"></i><span>Volver a guías</span></a>
 			<button class="btn btn-primary motives-create" id="new-motive" type="button"><i class="ti ti-plus" aria-hidden="true"></i><span>Nuevo motivo</span></button>
 		</div>
 	</header>
 
 	<section class="content-card maestro-card motives-card" aria-label="Listado de motivos">
 		<div class="maestro-toolbar motives-toolbar">
-			<label class="maestro-search" for="motive-search"><i class="ti ti-search" aria-hidden="true"></i><input id="motive-search" type="search" placeholder="Buscar por nombre o comportamiento" autocomplete="off" /></label>
+			<label class="maestro-search form-label" for="motive-search"><i class="ti ti-search" aria-hidden="true"></i><input id="motive-search" type="search" placeholder="Buscar por nombre o comportamiento" autocomplete="off"  class="form-control"/></label>
 			<div class="maestro-toolbar__actions motives-filters">
-				<label class="status-filter" for="motive-operation-filter"><span>Operación</span><select id="motive-operation-filter"><option value="">Todas</option><option value="1">Entrada</option><option value="2">Salida</option></select></label>
-				<label class="status-filter" for="motive-status-filter"><span>Estado</span><select id="motive-status-filter"><option value="">Todos</option><option value="true">Activos</option><option value="false">Inactivos</option></select></label>
+				<label class="status-filter form-label" for="motive-operation-filter"><span>Operación</span><select id="motive-operation-filter" class="form-select"><option value="">Todas</option><option value="1">Entrada</option><option value="2">Salida</option></select></label>
+				<label class="status-filter form-label" for="motive-status-filter"><span>Estado</span><select id="motive-status-filter" class="form-select"><option value="">Todos</option><option value="true">Activos</option><option value="false">Inactivos</option></select></label>
 			</div>
 		</div>
 		<div id="motives-alert" class="maestro-alert" role="alert" hidden></div>
-		<div class="table-responsive maestro-table-wrap motives-table-wrap">
+		<div class="table-responsive p-3 maestro-table-wrap motives-table-wrap">
 			<table class="table align-middle maestro-table motives-table mb-0">
 				<thead><tr><th>Motivo</th><th>Operación</th><th>Comportamiento</th><th>Datos solicitados</th><th>Estado</th><th class="text-end">Acciones</th></tr></thead>
-				<tbody id="motives-rows"><tr><td colspan="6" class="table-loading">Cargando motivos…</td></tr></tbody>
+				<tbody id="motives-rows"></tbody>
 			</table>
 		</div>
 		<footer class="maestro-table-footer"><span id="motives-count" role="status" aria-live="polite">Cargando listado…</span><span>Los cambios afectan las nuevas guías.</span></footer>
@@ -43,16 +42,16 @@
 			<div class="modal-body">
 				<div id="motive-form-alert" class="maestro-alert" role="alert" hidden></div>
 				<div class="maestro-form-grid motives-form-grid">
-					<div class="maestro-field"><label for="motive-name">Nombre del motivo <b>*</b></label><input class="form-control" id="motive-name" maxlength="100" required placeholder="Ej. Devolución de cliente" /></div>
-					<div class="maestro-field"><label for="motive-operation">Operación <b>*</b></label><select class="form-select" id="motive-operation"><option value="1">Entrada</option><option value="2">Salida</option></select></div>
-					<div class="maestro-field motives-field--wide"><label for="motive-behavior">Comportamiento <b>*</b></label><select class="form-select" id="motive-behavior" required></select><small id="motive-help" class="motives-help"></small></div>
+					<div class="maestro-field"><label for="motive-name" class="form-label">Nombre del motivo <b>*</b></label><input class="form-control" id="motive-name" maxlength="100" required placeholder="Ej. Devolución de cliente" /></div>
+					<div class="maestro-field"><label for="motive-operation" class="form-label">Operación <b>*</b></label><select class="form-select" id="motive-operation"><option value="1">Entrada</option><option value="2">Salida</option></select></div>
+					<div class="maestro-field motives-field--wide"><label for="motive-behavior" class="form-label">Comportamiento <b>*</b></label><select class="form-select" id="motive-behavior" required></select><small id="motive-help" class="motives-help"></small></div>
 					<fieldset class="motives-requirements motives-field--wide"><legend>Datos que solicitará la guía</legend><div class="motives-check-grid">
-						<label class="motives-check"><input type="checkbox" id="motive-provider"><span>Proveedor</span></label>
-						<label class="motives-check"><input type="checkbox" id="motive-client"><span>Cliente</span></label>
-						<label class="motives-check"><input type="checkbox" id="motive-origin"><span>Almacén de origen</span></label>
-						<label class="motives-check"><input type="checkbox" id="motive-destination"><span>Almacén de destino</span></label>
+						<label class="motives-check form-check"><input type="checkbox" id="motive-provider" class="form-check-input"><span>Proveedor</span></label>
+						<label class="motives-check form-check"><input type="checkbox" id="motive-client" class="form-check-input"><span>Cliente</span></label>
+						<label class="motives-check form-check"><input type="checkbox" id="motive-origin" class="form-check-input"><span>Almacén de origen</span></label>
+						<label class="motives-check form-check"><input type="checkbox" id="motive-destination" class="form-check-input"><span>Almacén de destino</span></label>
 					</div></fieldset>
-					<label class="motives-active motives-field--wide"><input type="checkbox" id="motive-active" checked><span><strong>Motivo activo</strong><small>Se mostrará al registrar nuevas guías.</small></span></label>
+					<label class="motives-active motives-field--wide form-check"><input type="checkbox" id="motive-active" checked class="form-check-input"><span><strong>Motivo activo</strong><small>Se mostrará al registrar nuevas guías.</small></span></label>
 				</div>
 			</div>
 			<div class="modal-footer"><button class="btn btn-light" type="button" data-bs-dismiss="modal">Cancelar</button><button class="btn btn-primary motives-save" id="save-motive" type="submit"><i class="ti ti-device-floppy" aria-hidden="true"></i><span>Guardar motivo</span></button></div>
@@ -60,5 +59,5 @@
 	</div></div>
 </div>
 
-@section Styles { <link rel="stylesheet" href="~/css/modules/guias/motivos.css" asp-append-version="true" /> }
-@section Scripts { <script src="~/js/modules/guias/motivos.js" asp-append-version="true"></script> }
+@section Styles { <link rel="stylesheet" href="~/libs/datatables/dataTables.dataTables.min.css" asp-append-version="true" /><link rel="stylesheet" href="~/css/modules/guias/motivos.css" asp-append-version="true" /> }
+@section Scripts { <script src="~/libs/datatables/dataTables.min.js" asp-append-version="true"></script><script src="~/js/modules/guias/motivos.js" asp-append-version="true"></script> }

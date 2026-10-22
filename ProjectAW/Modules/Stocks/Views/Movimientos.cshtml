@@ -14,13 +14,11 @@
 
 <section class="stock-panel" aria-label="Historial de movimientos">
 	<div class="stock-toolbar stock-toolbar--filters">
-		<label class="stock-filter">Operación <select class="form-select" id="movement-operation-filter"><option value="">Todas</option><option value="1">Entrada</option><option value="2">Salida</option><option value="3">Traslado</option></select></label>
-		<label class="stock-filter">Almacén <select class="form-select" id="movement-warehouse-filter"><option value="">Todos</option></select></label>
-		<label class="stock-filter">Guía <select class="form-select" id="movement-guide-filter"><option value="">Todas</option></select></label>
-		<button class="btn btn-primary" id="movement-filter" type="button">Aplicar filtros</button>
+		<label class="stock-filter form-label">Operación <select class="form-select" id="movement-operation-filter"><option value="">Todas</option><option value="1">Entrada</option><option value="2">Salida</option></select></label>
+		<label class="stock-filter form-label">Almacén <select class="form-select" id="movement-warehouse-filter"><option value="">Todos</option></select></label>
 	</div>
 	<div class="stock-alert" id="movement-alert" role="status" aria-live="polite" hidden></div>
-	<div class="table-responsive">
+	<div class="table-responsive p-3">
 		<table class="table align-middle mb-0" id="movement-table">
 			<thead><tr><th>Guía</th><th>Motivo</th><th>Operación</th><th>CodProducto</th><th>Producto (dsc)</th><th>Origen</th><th>Destino</th><th>Cantidad esperada</th><th>Cantidad enviada</th><th>Diferencia</th><th>Operador</th><th>Observación</th><th>Fecha - Hora</th></tr></thead>
 			<tbody></tbody>
@@ -29,10 +27,10 @@
 </section>
 
 @section Styles {
-	<link rel="stylesheet" href="~/lib/datatables/dataTables.dataTables.min.css" asp-append-version="true" />
+	<link rel="stylesheet" href="~/libs/datatables/dataTables.dataTables.min.css" asp-append-version="true" />
 	<link rel="stylesheet" href="~/css/modules/stocks/stocks.css" asp-append-version="true" />
 }
 @section Scripts {
-	<script src="~/lib/datatables/dataTables.min.js" asp-append-version="true"></script>
+	<script src="~/libs/datatables/dataTables.min.js" asp-append-version="true"></script>
 	<script src="~/js/modules/stocks/movimientos.js" asp-append-version="true"></script>
 }

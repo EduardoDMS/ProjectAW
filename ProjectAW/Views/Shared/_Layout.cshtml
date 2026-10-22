@@ -5,10 +5,10 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 	<meta name="theme-color" content="#004596" />
 	<title>@ViewData["Title"] · Almacén AW</title>
-	<link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
-	<link rel="stylesheet" href="~/lib/tabler-icons/dist/tabler-icons.min.css" asp-append-version="true" />
+	<link rel="stylesheet" href="~/libs/bootstrap/dist/css/bootstrap.min.css" />
+	<link rel="stylesheet" href="~/libs/tabler-icons/dist/tabler-icons.min.css" asp-append-version="true" />
 	<link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
-	<link rel="stylesheet" href="~/lib/sweetalert2/sweetalert2.min.css" asp-append-version="true" />
+	<link rel="stylesheet" href="~/libs/sweetalert2/sweetalert2.min.css" asp-append-version="true" />
 	@await RenderSectionAsync("Styles", required: false)
 </head>
 <body class="app-body">
@@ -58,8 +58,6 @@
 					<a class="sidebar-link sidebar-link--child @(ViewContext.RouteData.Values["controller"]?.ToString() == "Categoria" ? "is-active" : "")" asp-controller="Categoria" asp-action="Index" title="Categorías"><span class="sidebar-link__bullet"></span><span>Categorías</span></a>
 					<a class="sidebar-link sidebar-link--child @(ViewContext.RouteData.Values["controller"]?.ToString() == "Cliente" ? "is-active" : "")" asp-controller="Cliente" asp-action="Index" title="Clientes"><span class="sidebar-link__bullet"></span><span>Clientes</span></a>
 					<a class="sidebar-link sidebar-link--child @(ViewContext.RouteData.Values["controller"]?.ToString() == "Proveedor" ? "is-active" : "")" asp-controller="Proveedor" asp-action="Index" title="Proveedores"><span class="sidebar-link__bullet"></span><span>Proveedores</span></a>
-					<a class="sidebar-link sidebar-link--child @(ViewContext.RouteData.Values["controller"]?.ToString() == "Rol" ? "is-active" : "")" asp-controller="Rol" asp-action="Index" title="Roles"><span class="sidebar-link__bullet"></span><span>Roles</span></a>
-					<a class="sidebar-link sidebar-link--child @(ViewContext.RouteData.Values["controller"]?.ToString() == "TipoDocumento" ? "is-active" : "")" asp-controller="TipoDocumento" asp-action="Index" title="Tipos de documento"><span class="sidebar-link__bullet"></span><span>Tipos de documento</span></a>
 					<a class="sidebar-link sidebar-link--child @(ViewContext.RouteData.Values["controller"]?.ToString() == "UnidadMedida" ? "is-active" : "")" asp-controller="UnidadMedida" asp-action="Index" title="Unidades de medida"><span class="sidebar-link__bullet"></span><span>Unidades de medida</span></a>
 				</nav>
 			</div>
@@ -103,8 +101,8 @@
 		</div>
 	</div>
 
-	<script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
-	<script src="~/lib/sweetalert2/sweetalert2.all.min.js" asp-append-version="true"></script>
+	<script src="~/libs/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+	<script src="~/libs/sweetalert2/sweetalert2.all.min.js" asp-append-version="true"></script>
 	<script src="~/js/site.js" asp-append-version="true"></script>
 	<script src="~/js/modules/seguridad/auth/auth.js" asp-append-version="true"></script>
 	<script src="~/js/modules/layout/sidebar.js" asp-append-version="true"></script>

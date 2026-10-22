@@ -7,7 +7,7 @@ document.addEventListener("DOMContentLoaded", () => {
 	const OPERATIONS = [
 		{ id: 1, name: "Entrada", code: "ENT", availableForCreation: true },
 		{ id: 2, name: "Salida", code: "SAL", availableForCreation: true },
-		{ id: 3, name: "Traslado (histórico)", code: "TRA", availableForCreation: false },
+		{ id: 3, name: "Traslado (histórico)", code: "TRA", availableForCreation: false, historical: true },
 	];
 	const STATUSES = [
 		{ id: 1, name: "Pendiente", css: "pending" },
@@ -19,6 +19,7 @@ document.addEventListener("DOMContentLoaded", () => {
 	// Busca un elemento del HTML por selector para conectar la vista con este módulo.
 	const select = (selector) => document.querySelector(selector);
 	const rows = select("#guide-rows");
+	const table = select(".guide-table");
 	const alertBox = select("#guide-alert");
 	const formAlert = select("#guide-form-alert");
 	const search = select("#guide-search");
@@ -28,6 +29,7 @@ document.addEventListener("DOMContentLoaded", () => {
 	const dateInput = select("#guide-date");
 	const editorElement = select("#guide-editor");
 	const detailElement = select("#guide-detail-modal");
+	const detailLinesTable = select(".guide-lines-table");
 	const editor = window.bootstrap?.Modal.getOrCreateInstance(editorElement);
 	const detailModal =
 		window.bootstrap?.Modal.getOrCreateInstance(detailElement);
@@ -46,6 +48,10 @@ document.addEventListener("DOMContentLoaded", () => {
 	let lookupWarning = null;
 	let editingId = null;
 	let loadingGuides = false;
+	let guideGrid = null;
+	let detailLinesGrid = null;
+	let emptyTableMessage = "Todavía no hay guías para mostrar.";
+	detailElement.addEventListener("shown.bs.modal", () => detailLinesGrid?.columns.adjust());
 
 	// Envía fetch a los endpoints de Guías y convierte respuestas de error en mensajes.
 	async function fetchApi(url, options = {}) {
@@ -160,9 +166,10 @@ document.addEventListener("DOMContentLoaded", () => {
 	// Llena los filtros de operación y estado con las opciones reconocidas por la vista.
 	function setupFilters() {
 		for (const operation of OPERATIONS) {
-			operationFilter.append(
-				new Option(operation.name, String(operation.id)),
-			);
+			if (!operation.historical)
+				operationFilter.append(
+					new Option(operation.name, String(operation.id)),
+				);
 			// Actualiza los campos requeridos al cambiar el tipo de operación.
 			if (operation.availableForCreation)
 				select("#guide-operation").append(new Option(operation.name, String(operation.id)));
@@ -286,18 +293,17 @@ document.addEventListener("DOMContentLoaded", () => {
 	// Dibuja las guías recibidas del API, sus estados y acciones disponibles.
 	function renderGuides() {
 		const items = visibleGuides();
+		if (guideGrid) {
+			guideGrid.destroy();
+			guideGrid = null;
+		}
 		rows.replaceChildren();
 		if (items.length === 0) {
-			const row = document.createElement("tr");
-			const cell = document.createElement("td");
-			cell.colSpan = 6;
-			cell.className = "guide-empty";
-			cell.textContent = guides.length
+			emptyTableMessage = guides.length
 				? "No hay guías que coincidan con la búsqueda."
 				: "Todavía no hay guías para mostrar.";
-			row.append(cell);
-			rows.append(row);
 			select("#guide-count").textContent = `0 de ${guides.length} guías`;
+			initializeGuideGrid();
 			return;
 		}
 
@@ -359,13 +365,29 @@ document.addEventListener("DOMContentLoaded", () => {
 		}
 		select("#guide-count").textContent =
 			`${items.length} de ${guides.length} ${guides.length === 1 ? "guía" : "guías"}`;
+		emptyTableMessage = "No hay guías para mostrar.";
+		initializeGuideGrid();
+	}
+
+	function initializeGuideGrid() {
+		guideGrid = new DataTable(table, {
+			searching: false,
+			lengthChange: false,
+			info: false,
+			pageLength: 10,
+			columnDefs: [{ targets: -1, orderable: false }],
+			language: {
+				emptyTable: emptyTableMessage,
+				paginate: { previous: "Anterior", next: "Siguiente" },
+			},
+		});
 	}
 
 	// Crea un botón de acción y conecta su comportamiento sin insertar HTML de datos.
 	function actionButton(label, className, handler) {
 		const button = document.createElement("button");
 		button.type = "button";
-		button.className = className;
+		button.className = `btn ${className}`;
 		button.textContent = label;
 		button.addEventListener("click", handler);
 		return button;
@@ -394,14 +416,13 @@ document.addEventListener("DOMContentLoaded", () => {
 				);
 		} catch (error) {
 			if (guides.length === 0) {
+				if (guideGrid) {
+					guideGrid.destroy();
+					guideGrid = null;
+				}
 				rows.replaceChildren();
-				const row = document.createElement("tr");
-				const cell = document.createElement("td");
-				cell.className = "guide-empty";
-				cell.colSpan = 6;
-				cell.textContent = "No fue posible actualizar las guías. Inténtalo nuevamente.";
-				row.append(cell);
-				rows.append(row);
+				emptyTableMessage = "No se pudieron cargar las guías.";
+				initializeGuideGrid();
 				select("#guide-count").textContent = "";
 			}
 			window.showAppError(
@@ -583,7 +604,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 		const remove = document.createElement("button");
 		remove.type = "button";
-		remove.className = "guide-remove-line";
+		remove.className = "btn btn-sm btn-outline-danger guide-remove-line";
 		remove.setAttribute("aria-label", "Quitar producto");
 		remove.title = "Quitar producto";
 		remove.textContent = "×";
@@ -965,6 +986,10 @@ document.addEventListener("DOMContentLoaded", () => {
 		}
 
 		const body = select("#guide-detail-lines");
+		if (detailLinesGrid) {
+			detailLinesGrid.destroy();
+			detailLinesGrid = null;
+		}
 		body.replaceChildren();
 		for (const line of guide.detalles || []) {
 			const row = document.createElement("tr");
@@ -984,14 +1009,14 @@ document.addEventListener("DOMContentLoaded", () => {
 			row.append(productCell, amountCell);
 			body.append(row);
 		}
-		if (!body.children.length) {
-			const row = document.createElement("tr");
-			const cell = document.createElement("td");
-			cell.colSpan = 2;
-			cell.textContent = "La guía no contiene productos.";
-			row.append(cell);
-			body.append(row);
-		}
+		detailLinesGrid = new DataTable(detailLinesTable, {
+			searching: false,
+			lengthChange: false,
+			info: false,
+			paging: false,
+			ordering: false,
+			language: { emptyTable: "La guía no contiene productos." },
+		});
 	}
 
 	setMinimumProgramDate();

@@ -91,8 +91,8 @@ document.addEventListener("DOMContentLoaded", async () => {
 						searchable: false,
 						className: "text-end",
 						render: (_value, _type, warehouse) => `
-							<button class="table-action" data-action="edit" data-id="${Number(warehouse.idAlmacen)}" type="button">Editar</button>
-							<button class="table-action table-action--muted" data-action="status" data-id="${Number(warehouse.idAlmacen)}" type="button">${warehouse.activo ? "Desactivar" : "Activar"}</button>
+							<button class="btn table-action" data-action="edit" data-id="${Number(warehouse.idAlmacen)}" type="button">Editar</button>
+							<button class="btn table-action table-action--muted" data-action="status" data-id="${Number(warehouse.idAlmacen)}" type="button">${warehouse.activo ? "Desactivar" : "Activar"}</button>
 						`,
 					},
 				],

@@ -5,6 +5,7 @@ document.addEventListener("DOMContentLoaded", () => {
 	// El formulario modal vive fuera de #motives-app; los selectores deben buscar en todo el documento.
 	const $ = (selector) => document.querySelector(selector);
 	const rows = $("#motives-rows");
+	const table = rows.closest("table");
 	const alertBox = $("#motives-alert");
 	const formAlert = $("#motive-form-alert");
 	const modalElement = document.querySelector("#motive-editor");
@@ -18,6 +19,22 @@ document.addEventListener("DOMContentLoaded", () => {
 	let motives = [];
 	let behaviors = [];
 	let editingId = null;
+	let grid = null;
+	let emptyTableMessage = "Todavía no hay motivos registrados.";
+
+	function initializeGrid() {
+		grid = new DataTable(table, {
+			searching: false,
+			lengthChange: false,
+			info: false,
+			pageLength: 10,
+			columnDefs: [{ targets: -1, orderable: false }],
+			language: {
+				emptyTable: emptyTableMessage,
+				paginate: { previous: "Anterior", next: "Siguiente" },
+			},
+		});
+	}
 
 	async function request(url, options = {}) {
 		const headers = new Headers(options.headers || {});
@@ -54,7 +71,7 @@ document.addEventListener("DOMContentLoaded", () => {
 	function iconButton(icon, label, className, onClick) {
 		const button = document.createElement("button");
 		button.type = "button";
-		button.className = `table-action ${className || ""}`.trim();
+		button.className = `btn table-action ${className || ""}`.trim();
 		button.title = label;
 		button.setAttribute("aria-label", label);
 		const glyph = document.createElement("i");
@@ -93,6 +110,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
 	function renderRows() {
 		const visible = filteredMotives();
+		if (grid) {
+			grid.destroy();
+			grid = null;
+		}
 		rows.replaceChildren();
 		countLabel.replaceChildren();		const count = document.createElement("strong"); count.textContent = String(visible.length); countLabel.append(count, document.createTextNode(` de ${motives.length} motivos`));
 		for (const item of visible) {
@@ -118,25 +139,13 @@ document.addEventListener("DOMContentLoaded", () => {
 			appendCell(row, "Acciones", actions, "record-actions");
 			rows.append(row);
 		}
-		if (!visible.length) {
-			const row = document.createElement("tr");
-			const cell = document.createElement("td"); cell.colSpan = 6; cell.className = "table-empty";
-			cell.textContent = motives.length ? "No hay motivos que coincidan con los filtros." : "Todavía no hay motivos registrados.";
-			row.append(cell); rows.append(row);
-		}
+		emptyTableMessage = motives.length ? "No hay motivos que coincidan con los filtros." : "Todavía no hay motivos registrados.";
+		initializeGrid();
 	}
 
 	async function load() {
 		alertBox.hidden = true;
 		if (motives.length === 0) {
-			rows.replaceChildren();
-			const loadingRow = document.createElement("tr");
-			const loadingCell = document.createElement("td");
-			loadingCell.colSpan = 6;
-			loadingCell.className = "table-loading";
-			loadingCell.textContent = "Cargando motivos…";
-			loadingRow.append(loadingCell);
-			rows.append(loadingRow);
 			countLabel.textContent = "Consultando la API…";
 		}
 		try {
@@ -146,26 +155,23 @@ document.addEventListener("DOMContentLoaded", () => {
 			alertBox.hidden = true;
 			renderRows();
 		} catch (error) {
-			const failedRow = document.createElement("tr");
-			const failedCell = document.createElement("td");
-			failedCell.colSpan = 6;
-			failedCell.className = "table-empty motives-load-error";
-			failedCell.textContent = error.message || "No se pudieron cargar los motivos.";
 			const retry = document.createElement("button");
 			retry.type = "button";
 			retry.className = "btn btn-sm btn-outline-primary ms-2";
 			retry.textContent = "Reintentar";
 			retry.addEventListener("click", () => void load());
-			failedCell.append(retry);
-			failedRow.append(failedCell);
 			if (motives.length > 0) {
 				renderRows();
 				countLabel.textContent = `${motives.length} motivos · se conserva la última consulta válida`;
 			} else {
-				rows.replaceChildren(failedRow);
+				if (grid) { grid.destroy(); grid = null; }
+				rows.replaceChildren();
+				emptyTableMessage = "No se pudieron cargar los motivos.";
+				initializeGrid();
 				countLabel.textContent = "No se pudo cargar el listado";
 			}
 			showError(alertBox, error.message || "No se pudieron cargar los motivos.");
+			alertBox.append(" ", retry);
 		}
 	}
 
