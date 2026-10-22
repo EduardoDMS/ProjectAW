@@ -57,6 +57,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 			const text = DataTable.render.text();
 			const columns = [
 				{ data: "numeroGuia", render: text },
+				{ data: null, render: (_value, _type, row) => text.display(row.motivoGuia ?? row.MotivoGuia ?? row.nombreMotivoGuia ?? row.nombreMotivo ?? "—") },
 				{ data: "operacion", render: text },
 				{ data: "codigoProducto", render: text },
 				{ data: "producto", render: text },
@@ -74,7 +75,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 				grid = new DataTable(table, {
 					data: records,
 					columns,
-					order: [[11, "desc"]],
+					order: [[12, "desc"]],
 					pageLength: 10,
 					lengthMenu: [10, 25, 50],
 					autoWidth: false,

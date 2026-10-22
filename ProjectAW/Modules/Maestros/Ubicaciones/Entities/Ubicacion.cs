@@ -13,5 +13,6 @@ namespace ProjectAW.Modules.Maestros.Ubicaciones.Entities
 
         public int IdAlmacen { get; set; }
         public Almacen? Almacen { get; set; }
+        public ICollection<UbicacionDespacho> UbicacionesDespacho { get; set; } = new List<UbicacionDespacho>();
     }
 }

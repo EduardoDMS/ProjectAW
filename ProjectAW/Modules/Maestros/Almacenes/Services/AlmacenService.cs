@@ -36,9 +36,7 @@ namespace ProjectAW.Modules.Maestros.Almacenes.Services
             almacen.Activo = dto.Activo;
             almacen.FchModificacion = DateTime.UtcNow;
 
-            await _repository.ActualizarAlmacenAsync(almacen);
-
-            return true;
+            return await _repository.ActualizarAlmacenAsync(almacen, dto.IdUbicacionesDespacho ?? []);
 
         }
 
@@ -58,6 +56,8 @@ namespace ProjectAW.Modules.Maestros.Almacenes.Services
 
         public async Task<AlmacenDTO> CrearAlmacenAsync(CrearAlmacenDto dto)
         {
+            if (dto.IdUbicacionesDespacho?.Count > 0)
+                throw new ReglaNegocioException("Primero crea el almacén y sus ubicaciones; después podrás asignar las ubicaciones de despacho al editarlo.");
             var codigo = dto.Codigo.Trim();
             var almacenExistente = await _repository.ObtenerAlmacenPorCodigoAsync(codigo);
 
@@ -79,8 +79,9 @@ namespace ProjectAW.Modules.Maestros.Almacenes.Services
                 IdAlmacen = almacen.IdAlmacen,
                 Codigo = almacen.Codigo,
                 Descripcion = almacen.Descripcion,
-                Activo = true,
-                FchRegistro = almacen.FchRegistro
+                Activo = almacen.Activo,
+                FchRegistro = almacen.FchRegistro,
+                IdUbicacionesDespacho = []
             };
 
         }
@@ -95,7 +96,8 @@ namespace ProjectAW.Modules.Maestros.Almacenes.Services
                 Codigo = a.Codigo,
                 Descripcion = a.Descripcion,
                 Activo = a.Activo,
-                FchRegistro = a.FchRegistro
+                FchRegistro = a.FchRegistro,
+                IdUbicacionesDespacho = a.UbicacionesDespacho.Select(u => u.IdUbicacion).ToList()
             }).ToList();
         }
 
@@ -112,7 +114,8 @@ namespace ProjectAW.Modules.Maestros.Almacenes.Services
                 Codigo = almacen.Codigo,
                 Descripcion = almacen.Descripcion,
                 Activo = almacen.Activo,
-                FchRegistro = almacen.FchRegistro
+                FchRegistro = almacen.FchRegistro,
+                IdUbicacionesDespacho = almacen.UbicacionesDespacho.Select(u => u.IdUbicacion).ToList()
             };
         }
 
@@ -129,7 +132,8 @@ namespace ProjectAW.Modules.Maestros.Almacenes.Services
                  Codigo = almacen.Codigo,
                  Descripcion = almacen.Descripcion,
                  Activo = almacen.Activo,
-                 FchRegistro = almacen.FchRegistro
+                 FchRegistro = almacen.FchRegistro,
+                 IdUbicacionesDespacho = almacen.UbicacionesDespacho.Select(u => u.IdUbicacion).ToList()
              };
         }
     }

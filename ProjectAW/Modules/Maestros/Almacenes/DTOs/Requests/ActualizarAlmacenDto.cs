@@ -5,6 +5,7 @@
         public string Codigo { get; set; } = string.Empty;
         public string? Descripcion { get; set; }
         public bool Activo { get; set; }
+        public List<int> IdUbicacionesDespacho { get; set; } = [];
         public DateTime FchModificacion { get; set; } = DateTime.Now;
     }
 }

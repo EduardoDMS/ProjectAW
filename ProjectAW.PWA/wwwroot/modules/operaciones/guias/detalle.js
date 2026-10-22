@@ -22,7 +22,7 @@ async function loadGuide() {
   page.setAttribute("aria-busy", "true");
   try {
     const guide = await getMyGuideById(guideId);
-    const lookups = await getGuideDetailLookups(guide.idTipoOperacionGuia);
+    const lookups = await getGuideDetailLookups(guide);
     renderGuide(guide, lookups);
     if (guide.idEstadoGuia === 2) {
       const startButton = document.querySelector("#start-registration");
@@ -49,7 +49,7 @@ async function loadGuide() {
 }
 
 function renderGuide(guide, lookups) {
-  const operation = OPERATIONS[({ 1: "recepcion", 2: "despacho", 3: "traslado" })[guide.idTipoOperacionGuia]];
+  const operation = OPERATIONS[({ 1: "recepcion", 2: "despacho" })[guide.idTipoOperacionGuia]];
   const statusNames = { 1: "Pendiente", 2: "En proceso", 3: "Atendida", 4: "Cancelada" };
   document.title = `${guide.numeroGuia} | Proyecto AW`;
   document.querySelector("#guide-detail-title").textContent = guide.numeroGuia || `Guía #${guide.idGuia}`;
@@ -63,15 +63,19 @@ function renderGuide(guide, lookups) {
   const counterpartyName = (id, kind) => lookups.counterparties.get(Number(id)) || `${kind} #${id}`;
   const facts = [
     ["Operación", operation?.title || `Tipo #${guide.idTipoOperacionGuia}`],
+    ["Motivo", guide.nombreMotivo || "—"],
     ["Estado", statusNames[guide.idEstadoGuia] || "Desconocido"],
     ["Fecha programada", formatScheduledAt(guide.fechaProgramada)],
     ["Fecha de registro", formatScheduledAt(guide.fechaRegistro)]
   ];
 
-  if (guide.idProveedor) facts.push(["Proveedor", counterpartyName(guide.idProveedor, "Proveedor")]);
-  if (guide.idCliente) facts.push(["Cliente", counterpartyName(guide.idCliente, "Cliente")]);
-  if (guide.idAlmacenOrigen) facts.push(["Almacén de origen", warehouseName(guide.idAlmacenOrigen)]);
-  if (guide.idAlmacenDestino) facts.push(["Almacén de destino", warehouseName(guide.idAlmacenDestino)]);
+  if (guide.tipoTercero && (guide.requiereProveedor || guide.requiereCliente)) {
+    const counterpartyId = guide.requiereProveedor ? guide.idProveedor : guide.idCliente;
+    facts.push([guide.tipoTercero, guide.nombreTercero || counterpartyName(counterpartyId, guide.tipoTercero)]);
+  }
+  if (guide.requiereAlmacenOrigen && guide.idAlmacenOrigen) facts.push(["Almacén de origen", guide.nombreAlmacenOrigen || warehouseName(guide.idAlmacenOrigen)]);
+  if (guide.requiereAlmacenDestino && guide.idAlmacenDestino) facts.push(["Almacén de destino", guide.nombreAlmacenDestino || warehouseName(guide.idAlmacenDestino)]);
+  if (guide.numeroGuiaRelacionada) facts.push(["Guía relacionada", guide.numeroGuiaRelacionada]);
   if (guide.tipoDocumentoReferencia || guide.numeroDocumentoReferencia) {
     facts.push(["Documento de referencia", [guide.tipoDocumentoReferencia, guide.numeroDocumentoReferencia].filter(Boolean).join(" · ")]);
   }

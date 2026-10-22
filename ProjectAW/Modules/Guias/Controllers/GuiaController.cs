@@ -20,4 +20,11 @@ public sealed class GuiaController : Controller
         ViewData["OpenCreate"] = true;
         return View("Index");
     }
+
+    [HttpGet("Motivos")]
+    public IActionResult Motivos()
+    {
+        RouteData.Values["viewModule"] = "Guias";
+        return View("Motivos");
+    }
 }

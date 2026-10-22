@@ -34,6 +34,7 @@ namespace ProjectAW.Modules.Maestros.Ubicaciones.Services
             ubicacion.Descripcion = dto.Descripcion?.Trim();
             ubicacion.Activo = dto.Activo;
             ubicacion.FchModificacion = DateTime.Now;
+            if (ubicacion.IdAlmacen != dto.IdAlmacen) await _repository.EliminarAsignacionDespachoAsync(id);
             ubicacion.IdAlmacen = dto.IdAlmacen;
 
             await _repository.ActualizarUbicacionAsync(ubicacion);
@@ -68,7 +69,8 @@ namespace ProjectAW.Modules.Maestros.Ubicaciones.Services
                 Codigo = ubicacion.Codigo,
                 Descripcion = ubicacion.Descripcion,
                 Activo = ubicacion.Activo,
-                IdAlmacen = ubicacion.IdAlmacen
+                IdAlmacen = ubicacion.IdAlmacen,
+                EsUbicacionDespacho = ubicacion.UbicacionesDespacho.Any(x => x.IdAlmacen == ubicacion.IdAlmacen)
             };
         }
 
@@ -95,7 +97,8 @@ namespace ProjectAW.Modules.Maestros.Ubicaciones.Services
                 Codigo = u.Codigo,
                 Descripcion = u.Descripcion,
                 Activo = u.Activo,
-                IdAlmacen = u.IdAlmacen
+                IdAlmacen = u.IdAlmacen,
+                EsUbicacionDespacho = u.UbicacionesDespacho.Any(x => x.IdAlmacen == u.IdAlmacen)
             }).ToList();
 
         }
@@ -103,7 +106,7 @@ namespace ProjectAW.Modules.Maestros.Ubicaciones.Services
         public async Task<List<UbicacionDto>> ObtenerUbicacionesAsync(int? idAlmacen, bool soloActivas)
         {
             var ubicaciones = await _repository.ListarUbicacionesAsync(idAlmacen, soloActivas);
-            return ubicaciones.Select(u => new UbicacionDto { IdUbicacion = u.IdUbicacion, Codigo = u.Codigo, Descripcion = u.Descripcion, Activo = u.Activo, IdAlmacen = u.IdAlmacen }).ToList();
+            return ubicaciones.Select(u => new UbicacionDto { IdUbicacion = u.IdUbicacion, Codigo = u.Codigo, Descripcion = u.Descripcion, Activo = u.Activo, EsUbicacionDespacho = u.UbicacionesDespacho.Any(x => x.IdAlmacen == u.IdAlmacen), IdAlmacen = u.IdAlmacen }).ToList();
         }
 
         public async Task<UbicacionDto?> ObtenerUbicacionPorCodigoAsync(string codigo)
@@ -119,7 +122,8 @@ namespace ProjectAW.Modules.Maestros.Ubicaciones.Services
                 Codigo = ubicacion.Codigo,
                 Descripcion = ubicacion.Descripcion,
                 Activo = ubicacion.Activo,
-                IdAlmacen = ubicacion.IdAlmacen
+                IdAlmacen = ubicacion.IdAlmacen,
+                EsUbicacionDespacho = ubicacion.UbicacionesDespacho.Any(x => x.IdAlmacen == ubicacion.IdAlmacen)
             };
         }
 
@@ -136,7 +140,8 @@ namespace ProjectAW.Modules.Maestros.Ubicaciones.Services
                 Codigo = ubicacion.Codigo,
                 Descripcion = ubicacion.Descripcion,
                 Activo = ubicacion.Activo,
-                IdAlmacen = ubicacion.IdAlmacen
+                IdAlmacen = ubicacion.IdAlmacen,
+                EsUbicacionDespacho = ubicacion.UbicacionesDespacho.Any(x => x.IdAlmacen == ubicacion.IdAlmacen)
             };
 
         }

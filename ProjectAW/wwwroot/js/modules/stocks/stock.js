@@ -2,6 +2,8 @@
 document.addEventListener("DOMContentLoaded", async () => {
 	const table = document.querySelector("#stock-table");
 	const alertBox = document.querySelector("#stock-alert");
+	const results = document.querySelector("#stock-results");
+	const prompt = document.querySelector("#stock-select-prompt");
 	let grid;
 
 	// Llama al API con fetch y convierte Problem Details en un mensaje entendible.
@@ -36,7 +38,14 @@ document.addEventListener("DOMContentLoaded", async () => {
 	async function loadStocks() {
 		showError("");
 		const idAlmacen = document.querySelector("#stock-warehouse").value;
-		if (!idAlmacen) { if (grid) grid.clear().draw(); return; }
+		if (!idAlmacen) {
+			if (grid) grid.clear().draw();
+			results.hidden = true;
+			prompt.hidden = false;
+			return;
+		}
+		results.hidden = false;
+		prompt.hidden = true;
 		try {
 			const stocks = await fetchJson(`/api/stocks?idAlmacen=${encodeURIComponent(idAlmacen)}`);
 			const text = DataTable.render.text();

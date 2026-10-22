@@ -23,34 +23,67 @@ namespace ProjectAW.Modules.Guias.Services
         private readonly IGuiaRepository _repo;
         private readonly ICurrentUserService _currentUser;
         private readonly IStockService _stockService;
+        private readonly IMotivoGuiaRepository _motivos;
 
-        public GuiaService(IGuiaRepository repo, ICurrentUserService currentUser, IStockService stockService)
+        public GuiaService(IGuiaRepository repo, ICurrentUserService currentUser, IStockService stockService, IMotivoGuiaRepository motivos)
         {
             _repo = repo;
             _currentUser = currentUser;
             _stockService = stockService;
+            _motivos = motivos;
         } 
 
         public async Task<GuiaResponse> CrearAsync(CrearGuiaRequest request, CancellationToken ct = default)
         {
-            ValidarCabecera(request.IdTipoOperacionGuia, request);
+            var motivo = await ObtenerMotivoActivoAsync(request.IdMotivoGuia, request.IdTipoOperacionGuia, ct);
+            ValidarCabecera(motivo, request);
             ValidarDetalles(request.Detalles);
             await ValidarReferenciasAsync(request, ct);
-            await ValidarDisponibilidadAsync(request.IdTipoOperacionGuia, request, ct);
+            await ValidarDisponibilidadAsync(request.IdTipoOperacionGuia, motivo, request, ct);
 
             var guia = new CabeceraGuia
             {
                 NumeroGuia = await _repo.ObtenerSiguienteNumeroAsync(request.IdTipoOperacionGuia, ct),
                 IdTipoOperacionGuia = request.IdTipoOperacionGuia,
+                IdMotivoGuia = motivo.IdMotivoGuia,
                 IdEstadoGuia = EstadoGuiasIds.Pendiente,
                 IdUsuarioRegistro = _currentUser.IdUsuario
             };
-            AplicarDatos(guia, request);
+            AplicarDatos(guia, request, motivo);
 
-            await _repo.AgregarAsync(guia, ct);
-            await _repo.GuardarCambiosAsync(ct);
+            if (motivo.IdTipoComportamiento == 2)
+            {
+                var entradaMotivo = (await _motivos.ListarAsync(TipoOperacionGuiaIds.Entrada, true, ct))
+                    .Where(x => x.IdTipoComportamiento == 1 && x.RequiereAlmacenDestino && !x.RequiereAlmacenOrigen && !x.RequiereProveedor && !x.RequiereCliente)
+                    .ToList();
+                if (entradaMotivo.Count != 1)
+                    throw new ReglaNegocioException("Para crear un traslado interno configura exactamente un motivo activo de Entrada normal que requiera almacén destino, sin proveedor, cliente ni almacén de origen.");
+                var entrada = new CabeceraGuia
+                {
+                    NumeroGuia = await _repo.ObtenerSiguienteNumeroAsync(TipoOperacionGuiaIds.Entrada, ct),
+                    IdTipoOperacionGuia = TipoOperacionGuiaIds.Entrada,
+                    IdMotivoGuia = entradaMotivo[0].IdMotivoGuia,
+                    IdEstadoGuia = EstadoGuiasIds.Pendiente,
+                    IdUsuarioRegistro = _currentUser.IdUsuario,
+                    IdAlmacenDestino = request.IdAlmacenDestino,
+                    FechaProgramada = request.FechaProgramada,
+                    TipoDocumentoReferencia = request.TipODocumentoReferencia,
+                    NumeroDocumentoReferencia = request.NumeroDocumentoReferencia,
+                    Observacion = $"Entrada relacionada a {guia.NumeroGuia}. {request.Observacion}".Trim()
+                };
+                foreach (var detail in request.Detalles)
+                    entrada.Detalles.Add(new DetalleGuia { IdProducto = detail.IdProducto, CantidadEsperada = detail.CantidadEsperada });
+                await _repo.AgregarParAsync(guia, entrada, ct);
+                guia.GuiaRelacionada = entrada;
+                entrada.GuiaRelacionada = guia;
+            }
+            else
+            {
+                await _repo.AgregarAsync(guia, ct);
+                await _repo.GuardarCambiosAsync(ct);
+            }
 
-            return ToResponse(guia);
+            return await ObtenerPorIdAsync(guia.IdGuia, ct);
         }
 
         public async Task<GuiaResponse> ObtenerPorIdAsync(int idGuia, CancellationToken ct = default) =>
@@ -68,30 +101,49 @@ namespace ProjectAW.Modules.Guias.Services
             var guia = await ObtenerOFallarAsync(idGuia, ct);
             Exigir(guia.IdEstadoGuia == EstadoGuiasIds.Pendiente, "Solo se puede editar una guía en estado Pendiente.");
 
-            ValidarCabecera(guia.IdTipoOperacionGuia, request);
+            if (guia.IdGuiaRelacionada.HasValue)
+                throw new ReglaNegocioException("Esta guía pertenece a un traslado interno relacionado. Cancela ambas guías y crea nuevamente el movimiento para conservar su coherencia.");
+            var motivo = await ObtenerMotivoActivoAsync(request.IdMotivoGuia, guia.IdTipoOperacionGuia, ct);
+            ValidarCabecera(motivo, request);
             ValidarDetalles(request.Detalles);
             await ValidarReferenciasAsync(request, ct);
-            await ValidarDisponibilidadAsync(guia.IdTipoOperacionGuia, request, ct);
+            await ValidarDisponibilidadAsync(guia.IdTipoOperacionGuia, motivo, request, ct);
 
-            AplicarDatos(guia, request);
+            AplicarDatos(guia, request, motivo);
             RegistrarModificacion(guia); // nuevo api 
             await _repo.GuardarCambiosAsync(ct);
            
-            return ToResponse(guia);
+            return await ObtenerPorIdAsync(guia.IdGuia, ct);
         }
 
         public async Task CancelarAsync(int idGuia, CancellationToken ct = default)
         {
             var guia = await ObtenerOFallarAsync(idGuia, ct);
             Exigir(guia.IdEstadoGuia == EstadoGuiasIds.Pendiente, "Solo se puede cancelar una guía en estado Pendiente.");
+            if (guia.IdGuiaRelacionada.HasValue)
+            {
+                var relacionada = await ObtenerOFallarAsync(guia.IdGuiaRelacionada.Value, ct);
+                Exigir(relacionada.IdEstadoGuia == EstadoGuiasIds.Pendiente, "No se pueden cancelar las dos guías: la guía relacionada ya está en proceso o atendida.");
+                relacionada.IdEstadoGuia = EstadoGuiasIds.Cancelada;
+                RegistrarModificacion(relacionada);
+            }
             RegistrarModificacion(guia); // verificado
             guia.IdEstadoGuia = EstadoGuiasIds.Cancelada;
             await _repo.GuardarCambiosAsync(ct);
         }
 
 
-        private static void ValidarCabecera(int idTipoOperacionGuia, ActualizarGuiaRequest r)
+        private static void ValidarCabecera(MotivoGuia motivo, ActualizarGuiaRequest r)
         {
+            Exigir(motivo.Activo, "El motivo está inactivo y no se puede usar en nuevas guías.");
+            Exigir(r.IdProveedor.HasValue == motivo.RequiereProveedor, motivo.RequiereProveedor ? "El motivo requiere proveedor." : "El motivo seleccionado no admite proveedor.");
+            Exigir(r.IdCliente.HasValue == motivo.RequiereCliente, motivo.RequiereCliente ? "El motivo requiere cliente." : "El motivo seleccionado no admite cliente.");
+            Exigir(r.IdAlmacenOrigen.HasValue == motivo.RequiereAlmacenOrigen, motivo.RequiereAlmacenOrigen ? "El motivo requiere almacén de origen." : "El motivo seleccionado no admite almacén de origen.");
+            Exigir(r.IdAlmacenDestino.HasValue == motivo.RequiereAlmacenDestino, motivo.RequiereAlmacenDestino ? "El motivo requiere almacén de destino." : "El motivo seleccionado no admite almacén de destino.");
+            var idTipoOperacionGuia = motivo.IdTipoOperacionGuia;
+            Exigir(idTipoOperacionGuia is TipoOperacionGuiaIds.Entrada or TipoOperacionGuiaIds.Salida, "Traslado ya no es una operación disponible.");
+            if (motivo.IdTipoComportamiento == 2)
+                Exigir(idTipoOperacionGuia == TipoOperacionGuiaIds.Salida && r.IdAlmacenOrigen != r.IdAlmacenDestino, "Un traslado interno requiere una salida y dos almacenes distintos.");
             Exigir(r.FechaProgramada != default, "La fecha programada es obligatoria.");
             Exigir(r.FechaProgramada.Date >= DateTime.Today,
                 "La fecha programada no puede ser anterior a hoy.");
@@ -99,30 +151,9 @@ namespace ProjectAW.Modules.Guias.Services
             switch (idTipoOperacionGuia)
             {
                 case TipoOperacionGuiaIds.Entrada:
-                    Exigir(r.IdProveedor.HasValue, "La entrada requiere un proveedor.");
-                    Exigir(r.IdAlmacenDestino.HasValue, "La entrada requiere un almacén de destino.");
-                    Exigir(!r.IdCliente.HasValue && !r.IdAlmacenOrigen.HasValue,
-                        "La entrada no admite cliente ni almacén de origen.");
-                    break;
-
                 case TipoOperacionGuiaIds.Salida:
-                    Exigir(r.IdAlmacenOrigen.HasValue, "La salida requiere un almacén de origen.");
-                    Exigir(r.IdCliente.HasValue, "La salida requiere un cliente.");
-                    Exigir(!r.IdProveedor.HasValue && !r.IdAlmacenDestino.HasValue,
-                        "La salida no admite proveedor ni almacén de destino.");
                     break;
-
-                case TipoOperacionGuiaIds.Traslado:
-                    Exigir(r.IdAlmacenOrigen.HasValue && r.IdAlmacenDestino.HasValue,
-                        "El traslado requiere almacén de origen y de destino.");
-                    Exigir(r.IdAlmacenOrigen != r.IdAlmacenDestino,
-                        "El almacén de origen y de destino deben ser distintos.");
-                    Exigir(!r.IdProveedor.HasValue && !r.IdCliente.HasValue,
-                        "El traslado no admite proveedor ni cliente.");
-                    break;
-
-                default:
-                    throw new ReglaNegocioException("Tipo de operación no válido.");
+                default: throw new ReglaNegocioException("Tipo de operación no válida. Solo se admite entrada o salida.");
             }
         }
 
@@ -152,9 +183,9 @@ namespace ProjectAW.Modules.Guias.Services
         }
 
         private async Task ValidarDisponibilidadAsync(
-            int idTipoOperacionGuia, ActualizarGuiaRequest request, CancellationToken ct)
+            int idTipoOperacionGuia, MotivoGuia motivo, ActualizarGuiaRequest request, CancellationToken ct)
         {
-            if (idTipoOperacionGuia is not (TipoOperacionGuiaIds.Salida or TipoOperacionGuiaIds.Traslado))
+            if (idTipoOperacionGuia != TipoOperacionGuiaIds.Salida || !motivo.RequiereAlmacenOrigen)
                 return;
 
             // ValidarCabecera garantiza almacén de origen para salida y traslado.
@@ -183,8 +214,10 @@ namespace ProjectAW.Modules.Guias.Services
             await _repo.ObtenerPorIdAsync(idGuia, ct)
             ?? throw new NoEncontradoException($"La guía {idGuia} no existe.");
 
-        private static void AplicarDatos(CabeceraGuia guia, ActualizarGuiaRequest r)
+        private static void AplicarDatos(CabeceraGuia guia, ActualizarGuiaRequest r, MotivoGuia motivo)
         {
+            guia.IdMotivoGuia = motivo.IdMotivoGuia;
+            guia.Motivo = motivo;
             guia.IdProveedor = r.IdProveedor;
             guia.IdCliente = r.IdCliente;
             guia.IdAlmacenOrigen = r.IdAlmacenOrigen;
@@ -201,17 +234,36 @@ namespace ProjectAW.Modules.Guias.Services
         }
 
         private static GuiaResponse ToResponse(CabeceraGuia g) => new(
-            g.IdGuia, g.NumeroGuia, g.IdTipoOperacionGuia, g.IdEstadoGuia,
+            g.IdGuia, g.NumeroGuia, g.IdTipoOperacionGuia, g.IdMotivoGuia, g.Motivo?.NombreMotivo,
+            RequiereProveedor(g), RequiereCliente(g), RequiereAlmacenOrigen(g), RequiereAlmacenDestino(g),
+            TipoTercero(g), NombreTercero(g), NombreAlmacen(g.AlmacenOrigen), NombreAlmacen(g.AlmacenDestino),
+            g.IdGuiaRelacionada, g.GuiaRelacionada?.NumeroGuia, g.IdEstadoGuia,
             g.IdProveedor, g.IdCliente, g.IdAlmacenOrigen, g.IdAlmacenDestino,
             g.FechaProgramada, g.FechaRegistro,
             g.IdUsuarioRegistro, g.IdUsuarioModificacion, g.FechaActualizada,
             g.TipoDocumentoReferencia, g.NumeroDocumentoReferencia, g.Observacion,
             g.Detalles.Select(d => new DetalleGuiaResponse(d.IdGuiaDetalle, d.IdProducto, d.CantidadEsperada)).ToList());
 
+        private static bool RequiereProveedor(CabeceraGuia g) => g.Motivo?.RequiereProveedor ?? g.IdTipoOperacionGuia == TipoOperacionGuiaIds.Entrada;
+        private static bool RequiereCliente(CabeceraGuia g) => g.Motivo?.RequiereCliente ?? g.IdTipoOperacionGuia == TipoOperacionGuiaIds.Salida;
+        private static bool RequiereAlmacenOrigen(CabeceraGuia g) => g.Motivo?.RequiereAlmacenOrigen ?? g.IdTipoOperacionGuia is TipoOperacionGuiaIds.Salida or TipoOperacionGuiaIds.Traslado;
+        private static bool RequiereAlmacenDestino(CabeceraGuia g) => g.Motivo?.RequiereAlmacenDestino ?? g.IdTipoOperacionGuia is TipoOperacionGuiaIds.Entrada or TipoOperacionGuiaIds.Traslado;
+        private static string? TipoTercero(CabeceraGuia g) => RequiereProveedor(g) ? "Proveedor" : RequiereCliente(g) ? "Cliente" : null;
+        private static string? NombreTercero(CabeceraGuia g) => RequiereProveedor(g) ? g.Proveedor?.RazonSocial : RequiereCliente(g) ? g.Cliente?.RazonSocial : null;
+        private static string? NombreAlmacen(ProjectAW.Modules.Maestros.Almacenes.Entities.Almacen? almacen) => almacen is null ? null : string.Join(" · ", new[] { almacen.Codigo, almacen.Descripcion }.Where(x => !string.IsNullOrWhiteSpace(x)));
+
         private void RegistrarModificacion(CabeceraGuia guia)
         {
             guia.IdUsuarioModificacion = _currentUser.IdUsuario;
             guia.FechaActualizada = DateTime.UtcNow;
+        }
+
+        private async Task<MotivoGuia> ObtenerMotivoActivoAsync(int idMotivo, int idOperacion, CancellationToken ct)
+        {
+            var motivo = await _motivos.ObtenerAsync(idMotivo, ct) ?? throw new NoEncontradoException($"El motivo {idMotivo} no existe.");
+            Exigir(motivo.Activo, "El motivo seleccionado está inactivo.");
+            Exigir(motivo.IdTipoOperacionGuia == idOperacion, "El motivo no corresponde al tipo de operación seleccionado.");
+            return motivo;
         }
     }
 }

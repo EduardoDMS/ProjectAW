@@ -12,6 +12,11 @@ namespace ProjectAW.Modules.Guias.Entities
         public string NumeroGuia { get; set; } = string.Empty;
         
         public int IdTipoOperacionGuia { get; set; }
+        public int? IdMotivoGuia { get; set; }
+        public int? IdGuiaRelacionada { get; set; }
+        public MotivoGuia? Motivo { get; set; }
+        public CabeceraGuia? GuiaRelacionada { get; set; }
+        public ICollection<CabeceraGuia> GuiasRelacionadas { get; set; } = new List<CabeceraGuia>();
         public int IdEstadoGuia { get; set; } = EstadoGuiasIds.Pendiente;
         
         public int? IdProveedor { get; set; }

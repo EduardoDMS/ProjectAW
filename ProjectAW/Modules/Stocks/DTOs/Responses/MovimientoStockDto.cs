@@ -4,6 +4,7 @@ public sealed record MovimientoStockDto(
     int IdMovimientoStock,
     int IdGuia,
     string NumeroGuia,
+    string MotivoGuia,
     int IdOperacion,
     string Operacion,
     int IdProducto,

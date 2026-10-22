@@ -18,6 +18,13 @@ namespace ProjectAW.Modules.Maestros.Ubicaciones.Repositories
             await _context.SaveChangesAsync();
         }
 
+        public async Task EliminarAsignacionDespachoAsync(int idUbicacion)
+        {
+            var asignaciones = await _context.UbicacionesDespacho.Where(x => x.IdUbicacion == idUbicacion).ToListAsync();
+            _context.UbicacionesDespacho.RemoveRange(asignaciones);
+            await _context.SaveChangesAsync();
+        }
+
         public async Task CrearUbicacionAsync(Ubicacion ubicacion)
         {
             await _context.Ubicaciones.AddAsync(ubicacion);
@@ -26,12 +33,12 @@ namespace ProjectAW.Modules.Maestros.Ubicaciones.Repositories
 
         public async Task<List<Ubicacion>> ListarUbicacionesAsync()
         {
-            return await _context.Ubicaciones.ToListAsync();
+            return await _context.Ubicaciones.Include(u => u.UbicacionesDespacho).ToListAsync();
         }
 
         public Task<List<Ubicacion>> ListarUbicacionesAsync(int? idAlmacen, bool soloActivas)
         {
-            var query = _context.Ubicaciones.AsNoTracking().AsQueryable();
+            var query = _context.Ubicaciones.AsNoTracking().Include(u => u.UbicacionesDespacho).AsQueryable();
             if (idAlmacen.HasValue) query = query.Where(u => u.IdAlmacen == idAlmacen.Value);
             if (soloActivas) query = query.Where(u => u.Activo);
             return query.OrderBy(u => u.Codigo).ToListAsync();
@@ -39,12 +46,12 @@ namespace ProjectAW.Modules.Maestros.Ubicaciones.Repositories
 
         public async Task<Ubicacion?> ObtenerUbicacionPorCodigoAsync(string codigo)
         {
-            return await _context.Ubicaciones.AsNoTracking().FirstOrDefaultAsync(u => u.Codigo == codigo);
+            return await _context.Ubicaciones.AsNoTracking().Include(u => u.UbicacionesDespacho).FirstOrDefaultAsync(u => u.Codigo == codigo);
         }
 
         public async Task<Ubicacion?> ObtenerUbicacionPorIdAsync(int id)
         {
-            return await _context.Ubicaciones.AsNoTracking().FirstOrDefaultAsync(u => u.IdUbicacion == id);
+            return await _context.Ubicaciones.AsNoTracking().Include(u => u.UbicacionesDespacho).FirstOrDefaultAsync(u => u.IdUbicacion == id);
         }
     }
 }

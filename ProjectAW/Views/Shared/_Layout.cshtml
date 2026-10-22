@@ -33,6 +33,7 @@
 				</button>
 				<nav class="sidebar-submenu @(ViewContext.RouteData.Values["controller"]?.ToString() == "Guia" ? "is-open" : "")" id="guides-menu" aria-label="Guías">
 					<a class="sidebar-link sidebar-link--child @(ViewContext.RouteData.Values["action"]?.ToString() == "Index" && ViewContext.RouteData.Values["controller"]?.ToString() == "Guia" ? "is-active" : "")" asp-controller="Guia" asp-action="Index" title="Listado de guías"><span class="sidebar-link__bullet"></span><span>Listado de guías</span></a>
+					<a class="sidebar-link sidebar-link--child @(ViewContext.RouteData.Values["action"]?.ToString() == "Motivos" && ViewContext.RouteData.Values["controller"]?.ToString() == "Guia" ? "is-active" : "")" asp-controller="Guia" asp-action="Motivos" title="Motivos de guía"><span class="sidebar-link__bullet"></span><span>Motivos de guía</span></a>
 @*                     <a class="sidebar-link sidebar-link--child @(ViewContext.RouteData.Values["action"]?.ToString() == "Nueva" && ViewContext.RouteData.Values["controller"]?.ToString() == "Guia" ? "is-active" : "")" asp-controller="Guia" asp-action="Nueva" title="Registrar guía"><span class="sidebar-link__bullet"></span><span>Registrar guía</span></a> *@
 				</nav>
 

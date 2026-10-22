@@ -8,7 +8,7 @@ namespace ProjectAW.Modules.Stocks.Controllers;
 
 /// <summary>
 /// API compartida de captura operativa. Las reglas específicas de inventario
-/// se resuelven en el procesador de Recepción, Despacho o Traslado.
+/// se resuelven en el procesador de Recepción o Despacho. Los movimientos internos usan guías relacionadas de entrada y salida.
 /// </summary>
 [Authorize]
 [ApiController]

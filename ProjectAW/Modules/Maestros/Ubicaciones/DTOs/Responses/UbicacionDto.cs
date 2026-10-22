@@ -6,6 +6,7 @@
         public string Codigo { get; set; } = string.Empty;
         public string? Descripcion { get; set; } 
         public bool Activo { get; set; }
+        public bool EsUbicacionDespacho { get; set; }
         public int IdAlmacen { get; set; }
     }
 }

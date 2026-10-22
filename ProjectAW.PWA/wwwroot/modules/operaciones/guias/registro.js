@@ -31,6 +31,7 @@ let history = [];
 let stockRows = [];
 let lookupData;
 let flow = { step: 1, captured: [] };
+let hasDispatchLocations = false;
 let cameraStream;
 let cameraTimer;
 let detector;
@@ -50,10 +51,10 @@ byId("clear-product").addEventListener("click", clearProductFields);
 byId("capture-product").addEventListener("click", captureProduct);
 byId("save-allocation").addEventListener("click", () => void saveAllocation());
 byId("clear-allocation").addEventListener("click", clearAllocationFields);
-byId("to-locations").addEventListener("click", () => goToStep(2));
+byId("to-locations").addEventListener("click", () => void continueFromProducts());
 byId("back-products").addEventListener("click", () => goToStep(1));
 byId("to-consolidated").addEventListener("click", () => goToStep(3));
-byId("back-locations").addEventListener("click", () => goToStep(2));
+byId("back-locations").addEventListener("click", () => goToStep(isDispatch() && !hasDispatchLocations ? 1 : 2));
 byId("refresh-consolidated").addEventListener("click", () => void refreshHistory());
 byId("consolidated-readings").addEventListener("click", event => void removeAllocation(event));
 byId("finalize-registration").addEventListener("click", openFinalizeConfirmation);
@@ -64,7 +65,12 @@ byId("guide-note-toggle").addEventListener("click", toggleNote);
 byId("guide-note-close").addEventListener("click", closeNote);
 byId("camera-start").addEventListener("click", () => void startCamera());
 byId("camera-stop").addEventListener("click", stopCamera);
-document.querySelectorAll("[data-step-go]").forEach(button => button.addEventListener("click", () => goToStep(Number(button.dataset.stepGo))));
+document.querySelectorAll("[data-step-go]").forEach(button => button.addEventListener("click", () => {
+  const step = Number(button.dataset.stepGo);
+  if (isDispatch() && !hasDispatchLocations && step === 2) return;
+  if (isDispatch() && !hasDispatchLocations && step === 3 && flow.step === 1) { void continueFromProducts(); return; }
+  goToStep(step);
+}));
 
 for (const input of [fields.productCode, fields.allocationCode]) {
   input.addEventListener("focus", () => { activeCodeField = input; });
@@ -94,15 +100,19 @@ async function loadRegistration() {
   page.setAttribute("aria-busy", "true");
   try {
     guide = await getMyGuideById(guideId);
+    if (![1, 2].includes(Number(guide.idTipoOperacionGuia))) {
+      throw new Error("El operador solo puede registrar guías de recepción o despacho.");
+    }
     if (guide.idEstadoGuia !== 2) throw new Error("Esta guía ya no está disponible para registrar.");
     products = await getJson("api/ProductoApi");
     if (!Array.isArray(products)) throw new Error("La API no devolvió el catálogo de productos correctamente.");
-    lookupData = await getGuideDetailLookups(guide.idTipoOperacionGuia, products);
+    lookupData = await getGuideDetailLookups(guide, products);
     await loadLocations();
     if (isDispatch()) stockRows = await getJson(`api/stocks?idAlmacen=${encodeURIComponent(guide.idAlmacenOrigen)}`);
     history = await getGuideReadingHistory(guideId);
     restoreFlow();
     renderGuide();
+    if (isDispatch() && !hasDispatchLocations && flow.step === 2) flow.step = 3;
     renderAll();
     configureCaptureMode();
     goToStep(flow.step, false);
@@ -163,16 +173,15 @@ function restoreFlow() {
 function persistFlow() { localStorage.setItem(flowKey, JSON.stringify(flow)); }
 
 function renderGuide() {
-  const operationNames = { 1: "Recepción", 2: "Despacho", 3: "Traslado" };
+  const operationNames = { 1: "Recepción", 2: "Despacho" };
   const operationName = operationNames[guide.idTipoOperacionGuia] || "Registro";
   document.title = `${operationName} · ${guide.numeroGuia} | Proyecto AW`;
   byId("registration-title").textContent = operationName;
   byId("registration-subtitle").textContent = `${guide.numeroGuia || `Guía #${guide.idGuia}`} · ${formatScheduledAt(guide.fechaProgramada)}`;
-  byId("products-step-title").textContent = guide.idTipoOperacionGuia === 1 ? "Recepción de productos" : guide.idTipoOperacionGuia === 2 ? "Productos a despachar" : "Productos a trasladar";
+  byId("products-step-title").textContent = guide.idTipoOperacionGuia === 1 ? "Recepción de productos" : "Productos a despachar";
   byId("registration-back").href = `/modules/operaciones/guias/detalle.html?id=${encodeURIComponent(guideId)}`;
-  const isTransfer = guide.idTipoOperacionGuia === 3;
-  const needsOrigin = guide.idTipoOperacionGuia === 2 || isTransfer;
-  const needsDestination = guide.idTipoOperacionGuia === 1 || isTransfer;
+  const needsOrigin = guide.idTipoOperacionGuia === 2;
+  const needsDestination = guide.idTipoOperacionGuia === 1;
   const dispatch = isDispatch();
   byId("origin-field").hidden = dispatch || !needsOrigin;
   byId("destination-field").hidden = dispatch ? false : !needsDestination;
@@ -182,12 +191,18 @@ function renderGuide() {
   byId("outbound-source-field").hidden = !dispatch;
   byId("product-code-field").firstChild.textContent = dispatch ? "Código del producto a extraer" : "Código del producto";
   byId("product-quantity-field").firstChild.textContent = dispatch ? "Cantidad extraída" : "Cantidad contada";
-  byId("products-step-title").textContent = dispatch ? "Extracción de productos" : operationName === "Recepción" ? "Recepción de productos" : operationName === "Traslado" ? "Productos a trasladar" : "Productos";
+  byId("products-step-title").textContent = dispatch ? "Extracción de productos" : "Recepción de productos";
   byId("locations-step-title").textContent = dispatch ? "Ubicación de despacho" : "Asignación de ubicaciones";
   byId("allocation-progress-title").textContent = dispatch ? "Cantidades depositadas" : "Distribución capturada";
   byId("destination-field").firstChild.textContent = dispatch ? "Ubicación de despacho" : "Ubicación destino";
   byId("save-allocation").textContent = dispatch ? "Registrar despacho" : "Registrar ubicación";
-  byId("to-locations").textContent = dispatch ? "Continuar a despacho" : "Continuar a Ubicaciones";
+  byId("to-locations").textContent = dispatch
+    ? (hasDispatchLocations ? "Continuar a despacho" : "Continuar al Consolidado")
+    : "Continuar a Ubicaciones";
+  document.querySelector('[data-step-go="2"]').hidden = dispatch && !hasDispatchLocations;
+  byId("back-locations").innerHTML = dispatch && !hasDispatchLocations
+    ? '<i class="ti ti-arrow-left" aria-hidden="true"></i> Productos'
+    : '<i class="ti ti-arrow-left" aria-hidden="true"></i> Ubicaciones';
   byId("allocation-code").closest("label").firstChild.textContent = dispatch ? "Código del producto a despachar" : "Código del producto";
   byId("allocation-quantity").closest("label").firstChild.textContent = dispatch ? "Cantidad despachada" : "Cantidad a ubicar";
   byId("outbound-stock-suggestions").hidden = !dispatch;
@@ -196,12 +211,12 @@ function renderGuide() {
 
   const facts = [
     ["Código", guide.numeroGuia || `Guía #${guide.idGuia}`],
-    ["Operación", operationName], ["Programada", formatScheduledAt(guide.fechaProgramada)],
+    ["Operación", operationName], ["Motivo", guide.nombreMotivo],
+    ["Programada", formatScheduledAt(guide.fechaProgramada)],
     ["Registrada", formatScheduledAt(guide.fechaRegistro)],
-    ["Proveedor", lookupData.counterparties.get(Number(guide.idProveedor))],
-    ["Cliente", lookupData.counterparties.get(Number(guide.idCliente))],
-    ["Almacén de origen", lookupData.warehouses.get(Number(guide.idAlmacenOrigen))],
-    ["Almacén destino", lookupData.warehouses.get(Number(guide.idAlmacenDestino))],
+    [guide.tipoTercero, guide.nombreTercero || lookupData.counterparties.get(Number(guide.requiereProveedor ? guide.idProveedor : guide.idCliente))],
+    [guide.requiereAlmacenOrigen ? "Almacén de origen" : null, guide.nombreAlmacenOrigen || lookupData.warehouses.get(Number(guide.idAlmacenOrigen))],
+    [guide.requiereAlmacenDestino ? "Almacén destino" : null, guide.nombreAlmacenDestino || lookupData.warehouses.get(Number(guide.idAlmacenDestino))],
     ["Documento", [guide.tipoDocumentoReferencia, guide.numeroDocumentoReferencia].filter(Boolean).join(" · ")],
     ["Observación", guide.observacion]
   ].filter(([, value]) => value);
@@ -222,6 +237,7 @@ function renderGuide() {
 }
 
 function isDispatch() { return Number(guide?.idTipoOperacionGuia) === 2; }
+function isInternalDispatch() { return isDispatch() && Number(guide?.idTipoComportamiento) === 2; }
 
 function renderOutboundStockSuggestions() {
   const host = byId("outbound-stock-suggestions").querySelector(".table-responsive");
@@ -253,7 +269,11 @@ async function loadLocations() {
   const requests = [];
   if (guide.idAlmacenOrigen) requests.push(getActiveLocations(guide.idAlmacenOrigen).then(items => {
     fillLocations("origin", items);
-    if (isDispatch()) fillLocations("destination", items);
+    if (isDispatch()) {
+      const dispatchLocations = items.filter(item => item.esUbicacionDespacho === true);
+      fillLocations("destination", dispatchLocations);
+      hasDispatchLocations = dispatchLocations.length > 0;
+    }
   }));
   if (guide.idAlmacenDestino && !isDispatch()) requests.push(getActiveLocations(guide.idAlmacenDestino).then(items => fillLocations("destination", items)));
   await Promise.all(requests);
@@ -398,7 +418,8 @@ async function saveOutboundPlacement() {
   const product = resolveProductInput(fields.allocationCode);
   const quantity = Number(fields.allocationQuantity.value);
   const destinationId = resolveLocationId("destination");
-  if (!destinationId) { showFeedback("allocation-feedback", "La ubicación de despacho debe estar activa en el almacén de origen.", true); fields.destination.focus(); return; }
+  if (!hasDispatchLocations) { showApiFailure("Este almacén no tiene ubicaciones habilitadas para despacho. Continúa directamente al consolidado.", "allocation-feedback"); return; }
+  if (!destinationId) { showApiFailure("La ubicación ingresada no pertenece a las ubicaciones de despacho habilitadas de este almacén.", "allocation-feedback"); fields.destination.focus(); return; }
   if (!product) { showFeedback("allocation-feedback", "Escanea un producto extraído en el paso anterior.", true); fields.allocationCode.focus(); return; }
   if (!Number.isSafeInteger(quantity) || quantity <= 0) { showFeedback("allocation-feedback", "Ingresa una cantidad entera mayor que cero.", true); fields.allocationQuantity.focus(); return; }
   const pending = flow.captured.filter(item => Number(item.idProducto) === Number(product.idProducto))
@@ -429,9 +450,41 @@ async function saveOutboundPlacement() {
   } finally { button.disabled = false; }
 }
 
+async function continueFromProducts() {
+  if (!isDispatch() || hasDispatchLocations) { goToStep(2); return; }
+  if (!flow.captured.length) { showFeedback("scan-feedback", "Registra al menos un producto antes de continuar.", true); return; }
+  const incomplete = (guide.detalles || []).find(line => capturedTotal(line.idProducto) !== Number(line.cantidadEsperada));
+  if (incomplete) {
+    const product = productById(incomplete.idProducto);
+    showApiFailure(`Completa la cantidad esperada de ${product?.codigo || `el producto #${incomplete.idProducto}`} antes de ir al consolidado.`, "scan-feedback");
+    return;
+  }
+  const button = byId("to-locations");
+  button.disabled = true;
+  try {
+    for (const item of flow.captured) {
+      const saved = history.filter(reading => Number(reading.idProducto) === Number(item.idProducto) && Number(reading.idUbicacionOrigen) === Number(item.idUbicacionOrigen))
+        .reduce((sum, reading) => sum + Number(reading.cantidad), 0);
+      const remaining = Number(item.cantidad) - saved;
+      if (remaining <= 0) continue;
+      await registerGuideReading(guideId, {
+        idProducto: Number(item.idProducto), cantidad: remaining, codigoLeido: item.codigo,
+        idUbicacionOrigen: Number(item.idUbicacionOrigen), idUbicacionDestino: null
+      });
+    }
+    history = await getGuideReadingHistory(guideId);
+    renderAll();
+    goToStep(3);
+  } catch (error) {
+    try { history = await getGuideReadingHistory(guideId); renderAll(); } catch { /* Mantén el error inicial si la consulta también falla. */ }
+    showApiFailure(showApiError(error), "scan-feedback");
+  } finally { button.disabled = false; }
+}
+
 function goToStep(step, persist = true) {
+  if (isDispatch() && !hasDispatchLocations && step === 2) step = 3;
   if (step > 1 && !flow.captured.length) { showFeedback("scan-feedback", "Registra al menos un producto antes de continuar.", true); return; }
-  if (step > 2 && !history.length) { showFeedback("allocation-feedback", "Registra al menos una ubicación antes de continuar.", true); return; }
+  if (step > 2 && !history.length) { showFeedback(isDispatch() && !hasDispatchLocations ? "scan-feedback" : "allocation-feedback", isDispatch() && !hasDispatchLocations ? "Registra las cantidades extraídas antes de continuar." : "Registra al menos una ubicación antes de continuar.", true); return; }
   if (isDispatch() && step > 2 && (guide.detalles || []).some(line => capturedTotal(line.idProducto) <= 0 || capturedTotal(line.idProducto) !== totalFor(line.idProducto))) {
     showApiFailure("Para continuar, extrae cada producto de la guía y deposita exactamente la misma cantidad en ubicaciones de despacho.", "allocation-feedback"); return;
   }
@@ -557,7 +610,8 @@ function renderProgress() {
   const captured = flow.captured.reduce((sum, item) => sum + Number(item.cantidad), 0);
   const allocated = history.reduce((sum, item) => sum + Number(item.cantidad), 0);
   byId("registration-progress-count").textContent = `${flow.captured.length} capturas · ${allocated} ubicadas`;
-  byId("registration-progress-detail").textContent = `${captured} unidades capturadas · Paso ${flow.step} de 3`;
+  const steps = isDispatch() && !hasDispatchLocations ? 2 : 3;
+  byId("registration-progress-detail").textContent = `${captured} unidades capturadas · Paso ${flow.step === 3 && steps === 2 ? 2 : flow.step} de ${steps}`;
 }
 
 function createTable(headers) {
@@ -623,9 +677,14 @@ function showFeedback(id, text, isError) { const target = byId(id); target.textC
 function showError(text) { message.textContent = text; message.className = "alert alert-danger"; byId("registration-title").textContent = "No se pudo cargar la guía"; showApiFailure(text); }
 function showApiFailure(text, feedbackId = null) {
   if (feedbackId) showFeedback(feedbackId, text, true);
-  if (window.Swal?.fire) { void window.Swal.fire({ icon: "error", title: "No se pudo completar", text }); return; }
+  if (window.Swal?.fire) {
+    void window.Swal.fire({ toast: true, position: "top-end", icon: "error", title: "No se pudo completar", text, showConfirmButton: false, showCloseButton: true, timer: 6500, timerProgressBar: true });
+    return;
+  }
   byId("api-error-text").textContent = text;
-  if (!byId("api-error-dialog").open) byId("api-error-dialog").showModal();
+  const dialog = byId("api-error-dialog");
+  if (!dialog.open) dialog.show();
+  window.setTimeout(() => { if (dialog.open) dialog.close(); }, 6500);
 }
 
 function openFinalizeConfirmation() {
@@ -633,7 +692,9 @@ function openFinalizeConfirmation() {
   const missing = (guide.detalles || []).filter(line => totalFor(line.idProducto) === 0);
   if (missing.length) { showFeedback("consolidated-feedback", "Registra una distribución para cada producto de la guía antes de finalizar.", true); return; }
   if (isDispatch() && (guide.detalles || []).some(line => capturedTotal(line.idProducto) !== totalFor(line.idProducto))) {
-    showApiFailure("La cantidad depositada debe coincidir exactamente con la cantidad extraída para cada producto.", "consolidated-feedback"); return;
+    showApiFailure(hasDispatchLocations
+      ? "La cantidad depositada debe coincidir exactamente con la cantidad extraída para cada producto."
+      : "La cantidad registrada debe coincidir exactamente con la cantidad esperada de cada producto.", "consolidated-feedback"); return;
   }
   const unassigned = flow.captured.filter(item => capturedTotal(item.idProducto) !== totalFor(item.idProducto));
   if (unassigned.length) { showFeedback("consolidated-feedback", "Distribuye toda la cantidad capturada entre las ubicaciones antes de finalizar.", true); return; }

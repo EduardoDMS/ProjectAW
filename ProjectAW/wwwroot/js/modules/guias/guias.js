@@ -5,9 +5,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
 	const API = "/api/guias";
 	const OPERATIONS = [
-		{ id: 1, name: "Entrada", code: "ENT" },
-		{ id: 2, name: "Salida", code: "SAL" },
-		{ id: 3, name: "Traslado", code: "TRA" },
+		{ id: 1, name: "Entrada", code: "ENT", availableForCreation: true },
+		{ id: 2, name: "Salida", code: "SAL", availableForCreation: true },
+		{ id: 3, name: "Traslado (histórico)", code: "TRA", availableForCreation: false },
 	];
 	const STATUSES = [
 		{ id: 1, name: "Pendiente", css: "pending" },
@@ -34,10 +34,14 @@ document.addEventListener("DOMContentLoaded", () => {
 	let guides = [];
 	let products = [];
 	let productsWithOriginStock = null;
+	let stockAvailabilityByProduct = new Map();
+	let stockLookupPending = false;
+	let stockLookupFailed = false;
 	let stockLookupVersion = 0;
 	let warehouses = [];
 	let clients = [];
 	let suppliers = [];
+	let motives = [];
 	let lookupsReady = false;
 	let lookupWarning = null;
 	let editingId = null;
@@ -108,19 +112,20 @@ document.addEventListener("DOMContentLoaded", () => {
 	}
 
 	// Arma la referencia comercial o el traslado usando los catálogos de la vista.
-	function counterparty(guide) {
-		if (guide.idTipoOperacionGuia === 1)
-			return (
-				byId(suppliers, guide.idProveedor, "idProveedor")
-					?.razonSocial ||
-				(guide.idProveedor ? `Proveedor #${guide.idProveedor}` : "—")
-			);
-		if (guide.idTipoOperacionGuia === 2)
-			return (
-				byId(clients, guide.idCliente, "idCliente")?.razonSocial ||
-				(guide.idCliente ? `Cliente #${guide.idCliente}` : "—")
-			);
-		return `${warehouseName(guide.idAlmacenOrigen)} → ${warehouseName(guide.idAlmacenDestino)}`;
+	function counterparty(guide, includeType = true) {
+		if (guide.tipoTercero && guide.nombreTercero)
+			return includeType ? `${guide.tipoTercero}: ${guide.nombreTercero}` : guide.nombreTercero;
+		if (guide.requiereProveedor && guide.idProveedor) {
+			const name = byId(suppliers, guide.idProveedor, "idProveedor")?.razonSocial || `#${guide.idProveedor}`;
+			return includeType ? `Proveedor: ${name}` : name;
+		}
+		if (guide.requiereCliente && guide.idCliente) {
+			const name = byId(clients, guide.idCliente, "idCliente")?.razonSocial || `#${guide.idCliente}`;
+			return includeType ? `Cliente: ${name}` : name;
+		}
+		if ((guide.idTipoOperacionGuia === 2 && guide.requiereAlmacenDestino) || guide.idTipoOperacionGuia === 3)
+			return `${warehouseName(guide.idAlmacenOrigen)} → ${warehouseName(guide.idAlmacenDestino)}`;
+		return "—";
 	}
 
 	// Formatea fechas de la API para mostrarlas de forma localizada en la pantalla.
@@ -159,9 +164,8 @@ document.addEventListener("DOMContentLoaded", () => {
 				new Option(operation.name, String(operation.id)),
 			);
 			// Actualiza los campos requeridos al cambiar el tipo de operación.
-			select("#guide-operation").append(
-				new Option(operation.name, String(operation.id)),
-			);
+			if (operation.availableForCreation)
+				select("#guide-operation").append(new Option(operation.name, String(operation.id)));
 		}
 		for (const status of STATUSES)
 			statusFilter.append(new Option(status.name, String(status.id)));
@@ -196,6 +200,9 @@ document.addEventListener("DOMContentLoaded", () => {
 				if (index === 3) suppliers = result.value;
 			}
 		});
+		try {
+			motives = await fetchApi("/api/guias/motivos");
+		} catch { failures.push("Motivos de guía"); }
 
 		// Añade una marca visible a los registros inactivos ofrecidos por el API.
 		const inactiveSuffix = (item) =>
@@ -227,11 +234,13 @@ document.addEventListener("DOMContentLoaded", () => {
 				`${item.codigo} · ${item.descripcion || "Almacén"}${inactiveSuffix(item)}`,
 		);
 
-		lookupsReady = failures.length === 0;
+		lookupsReady = failures.length === 0 && motives.some((item) => item.activo);
 		// Abre el formulario de creación de una guía.
 		select("#new-guide").disabled = !lookupsReady;
 		if (!lookupsReady)
-			lookupWarning = `No se pudieron cargar los catálogos de ${failures.join(", ")}. Puedes consultar las guías; el registro y la edición quedan deshabilitados.`;
+			lookupWarning = failures.length
+				? `No se pudieron cargar los catálogos de ${failures.join(", ")}. Puedes consultar las guías; el registro y la edición quedan deshabilitados.`
+				: "Crea al menos un motivo activo para habilitar el registro de guías.";
 	}
 
 	// Actualiza los contadores de guías usando los resultados cargados desde el API.
@@ -367,7 +376,7 @@ document.addEventListener("DOMContentLoaded", () => {
 		if (loadingGuides) return;
 		loadingGuides = true;
 		clearAlert();
-		if (!silent) rows.innerHTML =
+		if (!silent && guides.length === 0) rows.innerHTML =
 			'<tr><td class="guide-empty" colspan="6">Consultando guías...</td></tr>';
 		const params = new URLSearchParams();
 		if (operationFilter.value)
@@ -384,31 +393,45 @@ document.addEventListener("DOMContentLoaded", () => {
 					"No se cargaron todos los catálogos",
 				);
 		} catch (error) {
-			rows.replaceChildren();
-			updateSummary();
-			select("#guide-count").textContent = "";
-			window.showAppError(error.message || "No se pudieron consultar las guías.");
+			if (guides.length === 0) {
+				rows.replaceChildren();
+				const row = document.createElement("tr");
+				const cell = document.createElement("td");
+				cell.className = "guide-empty";
+				cell.colSpan = 6;
+				cell.textContent = "No fue posible actualizar las guías. Inténtalo nuevamente.";
+				row.append(cell);
+				rows.append(row);
+				select("#guide-count").textContent = "";
+			}
+			window.showAppError(
+				guides.length > 0
+					? `${error.message || "No se pudieron consultar las guías."} Se conserva en pantalla la última lista cargada.`
+					: error.message || "No se pudieron consultar las guías.",
+			);
 		} finally {
 			loadingGuides = false;
 		}
 	}
 
-	// Muestra y exige únicamente los campos que corresponden a la operación seleccionada.
-	function setOperationFields(operationId) {
+	// El motivo configura qué referencias y almacenes requiere la operación.
+	function setOperationFields(operationId, preferredMotiveId = "") {
 		const operation = Number(operationId);
+		const motiveSelect = select("#guide-motive");
+		const options = motives.filter((item) => Number(item.idTipoOperacionGuia) === operation && (item.activo || Number(item.idMotivoGuia) === Number(preferredMotiveId)));
+		motiveSelect.replaceChildren(new Option("Selecciona un motivo activo", ""));
+		for (const item of options)
+			motiveSelect.append(new Option(`${item.nombreMotivo}${item.activo ? "" : " (inactivo)"}`, String(item.idMotivoGuia)));
+		motiveSelect.value = preferredMotiveId ? String(preferredMotiveId) : "";
+		const motive = options.find((item) => Number(item.idMotivoGuia) === Number(motiveSelect.value));
+		select("#guide-motive-help").textContent = motive
+			? `${motive.nombreComportamiento}: ${motive.descripcionComportamiento}`
+			: "Selecciona el motivo para conocer los campos requeridos.";
 		const fields = [
-			["#guide-provider-wrap", "#guide-provider", operation === 1],
-			["#guide-client-wrap", "#guide-client", operation === 2],
-			[
-				"#guide-origin-wrap",
-				"#guide-origin",
-				operation === 2 || operation === 3,
-			],
-			[
-				"#guide-destination-wrap",
-				"#guide-destination",
-				operation === 1 || operation === 3,
-			],
+			["#guide-provider-wrap", "#guide-provider", !!motive?.requiereProveedor],
+			["#guide-client-wrap", "#guide-client", !!motive?.requiereCliente],
+			["#guide-origin-wrap", "#guide-origin", !!motive?.requiereAlmacenOrigen],
+			["#guide-destination-wrap", "#guide-destination", !!motive?.requiereAlmacenDestino],
 		];
 		for (const [wrapperSelector, inputSelector, visible] of fields) {
 			const wrapper = select(wrapperSelector);
@@ -418,36 +441,55 @@ document.addEventListener("DOMContentLoaded", () => {
 			input.required = visible;
 			if (!visible) input.value = "";
 		}
+		return motive;
 	}
 
-	// En salidas y traslados limita el catálogo al stock disponible en el origen.
+	// En salidas limita el catálogo y prepara el stock agregado para validar las cantidades.
 	async function refreshProductChoices() {
 		const operation = Number(select("#guide-operation").value);
 		const originId = Number(select("#guide-origin").value);
-		const requiresOriginStock = operation === 2 || operation === 3;
+		const requiresOriginStock = operation === 2;
 		const version = ++stockLookupVersion;
 
 		if (!requiresOriginStock) {
 			productsWithOriginStock = null;
+			stockAvailabilityByProduct = new Map();
+			stockLookupPending = false;
+			stockLookupFailed = false;
 			updateProductSelects();
 			return;
 		}
 
 		productsWithOriginStock = new Set();
+		stockAvailabilityByProduct = new Map();
+		stockLookupFailed = false;
+		stockLookupPending = Boolean(originId);
 		updateProductSelects();
 		if (!originId) return;
 
 		try {
 			const stock = await fetchApi(`/api/stocks?idAlmacen=${encodeURIComponent(originId)}`);
 			if (version !== stockLookupVersion) return;
+			if (!Array.isArray(stock)) throw new Error("La API devolvió un formato de existencias no esperado.");
+			for (const item of stock) {
+				const idProducto = Number(item.idProducto);
+				const cantidad = Number(item.cantidadActual);
+				if (!Number.isSafeInteger(idProducto) || !Number.isFinite(cantidad)) continue;
+				stockAvailabilityByProduct.set(idProducto, (stockAvailabilityByProduct.get(idProducto) || 0) + cantidad);
+			}
 			productsWithOriginStock = new Set(
-				stock.filter((item) => Number(item.cantidadActual) > 0)
-					.map((item) => Number(item.idProducto)),
+				[...stockAvailabilityByProduct]
+					.filter(([, cantidad]) => cantidad > 0)
+					.map(([idProducto]) => idProducto),
 			);
+			stockLookupPending = false;
 			updateProductSelects();
 		} catch (error) {
 			if (version !== stockLookupVersion) return;
+			stockLookupPending = false;
+			stockLookupFailed = true;
 			productsWithOriginStock = new Set();
+			stockAvailabilityByProduct = new Map();
 			updateProductSelects();
 			window.showAppError(error.message || "No se pudo consultar el stock del almacén de origen.", "Stock no disponible");
 		}
@@ -584,6 +626,9 @@ document.addEventListener("DOMContentLoaded", () => {
 	function resetForm() {
 		editingId = null;
 		productsWithOriginStock = null;
+		stockAvailabilityByProduct = new Map();
+		stockLookupPending = false;
+		stockLookupFailed = false;
 		stockLookupVersion++;
 		form.reset();
 		select("#guide-editor-title").textContent = "Registrar guía";
@@ -647,7 +692,7 @@ document.addEventListener("DOMContentLoaded", () => {
 			);
 			// Actualiza los campos requeridos al cambiar el tipo de operación.
 			select("#guide-operation").disabled = true;
-			setOperationFields(guide.idTipoOperacionGuia);
+			setOperationFields(guide.idTipoOperacionGuia, guide.idMotivoGuia);
 			select("#guide-provider").value = guide.idProveedor
 				? String(guide.idProveedor)
 				: "";
@@ -700,6 +745,7 @@ document.addEventListener("DOMContentLoaded", () => {
 		);
 		return {
 			...(editingId === null ? { idTipoOperacionGuia: operationId } : {}),
+			idMotivoGuia: Number(select("#guide-motive").value),
 			idProveedor: getId("#guide-provider"),
 			idCliente: getId("#guide-client"),
 			idAlmacenOrigen: getId("#guide-origin"),
@@ -768,10 +814,38 @@ document.addEventListener("DOMContentLoaded", () => {
 			);
 			return false;
 		}
-		if (
-			operationIdForPayload(payload) === 3 &&
-			payload.idAlmacenOrigen === payload.idAlmacenDestino
-		) {
+		const selectedMotive = motives.find((item) => Number(item.idMotivoGuia) === Number(payload.idMotivoGuia));
+		if (!selectedMotive || Number(selectedMotive.idTipoOperacionGuia) !== operationIdForPayload(payload)) {
+			window.showAppError("Selecciona un motivo activo de la operación elegida.", "Motivo requerido");
+			return false;
+		}
+		if (selectedMotive.requiereAlmacenOrigen) {
+			if (stockLookupPending) {
+				window.showAppError("Espera a que termine la comprobación de existencias del almacén.", "Comprobando stock");
+				return false;
+			}
+			if (stockLookupFailed) {
+				window.showAppError("No se pudo comprobar el stock. Vuelve a seleccionar el almacén de origen para reintentar.", "Stock no disponible");
+				return false;
+			}
+			for (const line of payload.detalles) {
+				const disponible = stockAvailabilityByProduct.get(line.idProducto) || 0;
+				if (line.cantidadEsperada > disponible) {
+					const product = byId(products, line.idProducto, "idProducto");
+					window.showAppError(
+						`Stock insuficiente para ${product?.codigo || `el producto #${line.idProducto}`}. Disponible: ${disponible}; solicitado: ${line.cantidadEsperada}.`,
+						"Revisa la cantidad",
+					);
+					const quantityInput = [...document.querySelectorAll(".guide-line")]
+						.find((lineElement) => Number(lineElement.querySelector(".guide-line__product")?.value) === line.idProducto)
+						?.querySelector(".guide-line__quantity");
+					quantityInput?.focus();
+					return false;
+				}
+			}
+		}
+		if (selectedMotive.requiereAlmacenOrigen && selectedMotive.requiereAlmacenDestino &&
+			payload.idAlmacenOrigen === payload.idAlmacenDestino) {
 			window.showAppError(
 				"El almacén de origen y el de destino deben ser distintos.",
 				"Revisa los almacenes",
@@ -863,6 +937,8 @@ document.addEventListener("DOMContentLoaded", () => {
 		const summary = select("#guide-detail-summary");
 		summary.replaceChildren();
 		const details = [
+			["Motivo", guide.nombreMotivo || "—"],
+			["Guía relacionada", guide.numeroGuiaRelacionada || "—"],
 			["Programada", formatDate(guide.fechaProgramada)],
 			["Registrada", formatDate(guide.fechaRegistro)],
 			[
@@ -871,18 +947,11 @@ document.addEventListener("DOMContentLoaded", () => {
 					.filter(Boolean)
 					.join(" · ") || "—",
 			],
-			[
-				"Tercero",
-				guide.idTipoOperacionGuia === 3 ? "—" : counterparty(guide),
-			],
-			[
-				"Almacenes",
-				guide.idTipoOperacionGuia === 1
-					? `Destino: ${warehouseName(guide.idAlmacenDestino)}`
-					: guide.idTipoOperacionGuia === 2
-						? `Origen: ${warehouseName(guide.idAlmacenOrigen)}`
-						: `Origen: ${warehouseName(guide.idAlmacenOrigen)} → Destino: ${warehouseName(guide.idAlmacenDestino)}`,
-			],
+			...(guide.tipoTercero ? [[guide.tipoTercero, counterparty(guide, false)]] : []),
+			["Almacenes", [
+				guide.requiereAlmacenOrigen && `Origen: ${guide.nombreAlmacenOrigen || warehouseName(guide.idAlmacenOrigen)}`,
+				guide.requiereAlmacenDestino && `Destino: ${guide.nombreAlmacenDestino || warehouseName(guide.idAlmacenDestino)}`,
+			].filter(Boolean).join(" → ") || "—"],
 			["Observación", guide.observacion || "—"],
 		];
 		for (const [label, value] of details) {
@@ -932,6 +1001,7 @@ document.addEventListener("DOMContentLoaded", () => {
 		setOperationFields(event.target.value);
 		void refreshProductChoices();
 	});
+	select("#guide-motive").addEventListener("change", () => setOperationFields(select("#guide-operation").value, select("#guide-motive").value));
 	select("#guide-origin").addEventListener("change", () => {
 		void refreshProductChoices();
 	});

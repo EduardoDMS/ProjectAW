@@ -15,6 +15,7 @@ namespace ProjectAW.Modules.Maestros.Almacenes.Entities
         // conexion a la nueva tabla
         
         public ICollection<Ubicacion>? Ubicaciones { get; set; }
+        public ICollection<UbicacionDespacho> UbicacionesDespacho { get; set; } = new List<UbicacionDespacho>();
         public ICollection<MovimientoStock>? MovimientoStock { get; set; }
         public ICollection<StockAlmacen>? StockAlmacen { get; set; }
 

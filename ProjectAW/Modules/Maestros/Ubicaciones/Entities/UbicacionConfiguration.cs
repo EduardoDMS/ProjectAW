@@ -19,6 +19,7 @@ namespace ProjectAW.Modules.Maestros.Ubicaciones.Entities
             builder.Property(u => u.Activo)
                    .IsRequired();
 
+
             builder.Property(u => u.FchRegistro)
                    .IsRequired()
                    .HasDefaultValueSql("GETDATE()")

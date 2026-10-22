@@ -11,6 +11,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 	let warehouses = [];
 	let editingId = null;
 	let grid;
+	let selectedDispatchIds = new Set();
 
 	// Envía la petición HTTP al endpoint de Almacenes y convierte errores de API en mensajes.
 	async function fetchJson(url, options = {}) {
@@ -139,6 +140,12 @@ document.addEventListener("DOMContentLoaded", async () => {
 		editingId = null;
 		form.reset();
 		select("#warehouse-active").checked = true;
+			select("#warehouse-dispatch-toggle").checked = false;
+			select("#warehouse-dispatch-toggle").disabled = false;
+			selectedDispatchIds = new Set();
+			select("#warehouse-dispatch-locations").replaceChildren();
+			select("#warehouse-dispatch-locations-wrap").hidden = true;
+			select("#warehouse-dispatch-hint").textContent = "Guarda el almacén y crea sus ubicaciones; después podrás marcarlas al editarlo.";
 		select("#warehouse-modal-title").textContent = "Nuevo almacén";
 		select("#save-warehouse").textContent = "Guardar almacén";
 		showAlert("", select("#warehouse-form-alert"));
@@ -153,12 +160,43 @@ document.addEventListener("DOMContentLoaded", async () => {
 			select("#warehouse-description").value =
 				warehouse.descripcion || "";
 			select("#warehouse-active").checked = warehouse.activo;
+			select("#warehouse-dispatch-toggle").checked = warehouse.idUbicacionesDespacho?.length > 0;
+			select("#warehouse-dispatch-toggle").disabled = false;
+			await loadDispatchLocations(id, warehouse.idUbicacionesDespacho || []);
 			select("#warehouse-modal-title").textContent = "Editar almacén";
 			select("#save-warehouse").textContent = "Guardar cambios";
 			showAlert("", select("#warehouse-form-alert"));
 			modal.show();
 		} catch (error) {
 			window.showAppError(error.message || "No se pudo consultar el almacén.");
+		}
+	}
+
+	// Lista únicamente las ubicaciones existentes en el almacén que se está editando.
+	async function loadDispatchLocations(warehouseId, selectedIds = []) {
+		const locationList = select("#warehouse-dispatch-locations");
+		const hint = select("#warehouse-dispatch-hint");
+		selectedDispatchIds = new Set(selectedIds.map(Number));
+		locationList.replaceChildren();
+		try {
+			const locations = await fetchJson(`/api/UbicacionApi?idAlmacen=${encodeURIComponent(warehouseId)}`);
+			for (const location of locations) {
+				const id = Number(location.idUbicacion);
+				const card = document.createElement("button");
+				card.type = "button";
+				card.className = "warehouse-dispatch-card";
+				card.dataset.locationId = String(id);
+				card.setAttribute("aria-pressed", String(selectedDispatchIds.has(id)));
+				card.disabled = !location.activo;
+				card.textContent = `${location.codigo}${location.descripcion ? ` · ${location.descripcion}` : ""}${location.activo ? "" : " (inactiva)"}`;
+				locationList.append(card);
+			}
+			hint.textContent = locations.length
+				? "Selecciona una o varias tarjetas. Vuelve a tocar una seleccionada para quitarla."
+				: "Este almacén todavía no tiene ubicaciones registradas.";
+		} catch (error) {
+			hint.textContent = "No se pudieron cargar las ubicaciones del almacén.";
+			window.showAppError(error.message || "No se pudieron cargar las ubicaciones.");
 		}
 	}
 
@@ -189,6 +227,9 @@ document.addEventListener("DOMContentLoaded", async () => {
 			codigo: select("#warehouse-code").value.trim(),
 			descripcion: select("#warehouse-description").value.trim(),
 			activo: select("#warehouse-active").checked,
+			idUbicacionesDespacho: select("#warehouse-dispatch-toggle").checked
+				? [...selectedDispatchIds]
+				: [],
 		};
 		const button = select("#save-warehouse");
 		button.disabled = true;
@@ -233,6 +274,17 @@ document.addEventListener("DOMContentLoaded", async () => {
 	select("#new-warehouse").addEventListener("click", () => {
 		resetForm();
 		modal.show();
+	});
+	select("#warehouse-dispatch-toggle").addEventListener("change", (event) => {
+		select("#warehouse-dispatch-locations-wrap").hidden = !event.target.checked;
+	});
+	select("#warehouse-dispatch-locations").addEventListener("click", (event) => {
+		const card = event.target.closest("[data-location-id]");
+		if (!card || card.disabled) return;
+		const id = Number(card.dataset.locationId);
+		if (selectedDispatchIds.has(id)) selectedDispatchIds.delete(id);
+		else selectedDispatchIds.add(id);
+		card.setAttribute("aria-pressed", String(selectedDispatchIds.has(id)));
 	});
 	// Redibuja la tabla cuando cambia el filtro de estado.
 	select("#warehouse-status").addEventListener("change", drawTable);

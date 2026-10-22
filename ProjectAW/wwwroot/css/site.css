@@ -458,7 +458,7 @@ a:hover {
 }
 .app-container {
 	width: 100%;
-	max-width: 1370px;
+	max-width: 1540px;
 	margin: 0 auto;
 	padding: 0;
 }
@@ -1168,6 +1168,35 @@ a:hover {
 }
 .maestro-field {
 	min-width: 0;
+}
+.warehouse-dispatch-field {
+	grid-column: 1 / -1;
+}
+.warehouse-dispatch-list {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+	gap: 10px;
+	max-height: 240px;
+	overflow-y: auto;
+padding: 2px;
+}
+.warehouse-dispatch-card {
+	width: 100%;
+	min-height: 58px;
+	padding: 10px 12px;
+	border: 1px solid #dbe4ef;
+	border-radius: 12px;
+	background: #fff;
+	color: #243b53;
+	text-align: left;
+}
+.warehouse-dispatch-card[aria-pressed="true"] {
+	border-color: var(--color-primary, #0756a5);
+	background: #edf5ff;
+	box-shadow: inset 0 0 0 1px var(--color-primary, #0756a5);
+}
+.warehouse-dispatch-card:disabled {
+	opacity: .55;
 }
 .maestro-field label {
 	display: block;

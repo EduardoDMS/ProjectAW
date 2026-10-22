@@ -10,6 +10,7 @@ namespace ProjectAW.Modules.Maestros.Ubicaciones.Repositories
         Task<Ubicacion?> ObtenerUbicacionPorCodigoAsync(string codigo);
         Task CrearUbicacionAsync(Ubicacion ubicacion);
         Task ActualizarUbicacionAsync(Ubicacion ubicacion);
+        Task EliminarAsignacionDespachoAsync(int idUbicacion);
 
     }
 }
