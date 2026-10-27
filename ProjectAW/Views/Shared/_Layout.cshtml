@@ -26,31 +26,32 @@
 					<i class="ti ti-home" aria-hidden="true"></i><span>Inicio</span>
 				</a>
 
-				<div class="sidebar-section-label sidebar-section-label--spaced">GESTIÓN</div>
-				<button class="sidebar-group-toggle @(ViewContext.RouteData.Values["controller"]?.ToString() == "Guia" ? "is-current-group" : "")" type="button" data-sidebar-group aria-expanded="@(ViewContext.RouteData.Values["controller"]?.ToString() == "Guia" ? "true" : "false")" aria-controls="guides-menu" title="Guías">
+				<div class="sidebar-section-label sidebar-section-label--spaced">OPERACIONES</div>
+				<button class="sidebar-group-toggle @(ViewContext.RouteData.Values["controller"]?.ToString() == "Guia" ? "is-current-group" : "")" type="button" data-sidebar-group aria-expanded="true" aria-controls="guides-menu" title="Guías">
 					<i class="ti ti-file-text" aria-hidden="true"></i>
 					<span>Guías</span><i class="ti ti-chevron-down sidebar-chevron" aria-hidden="true"></i>
 				</button>
-				<nav class="sidebar-submenu @(ViewContext.RouteData.Values["controller"]?.ToString() == "Guia" ? "is-open" : "")" id="guides-menu" aria-label="Guías">
+				<nav class="sidebar-submenu is-open" id="guides-menu" aria-label="Guías">
 					<a class="sidebar-link sidebar-link--child @(ViewContext.RouteData.Values["action"]?.ToString() == "Index" && ViewContext.RouteData.Values["controller"]?.ToString() == "Guia" ? "is-active" : "")" asp-controller="Guia" asp-action="Index" title="Listado de guías"><span class="sidebar-link__bullet"></span><span>Listado de guías</span></a>
 					<a class="sidebar-link sidebar-link--child @(ViewContext.RouteData.Values["action"]?.ToString() == "Motivos" && ViewContext.RouteData.Values["controller"]?.ToString() == "Guia" ? "is-active" : "")" asp-controller="Guia" asp-action="Motivos" title="Motivos de guía"><span class="sidebar-link__bullet"></span><span>Motivos de guía</span></a>
 @*                     <a class="sidebar-link sidebar-link--child @(ViewContext.RouteData.Values["action"]?.ToString() == "Nueva" && ViewContext.RouteData.Values["controller"]?.ToString() == "Guia" ? "is-active" : "")" asp-controller="Guia" asp-action="Nueva" title="Registrar guía"><span class="sidebar-link__bullet"></span><span>Registrar guía</span></a> *@
 				</nav>
 
-				<button class="sidebar-group-toggle @(ViewContext.RouteData.Values["controller"]?.ToString() is "Stock" or "Movimientos" ? "is-current-group" : "")" type="button" data-sidebar-group aria-expanded="@(ViewContext.RouteData.Values["controller"]?.ToString() is "Stock" or "Movimientos" ? "true" : "false")" aria-controls="stocks-menu" title="Stocks">
+				<button class="sidebar-group-toggle @(ViewContext.RouteData.Values["controller"]?.ToString() is "Stock" or "Movimientos" ? "is-current-group" : "")" type="button" data-sidebar-group aria-expanded="false" aria-controls="stocks-menu" title="Stocks">
 					<i class="ti ti-packages" aria-hidden="true"></i>
 					<span>Stocks</span><i class="ti ti-chevron-down sidebar-chevron" aria-hidden="true"></i>
 				</button>
-				<nav class="sidebar-submenu @(ViewContext.RouteData.Values["controller"]?.ToString() is "Stock" or "Movimientos" ? "is-open" : "")" id="stocks-menu" aria-label="Stocks">
+				<nav class="sidebar-submenu" id="stocks-menu" aria-label="Stocks">
 					<a class="sidebar-link sidebar-link--child @(ViewContext.RouteData.Values["controller"]?.ToString() == "Stock" ? "is-active" : "")" asp-controller="Stock" asp-action="Index" title="Existencias"><span class="sidebar-link__bullet"></span><span>Existencias</span></a>
 					<a class="sidebar-link sidebar-link--child @(ViewContext.RouteData.Values["controller"]?.ToString() == "Movimientos" ? "is-active" : "")" asp-controller="Movimientos" asp-action="Index" title="Movimientos"><span class="sidebar-link__bullet"></span><span>Movimientos</span></a>
 				</nav>
 
-				<button class="sidebar-group-toggle @(ViewContext.RouteData.Values["controller"]?.ToString() is "Usuario" or "Rol" ? "is-current-group" : "")" type="button" data-sidebar-group aria-expanded="true" aria-controls="maintenance-menu" title="Gestion de Recursos">
+				<div class="sidebar-section-label sidebar-section-label--spaced">GESTIÓN</div>
+				<button class="sidebar-group-toggle @(ViewContext.RouteData.Values["controller"]?.ToString() is "Usuario" or "Rol" ? "is-current-group" : "")" type="button" data-sidebar-group aria-expanded="false" aria-controls="maintenance-menu" title="Gestion de Recursos">
 					<i class="ti ti-adjustments-horizontal" aria-hidden="true"></i>
 					<span>Gestion de Recursos</span><i class="ti ti-chevron-down sidebar-chevron" aria-hidden="true"></i>
 				</button>
-				<nav class="sidebar-submenu is-open" id="maintenance-menu" aria-label="Gestion de Recursos">
+				<nav class="sidebar-submenu" id="maintenance-menu" aria-label="Gestion de Recursos">
 					<a class="sidebar-link sidebar-link--child @(ViewContext.RouteData.Values["controller"]?.ToString() == "Usuario" ? "is-active" : "")" asp-controller="Usuario" asp-action="Index" title="Usuarios"><span class="sidebar-link__bullet"></span><span>Usuarios</span></a>
 					<a class="sidebar-link sidebar-link--child @(ViewContext.RouteData.Values["controller"]?.ToString() == "Producto" ? "is-active" : "")" asp-controller="Producto" asp-action="Index" title="Productos"><span class="sidebar-link__bullet"></span><span>Productos</span></a>
 					<a class="sidebar-link sidebar-link--child @(ViewContext.RouteData.Values["controller"]?.ToString() == "Almacen" ? "is-active" : "")" asp-controller="Almacen" asp-action="Index" title="Almacenes"><span class="sidebar-link__bullet"></span><span>Almacenes</span></a>
@@ -62,7 +63,7 @@
 				</nav>
 			</div>
 
-			<div class="sidebar-bottom"><span class="sidebar-bottom__line"></span><span class="sidebar-bottom__text">PLATAFORMA DE OPERACIONES</span></div>
+			<div class="sidebar-bottom"><span class="sidebar-bottom__line"></span><span>© @DateTime.Now.Year Almacén AW</span></div>
 		</aside>
 
 		<button class="sidebar-overlay" type="button" data-sidebar-close aria-label="Cerrar menú"></button>
@@ -96,8 +97,6 @@
 			<main class="app-main">
 				<div class="container-fluid app-container">@RenderBody()</div>
 			</main>
-
-			<footer class="app-footer"><span>© @DateTime.Now.Year Almacén AW</span><span><i></i> Plataforma interna de operaciones</span></footer>
 		</div>
 	</div>
 

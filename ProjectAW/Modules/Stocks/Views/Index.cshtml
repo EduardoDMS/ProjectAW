@@ -9,13 +9,12 @@
 		<h1>@ViewData["Title"]</h1>
 		<p>@ViewData["Description"]</p>
 	</div>
-	<a class="btn btn-outline-primary" asp-controller="Movimientos" asp-action="Index">Ver movimientos</a>
 </section>
 
 <section class="stock-panel" aria-label="Existencias por almacén">
 	<div class="stock-toolbar">
 		<label class="stock-filter form-label" for="stock-warehouse">Almacén <select class="form-select" id="stock-warehouse"><option value="">Selecciona un almacén</option></select></label>
-		<button class="btn btn-primary" id="stock-refresh" type="button">Actualizar</button>
+		@* <button class="btn btn-primary" id="stock-refresh" type="button">Actualizar</button> *@
 	</div>
 	<div class="stock-alert" id="stock-alert" role="status" aria-live="polite" hidden></div>
 	<p class="stock-select-prompt" id="stock-select-prompt">Selecciona un almacén para consultar sus existencias.</p>
