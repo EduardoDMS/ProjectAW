@@ -4,7 +4,6 @@
 
 <section class="welcome-panel">
 	<div class="welcome-copy">
-		<span class="eyebrow">ESPACIO DE TRABAJO</span>
 		<h1>Hola, @(User.Identity?.Name ?? "usuario")</h1>
 		<p>Tu operación empieza aquí. Accede al catálogo para consultar los productos registrados.</p>
 		<a class="btn btn-primary welcome-action" asp-controller="Producto" asp-action="Index">
@@ -19,13 +18,4 @@
 		<div class="art-spark art-spark--one">✦</div>
 		<div class="art-spark art-spark--two">✧</div>
 	</div>
-</section>
-
-<section class="home-shortcuts" aria-label="Accesos rápidos">
-	<a class="shortcut-card" asp-controller="Producto" asp-action="Index">
-		<span class="shortcut-icon" aria-hidden="true">P</span>
-		<span><strong>Catálogo de productos</strong><small>Consulta el inventario registrado</small></span>
-		<span class="shortcut-arrow" aria-hidden="true">↗</span>
-	</a>
-	<div class="shortcut-note"><span class="shortcut-note__dot"></span><span>Sesión autenticada mediante cookie segura</span></div>
 </section>
