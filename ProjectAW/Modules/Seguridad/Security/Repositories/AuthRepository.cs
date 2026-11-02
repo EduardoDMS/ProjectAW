@@ -13,7 +13,11 @@ namespace ProjectAW.Modules.Seguridad.Security.Repositories
             _context = context;
         }
 
-        public Task<Usuario?> ObtenerPorUsernameAsync(string username, CancellationToken ct = default) =>
-        _context.Usuarios.AsNoTracking().Include(u => u.rol).FirstOrDefaultAsync(u => u.Username == username, ct);
+        public async Task<Usuario?> ObtenerPorUsernameAsync(string username, CancellationToken ct = default)
+        {
+            return await _context.Usuarios.AsNoTracking()
+                .Include(usuario => usuario.rol)
+                .FirstOrDefaultAsync(usuario => usuario.Username == username, ct);
+        }
     }
 }

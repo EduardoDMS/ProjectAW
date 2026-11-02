@@ -2,7 +2,6 @@ using ProjectAW.Modules.Guias.Entities;
 using ProjectAW.Infrastructure.Errors;
 using ProjectAW.Modules.Maestros.Operaciones.Entities;
 using ProjectAW.Modules.Stocks.Entities;
-using ProjectAW.Modules.Stocks.Repositories;
 using ProjectAW.Modules.Stocks.Services;
 
 namespace ProjectAW.Modules.Traslado.Services;
@@ -10,9 +9,9 @@ namespace ProjectAW.Modules.Traslado.Services;
 /// <summary>Aplica traslados: descuenta el origen y suma el destino.</summary>
 public sealed class TrasladoStockProcessor : IGuiaStockProcessor
 {
-    private readonly IStockBalanceRepository _stock;
+    private readonly IStockBalanceService _stock;
 
-    public TrasladoStockProcessor(IStockBalanceRepository stock) => _stock = stock;
+    public TrasladoStockProcessor(IStockBalanceService stock) => _stock = stock;
 
     public int IdTipoOperacionGuia => TipoOperacionGuiaIds.Traslado;
     public bool RequiereUbicacionOrigen => true;
@@ -31,18 +30,42 @@ public sealed class TrasladoStockProcessor : IGuiaStockProcessor
     public async Task AplicarProductoAsync(
         CabeceraGuia guia, DetalleGuia detalle, IReadOnlyList<LecturaGuia> lecturas, CancellationToken ct = default)
     {
-        foreach (var grupo in lecturas.GroupBy(x => x.IdUbicacionOrigen!.Value))
-        {
-            var cantidad = checked((int)grupo.Sum(x => (long)x.Cantidad));
-            await _stock.AjustarUbicacionAsync(grupo.Key, detalle.IdProducto, -cantidad, ct);
-        }
+        await DescontarLecturasPorUbicacionOrigenAsync(detalle.IdProducto, lecturas, ct);
         await _stock.SincronizarAlmacenAsync(guia.IdAlmacenOrigen!.Value, detalle.IdProducto, ct);
 
-        foreach (var grupo in lecturas.GroupBy(x => x.IdUbicacionDestino!.Value))
-        {
-            var cantidad = checked((int)grupo.Sum(x => (long)x.Cantidad));
-            await _stock.AjustarUbicacionAsync(grupo.Key, detalle.IdProducto, cantidad, ct);
-        }
+        await SumarLecturasPorUbicacionDestinoAsync(detalle.IdProducto, lecturas, ct);
         await _stock.SincronizarAlmacenAsync(guia.IdAlmacenDestino!.Value, detalle.IdProducto, ct);
+    }
+
+    /// <summary>Descuenta del almacén origen una suma por cada ubicación utilizada.</summary>
+    private async Task DescontarLecturasPorUbicacionOrigenAsync(
+        int idProducto, IReadOnlyList<LecturaGuia> lecturas, CancellationToken ct)
+    {
+        var lecturasPorUbicacion = lecturas
+            .GroupBy(lectura => lectura.IdUbicacionOrigen!.Value);
+
+        foreach (var lecturasDeUbicacion in lecturasPorUbicacion)
+        {
+            var totalLeido = lecturasDeUbicacion.Sum(lectura => (long)lectura.Cantidad);
+            var cantidadLeida = checked((int)totalLeido);
+            await _stock.AjustarUbicacionAsync(
+                lecturasDeUbicacion.Key, idProducto, -cantidadLeida, ct);
+        }
+    }
+
+    /// <summary>Suma en el almacén destino una cantidad por cada ubicación utilizada.</summary>
+    private async Task SumarLecturasPorUbicacionDestinoAsync(
+        int idProducto, IReadOnlyList<LecturaGuia> lecturas, CancellationToken ct)
+    {
+        var lecturasPorUbicacion = lecturas
+            .GroupBy(lectura => lectura.IdUbicacionDestino!.Value);
+
+        foreach (var lecturasDeUbicacion in lecturasPorUbicacion)
+        {
+            var totalLeido = lecturasDeUbicacion.Sum(lectura => (long)lectura.Cantidad);
+            var cantidadLeida = checked((int)totalLeido);
+            await _stock.AjustarUbicacionAsync(
+                lecturasDeUbicacion.Key, idProducto, cantidadLeida, ct);
+        }
     }
 }

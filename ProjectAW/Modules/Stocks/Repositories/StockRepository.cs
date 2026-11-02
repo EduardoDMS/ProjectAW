@@ -13,19 +13,22 @@ public sealed class StockRepository : IStockRepository
     public async Task<IReadOnlyList<StockUbicacion>> ListarAsync(
         int? idAlmacen = null, int? idProducto = null, string? codigoUbicacion = null, CancellationToken ct = default)
     {
+        // Evita devolver todo el inventario si la consulta llega sin criterios.
         if (!idAlmacen.HasValue && !idProducto.HasValue && string.IsNullOrWhiteSpace(codigoUbicacion))
             return Array.Empty<StockUbicacion>();
 
         var query = _context.StockUbicacion.AsNoTracking()
-            .Include(s => s.Ubicacion)
+                .Include(s => s.Ubicacion)
                 .ThenInclude(u => u!.Almacen)
-            .Include(s => s.Producto)
+                .Include(s => s.Producto)
                 .ThenInclude(p => p!.UnidadMedida)
-            .Where(s => s.Ubicacion != null && s.Ubicacion.Activo &&
-                        (!idAlmacen.HasValue || s.Ubicacion.IdAlmacen == idAlmacen.Value) &&
-                        s.Producto != null && s.Producto.Activo)
-            .AsQueryable();
+                .AsQueryable();
 
+        // Solo expone stock de productos y ubicaciones vigentes; aplica después los filtros recibidos.
+        query = query.Where(stock => stock.Ubicacion != null && stock.Ubicacion.Activo &&
+            stock.Producto != null && stock.Producto.Activo);
+        if (idAlmacen.HasValue)
+            query = query.Where(stock => stock.Ubicacion!.IdAlmacen == idAlmacen.Value);
         if (idProducto.HasValue) query = query.Where(s => s.IdProducto == idProducto.Value);
         if (!string.IsNullOrWhiteSpace(codigoUbicacion))
         {

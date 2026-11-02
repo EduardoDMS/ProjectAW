@@ -14,32 +14,32 @@ namespace ProjectAW.Modules.Guias.Repositories
         }
 
         public async Task AgregarAsync(CabeceraGuia guia, CancellationToken ct = default)
-                            => await _context.CabeceraGuia.AddAsync(guia, ct);
-
-        public async Task AgregarParAsync(CabeceraGuia primera, CabeceraGuia relacionada, CancellationToken ct = default)
         {
-            await using var transaction = await _context.Database.BeginTransactionAsync(ct);
-            await _context.CabeceraGuia.AddRangeAsync([primera, relacionada], ct);
-            await _context.SaveChangesAsync(ct);
-            primera.IdGuiaRelacionada = relacionada.IdGuia;
-            relacionada.IdGuiaRelacionada = primera.IdGuia;
-            await _context.SaveChangesAsync(ct);
-            await transaction.CommitAsync(ct);
+            await _context.CabeceraGuia.AddAsync(guia, ct);
         }
 
+        /// <summary>
+        /// Se utiliza una tarea que devuelva un booleano para verificar si existe un registro en la base de datos 
+        /// Usando el método FindAsync de Entity Framework Core, que busca un registro por su clave primaria.
+        /// Usando la T para indicar que es un método genérico que puede trabajar con cualquier tipo de entidad.
+        /// por ellos se envia un new Object[] { id } para que se pueda buscar el registro por su id.
+        /// </summary>
         public async Task<bool> ExisteAsync<T>(int id, CancellationToken ct = default) where T : class
-                            => await _context.Set<T>().FindAsync(new object[] { id }, ct) is not null;
+        {
+            return await _context.Set<T>().FindAsync(new object[] { id }, ct) is not null;
+        }
 
-        public Task GuardarCambiosAsync(CancellationToken ct = default)
-                                    => _context.SaveChangesAsync(ct);
+        public async Task GuardarCambiosAsync(CancellationToken ct = default)
+        {
+            await _context.SaveChangesAsync(ct);
+        }
 
+        /// <summary>
+        ///      
+        /// </summary>
         public async Task<IReadOnlyList<CabeceraGuia>> ListarAsync(int? idTipoOperacionGuia, int? idEstadoGuia, CancellationToken ct = default)
         {
-            var query = _context.CabeceraGuia.AsNoTracking().Include(g => g.Detalles)
-                .Include(g => g.Proveedor).Include(g => g.Cliente)
-                .Include(g => g.AlmacenOrigen).Include(g => g.AlmacenDestino)
-                .Include(g => g.Motivo).ThenInclude(m => m!.TipoComportamiento)
-                .Include(g => g.GuiaRelacionada).AsQueryable();
+            var query = ConsultaGuiaCompleta().AsNoTracking();
 
             if (idTipoOperacionGuia.HasValue) query = query.Where(g => g.IdTipoOperacionGuia == idTipoOperacionGuia.Value);
             if (idEstadoGuia.HasValue) query = query.Where(g => g.IdEstadoGuia == idEstadoGuia.Value);
@@ -57,16 +57,27 @@ namespace ProjectAW.Modules.Guias.Repositories
                 _ => throw new ArgumentOutOfRangeException(nameof(idTipoOperacionGuia))
             };
 
-            var valores = await _context.Database.SqlQueryRaw<int>(sql).ToListAsync(ct);
-            return $"{prefijo}-{valores[0]:D6}";
+            // SingleAsync compone una consulta envolvente; SQL Server no permite
+            // NEXT VALUE FOR dentro de una subconsulta.
+            var numeros = await _context.Database.SqlQueryRaw<int>(sql).ToListAsync(ct);
+            var siguienteNumero = numeros.Single();
+            return $"{prefijo}-{siguienteNumero:D6}";
         }
 
-        public Task<CabeceraGuia?> ObtenerPorIdAsync(int idGuia, CancellationToken ct = default) =>
-        _context.CabeceraGuia.Include(g => g.Detalles)
-                                             .Include(g => g.Proveedor).Include(g => g.Cliente)
-                                             .Include(g => g.AlmacenOrigen).Include(g => g.AlmacenDestino)
-                                             .Include(g => g.Motivo).ThenInclude(m => m!.TipoComportamiento)
-                                             .Include(g => g.GuiaRelacionada)
-                                             .FirstOrDefaultAsync(g => g.IdGuia == idGuia, ct);
+        public async Task<CabeceraGuia?> ObtenerPorIdAsync(int idGuia, CancellationToken ct = default)
+        {
+            return await ConsultaGuiaCompleta()
+                .FirstOrDefaultAsync(guia => guia.IdGuia == idGuia, ct);
+        }
+
+        /// <summary>Relaciones compartidas por las consultas de lista y detalle.</summary>
+        private IQueryable<CabeceraGuia> ConsultaGuiaCompleta() => _context.CabeceraGuia
+            .Include(guia => guia.Detalles)
+            .Include(guia => guia.Proveedor)
+            .Include(guia => guia.Cliente)
+            .Include(guia => guia.AlmacenOrigen)
+            .Include(guia => guia.AlmacenDestino)
+            .Include(guia => guia.Motivo).ThenInclude(motivo => motivo!.TipoComportamiento)
+            .Include(guia => guia.GuiaRelacionada);
     }
 }

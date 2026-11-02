@@ -8,3 +8,9 @@ public sealed class TipoComportamientoGuia
     public string DescripcionComportamiento { get; set; } = string.Empty;
     public ICollection<MotivoGuia> Motivos { get; set; } = new List<MotivoGuia>();
 }
+
+public static class TipoComportamientoGuiaIds
+{
+    public const int MovimientoNormal = 1;
+    public const int TrasladoInterno = 2;
+}

@@ -18,9 +18,9 @@ public sealed class MotivoGuiaConfiguration : IEntityTypeConfiguration<MotivoGui
         builder.HasOne(x => x.TipoOperacionGuia).WithMany().HasForeignKey(x => x.IdTipoOperacionGuia).OnDelete(DeleteBehavior.Restrict);
         builder.HasOne(x => x.TipoComportamiento).WithMany(x => x.Motivos).HasForeignKey(x => x.IdTipoComportamiento).OnDelete(DeleteBehavior.Restrict);
         builder.HasData(
-            new MotivoGuia { IdMotivoGuia = 1, NombreMotivo = "Recepción estándar", IdTipoOperacionGuia = 1, RequiereProveedor = true, RequiereAlmacenDestino = true, IdTipoComportamiento = 1, Activo = true },
-            new MotivoGuia { IdMotivoGuia = 2, NombreMotivo = "Despacho a cliente", IdTipoOperacionGuia = 2, RequiereCliente = true, RequiereAlmacenOrigen = true, IdTipoComportamiento = 1, Activo = true },
-            new MotivoGuia { IdMotivoGuia = 3, NombreMotivo = "Salida para traslado interno", IdTipoOperacionGuia = 2, RequiereAlmacenOrigen = true, RequiereAlmacenDestino = true, IdTipoComportamiento = 2, Activo = true },
-            new MotivoGuia { IdMotivoGuia = 4, NombreMotivo = "Recepción de traslado interno", IdTipoOperacionGuia = 1, RequiereAlmacenDestino = true, IdTipoComportamiento = 1, Activo = true });
+            new MotivoGuia { IdMotivoGuia = 1, NombreMotivo = "Recepción estándar", IdTipoOperacionGuia = TipoOperacionGuiaIds.Entrada, RequiereProveedor = true, RequiereAlmacenDestino = true, IdTipoComportamiento = TipoComportamientoGuiaIds.MovimientoNormal, Activo = true },
+            new MotivoGuia { IdMotivoGuia = 2, NombreMotivo = "Despacho a cliente", IdTipoOperacionGuia = TipoOperacionGuiaIds.Salida, RequiereCliente = true, RequiereAlmacenOrigen = true, IdTipoComportamiento = TipoComportamientoGuiaIds.MovimientoNormal, Activo = true },
+            new MotivoGuia { IdMotivoGuia = 3, NombreMotivo = "Salida para traslado interno", IdTipoOperacionGuia = TipoOperacionGuiaIds.Salida, RequiereAlmacenOrigen = true, RequiereAlmacenDestino = true, IdTipoComportamiento = TipoComportamientoGuiaIds.TrasladoInterno, Activo = true },
+            new MotivoGuia { IdMotivoGuia = 4, NombreMotivo = "Recepción de traslado interno", IdTipoOperacionGuia = TipoOperacionGuiaIds.Entrada, RequiereAlmacenDestino = true, IdTipoComportamiento = TipoComportamientoGuiaIds.MovimientoNormal, Activo = true });
     }
 }
