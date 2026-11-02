@@ -27,7 +27,7 @@ document.addEventListener("DOMContentLoaded", () => {
 	}
 
 	const statusMarkup = (active) =>
-		`<span class="record-status ${active ? "is-active" : "is-inactive"}">${active ? "Activo" : "Inactivo"}</span>`;
+		`<span class="badge ${active ? "text-bg-success" : "text-bg-secondary"}">${active ? "Activo" : "Inactivo"}</span>`;
 	const actionMarkup = (user) =>
 		`<button class="btn btn-sm btn-outline-primary" type="button" data-edit="${Number(user.idUsuario)}">Ver / editar</button> ` +
 		`<button class="btn btn-sm btn-outline-secondary" type="button" data-toggle="${Number(user.idUsuario)}" data-active="${!user.activo}">${user.activo ? "Desactivar" : "Activar"}</button>`;

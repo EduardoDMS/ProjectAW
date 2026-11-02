@@ -4,25 +4,101 @@
 	Layout = "~/Views/Shared/_Layout.cshtml";
 }
 
-<section class="page-heading">
+<section class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3 mb-4">
 	<div>
-		<h1>@ViewData["Title"]</h1>
-		<p>@ViewData["Description"]</p>
+		<h1>
+			@ViewData["Title"]
+		</h1>
+		<p class="mb-0">
+			@ViewData["Description"]
+		</p>
 	</div>
-	<a class="btn btn-outline-primary" asp-controller="Stock" asp-action="Index">Ver existencias</a>
+	<a class="btn btn-outline-primary" asp-controller="Stock" asp-action="Index">
+		Ver existencias
+	</a>
 </section>
 
-<section class="stock-panel" aria-label="Historial de movimientos">
-	<div class="stock-toolbar stock-toolbar--filters">
-		<label class="stock-filter form-label">Operación <select class="form-select" id="movement-operation-filter"><option value="">Todas</option><option value="1">Entrada</option><option value="2">Salida</option></select></label>
-		<label class="stock-filter form-label">Almacén <select class="form-select" id="movement-warehouse-filter"><option value="">Todos</option></select></label>
-	</div>
-	<div class="stock-alert" id="movement-alert" role="status" aria-live="polite" hidden></div>
-	<div class="table-responsive p-3">
-		<table class="table align-middle mb-0" id="movement-table">
-			<thead><tr><th>Guía</th><th>Motivo</th><th>Operación</th><th>CodProducto</th><th>Producto (dsc)</th><th>Origen</th><th>Destino</th><th>Cantidad esperada</th><th>Cantidad enviada</th><th>Diferencia</th><th>Operador</th><th>Observación</th><th>Fecha - Hora</th></tr></thead>
-			<tbody></tbody>
-		</table>
+<section class="card" aria-label="Historial de movimientos">
+	<div class="card-body">
+		<div class="row g-3 align-items-end mb-3">
+			<div class="col-12 col-md-4">
+				<label class="form-label" for="movement-operation-filter">
+					Operación
+				</label>
+				<select class="form-select" id="movement-operation-filter">
+					<option value="">
+						Todas
+					</option>
+					<option value="1">
+						Entrada
+					</option>
+					<option value="2">
+						Salida
+					</option>
+				</select>
+			</div>
+			<div class="col-12 col-md-4">
+				<label class="form-label" for="movement-warehouse-filter">
+					Almacén
+				</label>
+				<select class="form-select" id="movement-warehouse-filter">
+					<option value="">
+						Todos
+					</option>
+				</select>
+			</div>
+		</div>
+		<div class="alert alert-danger" id="movement-alert" role="status" aria-live="polite" hidden>
+		</div>
+		<div class="table-responsive">
+			<table class="table table-striped align-middle mb-0" id="movement-table">
+				<thead>
+					<tr>
+						<th scope="col">
+							Guía
+						</th>
+						<th scope="col">
+							Motivo
+						</th>
+						<th scope="col">
+							Operación
+						</th>
+						<th scope="col">
+							CodProducto
+						</th>
+						<th scope="col">
+							Producto (dsc)
+						</th>
+						<th scope="col">
+							Origen
+						</th>
+						<th scope="col">
+							Destino
+						</th>
+						<th scope="col">
+							Cantidad esperada
+						</th>
+						<th scope="col">
+							Cantidad enviada
+						</th>
+						<th scope="col">
+							Diferencia
+						</th>
+						<th scope="col">
+							Operador
+						</th>
+						<th scope="col">
+							Observación
+						</th>
+						<th scope="col">
+							Fecha - Hora
+						</th>
+					</tr>
+				</thead>
+				<tbody>
+				</tbody>
+			</table>
+		</div>
 	</div>
 </section>
 
@@ -31,6 +107,8 @@
 	<link rel="stylesheet" href="~/css/modules/stocks/stocks.css" asp-append-version="true" />
 }
 @section Scripts {
-	<script src="~/libs/datatables/dataTables.min.js" asp-append-version="true"></script>
-	<script src="~/js/modules/stocks/movimientos.js" asp-append-version="true"></script>
+	<script src="~/libs/datatables/dataTables.min.js" asp-append-version="true">
+	</script>
+	<script src="~/js/modules/stocks/movimientos.js" asp-append-version="true">
+	</script>
 }

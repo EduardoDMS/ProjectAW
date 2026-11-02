@@ -6,314 +6,311 @@
 }
 
 <div id="guides-app" data-open-create="@(ViewData["OpenCreate"] is true ? "true" : "false")">
-	<section class="page-heading guide-page-heading">
+	<section class="d-flex flex-column flex-md-row align-items-md-end justify-content-between gap-3 mb-4">
 		<div>
-			<h1>@ViewData["Title"]</h1>
-			<p>@ViewData["Description"]</p>
+			<h1>
+			@ViewData["Title"]
+			</h1>
+			<p class="mb-0">
+			@ViewData["Description"]
+			</p>
 		</div>
-		<button
-			class="btn btn-primary guide-primary-action"
-			id="new-guide"
-			type="button"
-		>
+		<button class="btn btn-primary" id="new-guide" type="button">
 			<span aria-hidden="true">＋</span> Registrar guía
 		</button>
 	</section>
 
-	<div class="guide-summary" aria-label="Resumen de guías">
-		<article class="guide-summary-card">
-			<span class="guide-summary-card__icon guide-icon--all">G</span>
-			<div>
-				<small>Total visible</small><strong id="guide-total">—</strong>
-			</div>
-		</article>
-		<article class="guide-summary-card">
-			<span class="guide-summary-card__icon guide-icon--pending">P</span>
-			<div>
-				<small>Pendientes</small><strong id="guide-pending">—</strong>
-			</div>
-		</article>
-		<article class="guide-summary-card">
-			<span class="guide-summary-card__icon guide-icon--active">↗</span>
-			<div>
-				<small>En proceso</small><strong id="guide-progress">—</strong>
-			</div>
-		</article>
-		<article class="guide-summary-card">
-			<span class="guide-summary-card__icon guide-icon--cancelled"
-				>×</span
-			>
-			<div>
-				<small>Canceladas</small><strong id="guide-cancelled">—</strong>
-			</div>
-		</article>
+	<div class="row row-cols-2 row-cols-lg-4 g-3 mb-4" aria-label="Resumen de guías">
+		<div class="col">
+			<article class="card h-100">
+				<div class="card-body d-flex align-items-center gap-3">
+					<span class="badge rounded-pill text-bg-primary">
+					G
+					</span>
+					<div>
+						<small class="d-block">
+						Total visible
+						</small>
+						<strong id="guide-total">
+						—
+						</strong>
+					</div>
+				</div>
+			</article>
+		</div>
+		<div class="col">
+			<article class="card h-100">
+				<div class="card-body d-flex align-items-center gap-3">
+					<span class="badge rounded-pill text-bg-warning">
+					P
+					</span>
+					<div>
+						<small class="d-block">
+						Pendientes
+						</small>
+						<strong id="guide-pending">
+						—
+						</strong>
+					</div>
+				</div>
+			</article>
+		</div>
+		<div class="col">
+			<article class="card h-100">
+				<div class="card-body d-flex align-items-center gap-3">
+					<span class="badge rounded-pill text-bg-success">
+					↗
+					</span>
+					<div>
+						<small class="d-block">
+						En proceso
+						</small>
+						<strong id="guide-progress">
+						—
+						</strong>
+					</div>
+				</div>
+			</article>
+		</div>
+		<div class="col">
+			<article class="card h-100">
+				<div class="card-body d-flex align-items-center gap-3">
+					<span class="badge rounded-pill text-bg-secondary">
+					×
+					</span>
+					<div>
+						<small class="d-block">
+						Canceladas
+						</small>
+						<strong id="guide-cancelled">
+						—
+						</strong>
+					</div>
+				</div>
+			</article>
+		</div>
 	</div>
 
-	<section class="guide-panel" aria-label="Listado de guías">
-		<div class="guide-toolbar">
-			<label class="guide-search form-label" for="guide-search">
-				<i class="ti ti-search" aria-hidden="true"></i>
-				<input
-					id="guide-search"
-					type="search"
-					placeholder="Buscar número, tercero o almacén..."
-					autocomplete="off"
-				 class="form-control"/>
-			</label>
-			<div class="guide-filters">
-				<label
-					 class="form-label"><span>Operación</span
-					><select id="guide-operation-filter" class="form-select">
-						<option value="">Todas</option>
-					</select></label
-				>
-				<label
-					 class="form-label"><span>Estado</span
-					><select id="guide-status-filter" class="form-select">
-						<option value="">Todos</option>
-					</select></label
-				>
+	<section class="card" aria-label="Listado de guías">
+		<div class="card-header d-flex flex-column flex-lg-row align-items-lg-center justify-content-between gap-3">
+			<div class="input-group flex-grow-1">
+				<span class="input-group-text" aria-hidden="true"><i class="ti ti-search"></i></span>
+				<input id="guide-search" type="search" class="form-control" placeholder="Buscar número, tercero o almacén..." autocomplete="off" aria-label="Buscar guías" />
+			</div>
+			<div class="row g-3 flex-grow-1">
+				<div class="col-12 col-md-6">
+					<label class="form-label" for="guide-operation-filter">
+					Operación
+					</label>
+					<select id="guide-operation-filter" class="form-select">
+						<option value="">
+						Todas
+						</option>
+					</select>
+				</div>
+				<div class="col-12 col-md-6">
+					<label class="form-label" for="guide-status-filter">
+					Estado
+					</label>
+					<select id="guide-status-filter" class="form-select">
+						<option value="">
+						Todos
+						</option>
+					</select>
+				</div>
 			</div>
 		</div>
-		<div
-			id="guide-alert"
-			class="guide-alert"
-			role="status"
-			aria-live="polite"
-			hidden
-		></div>
-		<div class="table-responsive p-3 guide-table-wrap">
-			<table class="table guide-table align-middle mb-0">
+		<div id="guide-alert" class="alert alert-danger m-3" role="alert" aria-live="polite" hidden>
+		</div>
+		<div class="table-responsive">
+			<table class="table table-hover guide-table align-middle mb-0">
 				<thead>
 					<tr>
-						<th scope="col">Guía</th>
-						<th scope="col">Operación y referencia</th>
-						<th scope="col">Programación</th>
-						<th scope="col">Productos</th>
-						<th scope="col">Estado</th>
-						<th scope="col" class="text-end">Acciones</th>
+						<th scope="col">
+						Guía
+						</th>
+						<th scope="col">
+						Operación y referencia
+						</th>
+						<th scope="col">
+						Programación
+						</th>
+						<th scope="col">
+						Productos
+						</th>
+						<th scope="col">
+						Estado
+						</th>
+						<th scope="col" class="text-end">
+						Acciones
+						</th>
 					</tr>
 				</thead>
-				<tbody id="guide-rows"></tbody>
+				<tbody id="guide-rows">
+				</tbody>
 			</table>
 		</div>
-		<footer class="guide-table-footer">
-			<span id="guide-count" role="status" aria-live="polite"></span
-			><span>Las guías pendientes se pueden editar o cancelar.</span>
+		<footer class="card-footer d-flex flex-column flex-md-row justify-content-between gap-2">
+			<span id="guide-count" role="status" aria-live="polite">
+			</span>
+			<span>
+			Las guías pendientes se pueden editar o cancelar.
+			</span>
 		</footer>
 	</section>
 </div>
 
-<div
-	class="modal fade"
-	id="guide-editor"
-	tabindex="-1"
-	aria-labelledby="guide-editor-title"
-	aria-hidden="true"
->
-	<div
-		class="modal-dialog modal-dialog-centered modal-xl modal-dialog-scrollable"
-	>
-		<div class="modal-content guide-modal">
+<div class="modal fade" id="guide-editor" tabindex="-1" aria-labelledby="guide-editor-title" aria-hidden="true">
+	<div class="modal-dialog modal-dialog-centered modal-xl modal-dialog-scrollable">
+		<div class="modal-content">
 			<div class="modal-header">
 				<div>
-					<span class="eyebrow">DOCUMENTO DE INVENTARIO</span>
+					<p class="mb-1">
+					Documento de inventario
+					</p>
 					<h2 class="modal-title" id="guide-editor-title">
 						Registrar guía
 					</h2>
-					<p id="guide-editor-hint">
+					<p class="mb-0" id="guide-editor-hint">
 						Completa los datos de la operación y agrega sus
 						productos.
 					</p>
 				</div>
-				<button
-					type="button"
-					class="btn-close"
-					data-bs-dismiss="modal"
-					aria-label="Cerrar"
-				></button>
+				<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar">
+				</button>
 			</div>
-			<form id="guide-form" novalidate>
+			<form id="guide-form" class="d-flex flex-column flex-grow-1 overflow-hidden" novalidate>
 				<div class="modal-body">
-					<div
-						id="guide-form-alert"
-						class="guide-alert"
-						role="alert"
-						aria-live="polite"
-						hidden
-					></div>
-					<nav
-						class="guide-modal-nav"
-						aria-label="Secciones del formulario de guía"
-					>
-						<button
-							class="guide-modal-nav__item is-active btn"
-							type="button"
-							data-guide-jump="guide-operation-section"
-							aria-current="step"
-						>
+					<div id="guide-form-alert" class="alert alert-danger" role="alert" aria-live="polite" hidden>
+					</div>
+					<nav class="nav nav-pills gap-2 sticky-top bg-white py-2" aria-label="Secciones del formulario de guía">
+						<button class="nav-link active" type="button" data-guide-jump="guide-operation-section" aria-current="step">
 							01 <span>Operación</span>
 						</button>
-						<button
-							class="guide-modal-nav__item btn"
-							type="button"
-							data-guide-jump="guide-products-section"
-						>
-							02 <span>Productos</span
-							><b id="guide-line-count">0</b>
+						<button class="nav-link" type="button" data-guide-jump="guide-products-section">
+							02 <span>Productos</span>
+							<span class="badge text-bg-secondary" id="guide-line-count">
+							0
+							</span>
 						</button>
 					</nav>
-					<section
-						class="guide-form-section"
-						id="guide-operation-section"
-					>
-						<div class="guide-form-section__heading">
-							<span>01</span>
+					<section class="guide-form-section py-4 border-bottom" id="guide-operation-section">
+						<div class="d-flex align-items-center gap-3 mb-3">
+							<span class="badge text-bg-secondary">
+							01
+							</span>
 							<div>
-								<h3>Datos de la operación</h3>
-								<p>
+								<h3>
+								Datos de la operación
+								</h3>
+								<p class="mb-0">
 									La operación determina qué datos de origen y
 									destino son necesarios.
 								</p>
 							</div>
 						</div>
-						<div class="guide-form-grid">
-							<div class="guide-field">
-								<label for="guide-operation"
-									 class="form-label">Tipo de operación <b>*</b></label
-								><select
-									class="form-select"
-									id="guide-operation"
-									required
-								></select>
+						<div class="row g-3">
+							<div class="col-md-6">
+								<label for="guide-operation" class="form-label">Tipo de operación <b>*</b></label>
+								<select class="form-select" id="guide-operation" required>
+								</select>
 							</div>
-							<div class="guide-field guide-field--wide">
+							<div class="col-12">
 								<label for="guide-motive" class="form-label">Motivo de la guía <b>*</b></label>
-								<select class="form-select" id="guide-motive" required></select>
-								<small id="guide-motive-help" class="form-text">El motivo define los campos requeridos y el efecto sobre el stock.</small>
+								<select class="form-select" id="guide-motive" required>
+								</select>
+								<div id="guide-motive-help" class="form-text">
+								El motivo define los campos requeridos y el efecto sobre el stock.
+								</div>
 							</div>
-							<div class="guide-field">
-								<label for="guide-date"
-									 class="form-label">Fecha programada <b>*</b></label
-								><input
-									class="form-control"
-									id="guide-date"
-									type="datetime-local"
-									required
-								/>
+							<div class="col-md-6">
+								<label for="guide-date" class="form-label">Fecha programada <b>*</b></label>
+								<input class="form-control" id="guide-date" type="datetime-local" required />
 							</div>
-							<div class="guide-field" id="guide-provider-wrap">
-								<label for="guide-provider"
-									 class="form-label">Proveedor <b>*</b></label
-								><select
-									class="form-select"
-									id="guide-provider"
-								></select>
+							<div class="col-md-6" id="guide-provider-wrap" hidden>
+								<label for="guide-provider" class="form-label">Proveedor <b>*</b></label>
+								<select class="form-select" id="guide-provider">
+								</select>
 							</div>
-							<div class="guide-field" id="guide-client-wrap">
-								<label for="guide-client"
-									 class="form-label">Cliente <b>*</b></label
-								><select
-									class="form-select"
-									id="guide-client"
-								></select>
+							<div class="col-md-6" id="guide-client-wrap" hidden>
+								<label for="guide-client" class="form-label">Cliente <b>*</b></label>
+								<select class="form-select" id="guide-client">
+								</select>
 							</div>
-							<div class="guide-field" id="guide-origin-wrap">
-								<label for="guide-origin"
-									 class="form-label">Almacén de origen <b>*</b></label
-								><select
-									class="form-select"
-									id="guide-origin"
-								></select>
+							<div class="col-md-6" id="guide-origin-wrap" hidden>
+								<label for="guide-origin" class="form-label">Almacén de origen <b>*</b></label>
+								<select class="form-select" id="guide-origin">
+								</select>
 							</div>
-							<div
-								class="guide-field"
-								id="guide-destination-wrap"
-							>
-								<label for="guide-destination"
-									 class="form-label">Almacén de destino <b>*</b></label
-								><select
-									class="form-select"
-									id="guide-destination"
-								></select>
+							<div class="col-md-6" id="guide-destination-wrap" hidden>
+								<label for="guide-destination" class="form-label">Almacén de destino <b>*</b></label>
+								<select class="form-select" id="guide-destination">
+								</select>
 							</div>
-							<div class="guide-field">
-								<label for="guide-reference-type"
-									 class="form-label">Tipo de documento de referencia</label
-								><input
-									class="form-control"
-									id="guide-reference-type"
-									maxlength="30"
-									placeholder="Ej. Orden de compra"
-								/>
+							<div class="col-md-6">
+								<label for="guide-reference-type" class="form-label">
+								Tipo de documento de referencia
+								</label>
+								<input class="form-control" id="guide-reference-type" maxlength="30" placeholder="Ej. Orden de compra" />
 							</div>
-							<div class="guide-field">
-								<label for="guide-reference-number"
-									 class="form-label">Número de documento</label
-								><input
-									class="form-control"
-									id="guide-reference-number"
-									maxlength="50"
-									placeholder="Ej. OC-2026-0012"
-								/>
+							<div class="col-md-6">
+								<label for="guide-reference-number" class="form-label">
+								Número de documento
+								</label>
+								<input class="form-control" id="guide-reference-number" maxlength="50" placeholder="Ej. OC-2026-0012" />
 							</div>
-							<div class="guide-field guide-field--wide">
-								<label for="guide-observation"
-									 class="form-label">Observación</label
-								><textarea
-									class="form-control"
-									id="guide-observation"
-									rows="2"
-									maxlength="500"
-									placeholder="Notas sobre la operación (opcional)"
-								></textarea>
+							<div class="col-12">
+								<label for="guide-observation" class="form-label">
+								Observación
+								</label>
+								<textarea class="form-control" id="guide-observation" rows="2" maxlength="500" placeholder="Notas sobre la operación (opcional)">
+								</textarea>
 							</div>
 						</div>
 					</section>
 
-					<section
-						class="guide-form-section guide-details-section"
-						id="guide-products-section"
-					>
-						<div class="guide-form-section__heading">
-							<span>02</span>
+					<section class="guide-form-section py-4 border-bottom-0" id="guide-products-section">
+						<div class="d-flex flex-wrap align-items-center gap-3 mb-3">
+							<span class="badge text-bg-secondary">
+							02
+							</span>
 							<div>
-								<h3>Productos de la guía</h3>
-								<p>
+								<h3>
+								Productos de la guía
+								</h3>
+								<p class="mb-0">
 									Agrega al menos un producto. No se permiten
 									líneas repetidas.
 								</p>
 							</div>
-							<button
-								class="btn btn-outline-primary guide-add-line"
-								type="button"
-								id="add-guide-line"
-							>
+							<button class="btn btn-outline-primary ms-auto" type="button" id="add-guide-line">
 								＋ Agregar producto
 							</button>
 						</div>
-						<div class="guide-lines-head">
-							<span>Producto</span><span>Cantidad esperada</span
-							><span></span>
+						<div class="row g-2 mx-0 text-secondary mb-2">
+							<div class="col-md">
+							Producto
+							</div>
+							<div class="col-10 col-md-3">
+							Cantidad esperada
+							</div>
+							<div class="col-2 col-md-auto">
+							</div>
 						</div>
-						<div id="guide-lines" class="guide-lines"></div>
+						<div id="guide-lines" class="d-grid gap-2">
+						</div>
 					</section>
 				</div>
 				<div class="modal-footer">
-					<button
-						type="button"
-						class="btn btn-light"
-						data-bs-dismiss="modal"
-					>
+					<button type="button" class="btn btn-light" data-bs-dismiss="modal">
 						Cerrar
 					</button>
-					<button
-						type="submit"
-						class="btn btn-primary guide-save"
-						id="save-guide"
-					>
-						<span id="save-guide-label">Guardar guía</span
-						><span class="guide-spinner" aria-hidden="true"></span>
+					<button type="submit" class="btn btn-primary" id="save-guide">
+						<span id="save-guide-label">
+						Guardar guía
+						</span>
+						<span id="save-guide-spinner" class="spinner-border spinner-border-sm ms-2 d-none" aria-hidden="true">
+						</span>
 					</button>
 				</div>
 			</form>
@@ -321,53 +318,45 @@
 	</div>
 </div>
 
-<div
-	class="modal fade"
-	id="guide-detail-modal"
-	tabindex="-1"
-	aria-labelledby="guide-detail-title"
-	aria-hidden="true"
->
-	<div
-		class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable"
-	>
-		<div class="modal-content guide-modal">
+<div class="modal fade" id="guide-detail-modal" tabindex="-1" aria-labelledby="guide-detail-title" aria-hidden="true">
+	<div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
+		<div class="modal-content">
 			<div class="modal-header">
 				<div>
-					<span class="eyebrow">DETALLE DEL DOCUMENTO</span>
-					<h2 class="modal-title" id="guide-detail-title">Guía</h2>
-					<p id="guide-detail-subtitle"></p>
+					<p class="mb-1">
+					Detalle del documento
+					</p>
+					<h2 class="modal-title" id="guide-detail-title">
+					Guía
+					</h2>
+					<p class="mb-0" id="guide-detail-subtitle">
+					</p>
 				</div>
-				<button
-					type="button"
-					class="btn-close"
-					data-bs-dismiss="modal"
-					aria-label="Cerrar"
-				></button>
+				<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar">
+				</button>
 			</div>
 			<div class="modal-body">
-				<div
-					id="guide-detail-summary"
-					class="guide-detail-summary"
-				></div>
+				<div id="guide-detail-summary" class="row row-cols-1 row-cols-md-2 g-3 mb-4">
+				</div>
 				<div class="table-responsive p-3">
 					<table class="table guide-lines-table align-middle">
 						<thead>
 							<tr>
-								<th>Producto</th>
-								<th class="text-end">Cantidad esperada</th>
+								<th>
+								Producto
+								</th>
+								<th class="text-end">
+								Cantidad esperada
+								</th>
 							</tr>
 						</thead>
-						<tbody id="guide-detail-lines"></tbody>
+						<tbody id="guide-detail-lines">
+						</tbody>
 					</table>
 				</div>
 			</div>
 			<div class="modal-footer">
-				<button
-					type="button"
-					class="btn btn-light"
-					data-bs-dismiss="modal"
-				>
+				<button type="button" class="btn btn-light" data-bs-dismiss="modal">
 					Cerrar
 				</button>
 			</div>
@@ -376,11 +365,14 @@
 </div>
 
 @section Styles {
-<link rel="stylesheet" href="~/libs/datatables/dataTables.dataTables.min.css" asp-append-version="true" />
+	<link rel="stylesheet" href="~/libs/datatables/dataTables.dataTables.min.css" asp-append-version="true" />
+	<link rel="stylesheet" href="~/css/modules/guias/guias.css" asp-append-version="true" />
 }
 @section Scripts {
-<script src="~/libs/datatables/dataTables.min.js" asp-append-version="true"></script>
-<script src="~/js/modules/guias/guias.js" asp-append-version="true"></script>
+	<script src="~/libs/datatables/dataTables.min.js" asp-append-version="true">
+	</script>
+	<script src="~/js/modules/guias/guias.js" asp-append-version="true">
+	</script>
 }
 
 

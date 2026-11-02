@@ -2,20 +2,39 @@
 	ViewData["Title"] = "Inicio";
 }
 
-<section class="welcome-panel">
+<section class="welcome-panel position-relative d-flex align-items-center overflow-hidden p-4 p-lg-5">
 	<div class="welcome-copy">
-		<h1>Hola, @(User.Identity?.Name ?? "usuario")</h1>
-		<p>Tu operación empieza aquí. Accede al catálogo para consultar los productos registrados.</p>
-		<a class="btn btn-primary welcome-action" asp-controller="Producto" asp-action="Index">
-			Ir a productos <span aria-hidden="true">→</span>
+		<h1 class="mt-2">
+			Hola, @(User.Identity?.Name ?? "usuario")
+		</h1>
+		<p>
+			Tu operación empieza aquí. Accede al catálogo para consultar los productos registrados.
+		</p>
+		<a class="btn btn-primary mt-4" asp-controller="Producto" asp-action="Index">
+			Ir a productos
+			<span aria-hidden="true">
+				→
+			</span>
 		</a>
 	</div>
 	<div class="welcome-art" aria-hidden="true">
-		<div class="art-orbit art-orbit--outer"></div>
-		<div class="art-orbit art-orbit--inner"></div>
-		<div class="art-box art-box--back"></div>
-		<div class="art-box art-box--front"><span></span><i></i></div>
-		<div class="art-spark art-spark--one">✦</div>
-		<div class="art-spark art-spark--two">✧</div>
+		<div class="art-orbit art-orbit--outer">
+		</div>
+		<div class="art-orbit art-orbit--inner">
+		</div>
+		<div class="art-box art-box--back">
+		</div>
+		<div class="art-box art-box--front">
+			<span>
+			</span>
+			<i>
+			</i>
+		</div>
+		<div class="art-spark art-spark--one">
+			✦
+		</div>
+		<div class="art-spark art-spark--two">
+			✧
+		</div>
 	</div>
 </section>

@@ -3,48 +3,145 @@
 	ViewData["Description"] = "Administra las cuentas de acceso para administración y operaciones.";
 	Layout = "~/Views/Shared/_Layout.cshtml";
 }
-<section class="page-heading">
+
+<section class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3 mb-4">
 	<div>
-		<h1>Usuarios</h1>
-		<p>Gestiona cuentas, roles y acceso de administradores y operadores.</p>
+		<h1>
+			Usuarios
+		</h1>
+		<p class="mb-0">
+			Gestiona cuentas, roles y acceso de administradores y operadores.
+		</p>
 	</div>
-	<button class="btn btn-primary" id="new-user" type="button">＋ Nuevo usuario</button>
+	<button class="btn btn-primary" id="new-user" type="button">
+		＋ Nuevo usuario
+	</button>
 </section>
-<section class="content-card maestro-card">
-	<div class="maestro-toolbar">
-		<label class="status-filter form-label" for="user-status"><span>Estado</span><select id="user-status" class="form-select"><option value="">Todos</option><option value="true">Activos</option><option value="false">Inactivos</option></select></label>
-		<span class="ms-auto" id="user-feedback" role="status" aria-live="polite"></span>
+
+<section class="card overflow-hidden">
+	<div class="d-flex flex-column flex-sm-row align-items-sm-center justify-content-between gap-3 p-3 border-bottom">
+		<div class="d-flex flex-column flex-sm-row align-items-sm-center gap-2">
+			<label class="form-label mb-0" for="user-status">
+				Estado
+			</label>
+			<select id="user-status" class="form-select">
+				<option value="">
+					Todos
+				</option>
+				<option value="true">
+					Activos
+				</option>
+				<option value="false">
+					Inactivos
+				</option>
+			</select>
+		</div>
+		<span class="ms-sm-auto" id="user-feedback" role="status" aria-live="polite">
+		</span>
 	</div>
-	<div class="maestro-alert" id="user-alert" role="alert" hidden></div>
+	<div class="alert alert-danger m-3" id="user-alert" role="alert" hidden>
+	</div>
 	<div class="table-responsive p-3">
 		<table id="users-table" class="table align-middle w-100">
-			<thead><tr><th>Usuario</th><th>Nombre</th><th>Rol</th><th>Estado</th><th>Acciones</th></tr></thead>
-			<tbody></tbody>
+			<thead>
+				<tr>
+					<th scope="col">
+						Usuario
+					</th>
+					<th scope="col">
+						Nombre
+					</th>
+					<th scope="col">
+						Rol
+					</th>
+					<th scope="col">
+						Estado
+					</th>
+					<th scope="col">
+						Acciones
+					</th>
+				</tr>
+			</thead>
+			<tbody>
+			</tbody>
 		</table>
 	</div>
 </section>
+
 <div class="modal fade" id="user-modal" tabindex="-1" aria-labelledby="user-modal-title" aria-hidden="true">
 	<div class="modal-dialog modal-dialog-centered">
-		<div class="modal-content maestro-modal">
-			<div class="modal-header"><div><span class="eyebrow">SEGURIDAD Y ACCESO</span><h2 class="modal-title" id="user-modal-title">Nuevo usuario</h2></div><button class="btn-close" type="button" data-bs-dismiss="modal" aria-label="Cerrar"></button></div>
+		<div class="modal-content">
+			<div class="modal-header">
+				<h2 class="modal-title" id="user-modal-title">
+					Nuevo usuario
+				</h2>
+				<button class="btn-close" type="button" data-bs-dismiss="modal" aria-label="Cerrar">
+				</button>
+			</div>
 			<form id="user-form">
 				<div class="modal-body">
-					<div id="user-form-alert" class="maestro-alert" role="alert" hidden></div>
-					<div class="maestro-field"><label for="user-name" class="form-label">Nombre *</label><input class="form-control" id="user-name" name="nombre" maxlength="100" autocomplete="given-name" required /></div>
-					<div class="maestro-field"><label for="user-surname" class="form-label">Apellido *</label><input class="form-control" id="user-surname" name="apellido" maxlength="100" autocomplete="family-name" required /></div>
-					<div class="maestro-field"><label for="user-username" class="form-label">Nombre de usuario *</label><input class="form-control" id="user-username" name="username" maxlength="20" autocomplete="username" required /></div>
-					<div class="maestro-field"><label for="user-password" class="form-label">Contraseña <span id="password-required-mark">*</span></label><input class="form-control" id="user-password" name="password" type="password" autocomplete="new-password" /><small id="password-hint">Define la contraseña inicial para esta cuenta.</small></div>
-					<div class="maestro-field"><label for="user-role" class="form-label">Rol *</label><select class="form-select" id="user-role" name="idRol" required><option value="">Selecciona Administrador u Operador</option></select></div>
+					<div class="alert alert-danger" id="user-form-alert" role="alert" hidden>
+					</div>
+					<div class="mb-3">
+						<label for="user-name" class="form-label">
+							Nombre *
+						</label>
+						<input class="form-control" id="user-name" name="nombre" maxlength="100" autocomplete="given-name" required />
+					</div>
+					<div class="mb-3">
+						<label for="user-surname" class="form-label">
+							Apellido *
+						</label>
+						<input class="form-control" id="user-surname" name="apellido" maxlength="100" autocomplete="family-name" required />
+					</div>
+					<div class="mb-3">
+						<label for="user-username" class="form-label">
+							Nombre de usuario *
+						</label>
+						<input class="form-control" id="user-username" name="username" maxlength="20" autocomplete="username" required />
+					</div>
+					<div class="mb-3">
+						<label for="user-password" class="form-label">
+							Contraseña
+							<span id="password-required-mark">
+								*
+							</span>
+						</label>
+						<input class="form-control" id="user-password" name="password" type="password" autocomplete="new-password" />
+						<small class="form-text" id="password-hint">
+							Define la contraseña inicial para esta cuenta.
+						</small>
+					</div>
+					<div>
+						<label for="user-role" class="form-label">
+							Rol *
+						</label>
+						<select class="form-select" id="user-role" name="idRol" required>
+							<option value="">
+								Selecciona Administrador u Operador
+							</option>
+						</select>
+					</div>
 				</div>
-				<div class="modal-footer"><button class="btn btn-light" type="button" data-bs-dismiss="modal">Cancelar</button><button class="btn btn-primary" id="save-user" type="submit">Crear usuario</button></div>
+				<div class="modal-footer">
+					<button class="btn btn-light" type="button" data-bs-dismiss="modal">
+						Cancelar
+					</button>
+					<button class="btn btn-primary" id="save-user" type="submit">
+						Crear usuario
+					</button>
+				</div>
 			</form>
 		</div>
 	</div>
 </div>
+
 @section Styles {
 	<link rel="stylesheet" href="~/libs/datatables/dataTables.dataTables.min.css" asp-append-version="true" />
 }
 @section Scripts {
-	<script src="~/libs/datatables/dataTables.min.js" asp-append-version="true"></script>
-	<script src="~/js/modules/seguridad/usuarios/usuario.js" asp-append-version="true"></script>
+	<script src="~/libs/datatables/dataTables.min.js" asp-append-version="true">
+	</script>
+	<script src="~/js/modules/seguridad/usuarios/usuario.js" asp-append-version="true">
+	</script>
 }
