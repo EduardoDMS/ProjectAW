@@ -2,10 +2,11 @@ using Microsoft.EntityFrameworkCore;
 using ProjectAW.Infrastructure.Data;
 using ProjectAW.Modules.Maestros.Almacenes.Entities;
 using ProjectAW.Infrastructure.Errors;
+using ProjectAW.Modules.Maestros.Ubicaciones.Entities;
 
 namespace ProjectAW.Modules.Maestros.Almacenes.Repositories
 {
-    public class AlmacenRepository:IAlmacenRepository
+    public class AlmacenRepository : IAlmacenRepository
     {
         private readonly AppDbContext _context;
 
@@ -20,28 +21,9 @@ namespace ProjectAW.Modules.Maestros.Almacenes.Repositories
             return _context.SaveChangesAsync();
         }
 
-        public async Task<bool> ActualizarAlmacenAsync(Almacen almacen, IReadOnlyCollection<int> idUbicacionesDespacho)
+        public async Task<Almacen?> ObtenerAlmacenParaActualizarAsync(int id)
         {
-            await using var transaction = await _context.Database.BeginTransactionAsync();
-            var actual = await _context.Almacenes.FirstOrDefaultAsync(x => x.IdAlmacen == almacen.IdAlmacen);
-            if (actual is null) return false;
-
-            var seleccionadas = idUbicacionesDespacho.Distinct().ToHashSet();
-            var ubicacionIds = await _context.Ubicaciones.Where(x => x.IdAlmacen == actual.IdAlmacen).Select(x => x.IdUbicacion).ToListAsync();
-            if (seleccionadas.Except(ubicacionIds).Any())
-                throw new ReglaNegocioException("Selecciona únicamente ubicaciones pertenecientes a este almacén.");
-
-            actual.Codigo = almacen.Codigo;
-            actual.Descripcion = almacen.Descripcion;
-            actual.Activo = almacen.Activo;
-            actual.FchModificacion = almacen.FchModificacion;
-            var actuales = await _context.UbicacionesDespacho.Where(x => x.IdAlmacen == actual.IdAlmacen).ToListAsync();
-            _context.UbicacionesDespacho.RemoveRange(actuales);
-            await _context.UbicacionesDespacho.AddRangeAsync(seleccionadas.Select(id => new ProjectAW.Modules.Maestros.Ubicaciones.Entities.UbicacionDespacho { IdAlmacen = actual.IdAlmacen, IdUbicacion = id }));
-
-            await _context.SaveChangesAsync();
-            await transaction.CommitAsync();
-            return true;
+            return await _context.Almacenes.FirstOrDefaultAsync(almacen => almacen.IdAlmacen == id);
         }
 
         public async Task CrearAlmacenAsync(Almacen almacen)
@@ -63,6 +45,42 @@ namespace ProjectAW.Modules.Maestros.Almacenes.Repositories
         public async Task<List<Almacen>> ObtenerAlmacenesAsync()
         {
             return await _context.Almacenes.AsNoTracking().Include(a => a.UbicacionesDespacho).ToListAsync();
+        }
+
+        public async Task<List<int>> ListarUbicacionesDelAlmacenAsync(
+            int idAlmacen, IReadOnlyCollection<int> idsUbicaciones)
+        {
+            if (idsUbicaciones.Count == 0)
+                return [];
+
+            return await _context.Ubicaciones.AsNoTracking()
+                .Where(ubicacion => ubicacion.IdAlmacen == idAlmacen &&
+                                    idsUbicaciones.Contains(ubicacion.IdUbicacion))
+                .Select(ubicacion => ubicacion.IdUbicacion)
+                .ToListAsync();
+        }
+
+        public Task EliminarUbicacionesDespachoAsync(int idAlmacen)
+        {
+            return _context.UbicacionesDespacho
+                .Where(ubicacion => ubicacion.IdAlmacen == idAlmacen)
+                .ExecuteDeleteAsync();
+        }
+
+        public async Task AgregarUbicacionesDespachoAsync(
+            int idAlmacen, IReadOnlyCollection<int> idsUbicaciones)
+        {
+            if (idsUbicaciones.Count == 0)
+                return;
+
+            var nuevasUbicaciones = idsUbicaciones.Select(id => new UbicacionDespacho
+            {
+                IdAlmacen = idAlmacen,
+                IdUbicacion = id
+            }).ToList();
+
+            await _context.UbicacionesDespacho.AddRangeAsync(nuevasUbicaciones);
+            await _context.SaveChangesAsync();
         }
     }
 }

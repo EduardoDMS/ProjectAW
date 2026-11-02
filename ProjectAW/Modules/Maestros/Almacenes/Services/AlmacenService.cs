@@ -3,41 +3,48 @@ using ProjectAW.Modules.Maestros.Almacenes.DTOs.Responses;
 using ProjectAW.Modules.Maestros.Almacenes.Entities;
 using ProjectAW.Modules.Maestros.Almacenes.Repositories;
 using ProjectAW.Infrastructure.Errors;
+using ProjectAW.Infrastructure.Data;
 
 namespace ProjectAW.Modules.Maestros.Almacenes.Services
 {
     public class AlmacenService : IAlmacenService
     { 
         private readonly IAlmacenRepository _repository;
+        private readonly ITransactionManager _transactions;
 
-        public AlmacenService(IAlmacenRepository repository)
+        public AlmacenService(IAlmacenRepository repository, ITransactionManager transactions)
         {
             _repository = repository;
+            _transactions = transactions;
         }
 
         public async Task<bool> ActualizarAlmacenAsync(int id, ActualizarAlmacenDto dto)
         {
-            var almacen = await _repository.ObtenerAlmacenPorIdAsync(id);
+            var actualizado = false;
 
-            if (almacen == null)
-                return false;
-
-            var codigo = dto.Codigo.Trim();
-
-            var almacenMismoCodigo = await _repository.ObtenerAlmacenPorCodigoAsync(codigo);
-
-            if (almacenMismoCodigo != null && almacenMismoCodigo.IdAlmacen != id)
+            await _transactions.ExecuteAsync(async _ =>
             {
-                throw new ConflictoNegocioException("El código del almacén ya existe.");
-            }
+                var almacen = await _repository.ObtenerAlmacenParaActualizarAsync(id);
+                if (almacen is null)
+                    return;
 
-            almacen.Codigo = codigo;
-            almacen.Descripcion = dto.Descripcion?.Trim();
-            almacen.Activo = dto.Activo;
-            almacen.FchModificacion = DateTime.UtcNow;
+                var codigo = dto.Codigo.Trim();
+                await ValidarCodigoUnicoAsync(id, codigo);
 
-            return await _repository.ActualizarAlmacenAsync(almacen, dto.IdUbicacionesDespacho ?? []);
+                var ubicacionesSeleccionadas = (dto.IdUbicacionesDespacho ?? []).ToHashSet();
+                await ValidarUbicacionesDespachoAsync(id, ubicacionesSeleccionadas);
 
+                almacen.Codigo = codigo;
+                almacen.Descripcion = dto.Descripcion?.Trim();
+                almacen.Activo = dto.Activo;
+                almacen.FchModificacion = DateTime.UtcNow;
+                await _repository.ActualizarAlmacenAsync(almacen);
+                await _repository.EliminarUbicacionesDespachoAsync(id);
+                await _repository.AgregarUbicacionesDespachoAsync(id, ubicacionesSeleccionadas);
+                actualizado = true;
+            });
+
+            return actualizado;
         }
 
         public async Task<bool> CambiarEstadoAlmacenAsync(int id, bool activo)
@@ -136,5 +143,22 @@ namespace ProjectAW.Modules.Maestros.Almacenes.Services
                  IdUbicacionesDespacho = almacen.UbicacionesDespacho.Select(u => u.IdUbicacion).ToList()
              };
         }
+
+        private async Task ValidarCodigoUnicoAsync(int idAlmacen, string codigo)
+        {
+            var almacenExistente = await _repository.ObtenerAlmacenPorCodigoAsync(codigo);
+            if (almacenExistente is not null && almacenExistente.IdAlmacen != idAlmacen)
+                throw new ConflictoNegocioException("El código del almacén ya existe.");
+        }
+
+        private async Task ValidarUbicacionesDespachoAsync(
+            int idAlmacen, IReadOnlySet<int> idsSeleccionados)
+        {
+            var idsValidos = await _repository.ListarUbicacionesDelAlmacenAsync(
+                idAlmacen, idsSeleccionados);
+            if (idsSeleccionados.Except(idsValidos).Any())
+                throw new ReglaNegocioException("Selecciona únicamente ubicaciones pertenecientes a este almacén.");
+        }
+
     }
 }

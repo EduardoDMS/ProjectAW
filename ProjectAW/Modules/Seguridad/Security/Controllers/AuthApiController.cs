@@ -1,12 +1,13 @@
-﻿using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Cors;
-using Microsoft.AspNetCore.Identity.Data;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using ProjectAW.Modules.Seguridad.Security.HttpAuth;
 using ProjectAW.Modules.Seguridad.Security.Services;
 using System.Security.Claims;
+using LoginRequest = ProjectAW.Modules.Seguridad.Security.DTOs.Request.LoginRequest;
+using SesionResponse = ProjectAW.Modules.Seguridad.Security.DTOs.Response.SesionResponse;
 
 namespace ProjectAW.Modules.Seguridad.Security.Controllers
 {
@@ -24,56 +25,31 @@ namespace ProjectAW.Modules.Seguridad.Security.Controllers
             _configuration = configuration;
         }
 
+        /// <summary>
+        /// Valida las credenciales, determina el esquema según el origen y el rol,
+        /// y solo entonces emite la cookie del cliente correspondiente.
+        /// </summary>
         [HttpPost("login")]
         [AllowAnonymous]
         [EnableRateLimiting("login")]
-        public async Task<IActionResult> Login(Modules.Seguridad.Security.DTOs.Request.LoginRequest request, CancellationToken ct)
+        public async Task<IActionResult> Login(LoginRequest request, CancellationToken ct)
         {
             var sesion = await _service.ValidarCredencialAsync(request, ct);
-
-            if(sesion is null)
-            {
+            if (sesion is null)
                 return Problem(detail: "Usuario o Contraseña incorrectos. ",
-                               statusCode: StatusCodes.Status401Unauthorized,
-                               title: "Credenciales invalidas");
-            }
+                    statusCode: StatusCodes.Status401Unauthorized,
+                    title: "Credenciales invalidas");
 
-            var pwaOrigins = _configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? [];
-            var scheme = AuthCookieSchemes.Resolver(HttpContext, pwaOrigins);
+            var scheme = AuthCookieSchemes.Resolver(HttpContext, ObtenerOrigenesPwa());
             if (scheme == AuthCookieSchemes.Rechazar)
                 return Problem(detail: "El origen de esta solicitud no está autorizado.",
                     statusCode: StatusCodes.Status403Forbidden, title: "Origen no permitido");
 
-            var isPwaRequest = scheme == AuthCookieSchemes.Operador;
-            var isOperator = string.Equals(sesion.Rol.Trim(), "Operador", StringComparison.OrdinalIgnoreCase);
-            if (isPwaRequest != isOperator)
-            {
-                return Problem(
-                    detail: isPwaRequest
-                        ? "La aplicación de operadores requiere una cuenta con rol Operador."
-                        : "Las cuentas de Operador deben iniciar sesión desde la aplicación móvil.",
-                    statusCode: StatusCodes.Status403Forbidden,
-                    title: "Rol no permitido para esta aplicación");
-            }
+            var respuestaRol = ValidarRolParaCliente(sesion, scheme);
+            if (respuestaRol is not null)
+                return respuestaRol;
 
-            var claims = new List<Claim>
-            {
-                new(ClaimTypes.NameIdentifier, sesion.IdUsuario.ToString()),
-                new(ClaimTypes.Name, sesion.Username),
-                new(AppClaimTypes.IdRol,sesion.IdRol.ToString())
-            };
-
-            var identity = new ClaimsIdentity(claims, scheme);
-
-            await HttpContext.SignInAsync(
-                scheme, new ClaimsPrincipal(identity));
-            Response.Cookies.Delete(AuthCookieSchemes.LegacyCookieName, new CookieOptions
-            {
-                Path = "/",
-                SameSite = SameSiteMode.Lax,
-                Secure = Request.IsHttps,
-                HttpOnly = true
-            });
+            await IniciarSesionAsync(sesion, scheme);
 
             return Ok(sesion);
         }
@@ -87,6 +63,40 @@ namespace ProjectAW.Modules.Seguridad.Security.Controllers
                 return Problem(detail: "El origen de esta solicitud no está autorizado.",
                     statusCode: StatusCodes.Status403Forbidden, title: "Origen no permitido");
             await HttpContext.SignOutAsync(scheme);
+            EliminarCookieAnterior();
+            return NoContent();
+        }
+
+        private IActionResult? ValidarRolParaCliente(SesionResponse sesion, string scheme)
+        {
+            var esClienteOperador = scheme == AuthCookieSchemes.Operador;
+            var esUsuarioOperador = string.Equals(sesion.Rol.Trim(), "Operador", StringComparison.OrdinalIgnoreCase);
+            if (esClienteOperador == esUsuarioOperador)
+                return null;
+
+            return Problem(
+                detail: esClienteOperador
+                    ? "La aplicación de operadores requiere una cuenta con rol Operador."
+                    : "Las cuentas de Operador deben iniciar sesión desde la aplicación móvil.",
+                statusCode: StatusCodes.Status403Forbidden,
+                title: "Rol no permitido para esta aplicación");
+        }
+
+        private async Task IniciarSesionAsync(SesionResponse sesion, string scheme)
+        {
+            var claims = new List<Claim>
+            {
+                new(ClaimTypes.NameIdentifier, sesion.IdUsuario.ToString()),
+                new(ClaimTypes.Name, sesion.Username),
+                new(AppClaimTypes.IdRol, sesion.IdRol.ToString())
+            };
+
+            var identity = new ClaimsIdentity(claims, scheme);
+            await HttpContext.SignInAsync(scheme, new ClaimsPrincipal(identity));
+            EliminarCookieAnterior();
+        }
+
+        private void EliminarCookieAnterior() =>
             Response.Cookies.Delete(AuthCookieSchemes.LegacyCookieName, new CookieOptions
             {
                 Path = "/",
@@ -94,13 +104,13 @@ namespace ProjectAW.Modules.Seguridad.Security.Controllers
                 Secure = Request.IsHttps,
                 HttpOnly = true
             });
-            return NoContent();
-        }
 
         private string GetCurrentClientScheme()
         {
-            var pwaOrigins = _configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? [];
-            return AuthCookieSchemes.Resolver(HttpContext, pwaOrigins);
+            return AuthCookieSchemes.Resolver(HttpContext, ObtenerOrigenesPwa());
         }
+
+        private string[] ObtenerOrigenesPwa() =>
+            _configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? [];
     }
 }

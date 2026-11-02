@@ -13,7 +13,7 @@ public sealed class TipoComportamientoGuiaConfiguration : IEntityTypeConfigurati
         builder.HasIndex(x => x.NombreComportamiento).IsUnique();
         builder.Property(x => x.DescripcionComportamiento).HasMaxLength(250).IsRequired();
         builder.HasData(
-            new TipoComportamientoGuia { IdTipoComportamiento = 1, NombreComportamiento = "MOVIMIENTO_NORMAL", DescripcionComportamiento = "La entrada suma existencias y la salida las resta." },
-            new TipoComportamientoGuia { IdTipoComportamiento = 2, NombreComportamiento = "TRASLADO_INTERNO", DescripcionComportamiento = "La salida resta en origen y crea una entrada relacionada para sumar en destino." });
+            new TipoComportamientoGuia { IdTipoComportamiento = TipoComportamientoGuiaIds.MovimientoNormal, NombreComportamiento = "MOVIMIENTO_NORMAL", DescripcionComportamiento = "La entrada suma existencias y la salida las resta." },
+            new TipoComportamientoGuia { IdTipoComportamiento = TipoComportamientoGuiaIds.TrasladoInterno, NombreComportamiento = "TRASLADO_INTERNO", DescripcionComportamiento = "La salida resta en origen y crea una entrada relacionada para sumar en destino." });
     }
 }

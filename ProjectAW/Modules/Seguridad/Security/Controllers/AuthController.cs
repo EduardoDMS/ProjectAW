@@ -20,11 +20,16 @@ public sealed class AuthController : Controller
     }
 
     [HttpGet("/AccesoDenegado")]
-    public IActionResult AccessDenied() =>
-        View("~/Modules/Seguridad/Security/Views/AccessDenied.cshtml");
+    public IActionResult AccessDenied()
+    {
+        return View("~/Modules/Seguridad/Security/Views/AccessDenied.cshtml");
+    }
 
-    private IActionResult RedirectToLocal(string? returnUrl) =>
-        Url.IsLocalUrl(returnUrl)
-            ? LocalRedirect(returnUrl!)
-            : RedirectToAction("Index", "Home");
+    private IActionResult RedirectToLocal(string? returnUrl)
+    {
+        if (Url.IsLocalUrl(returnUrl))
+            return LocalRedirect(returnUrl!);
+
+        return RedirectToAction("Index", "Home");
+    }
 }

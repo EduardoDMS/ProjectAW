@@ -10,6 +10,14 @@ namespace ProjectAW.Modules.Seguridad.Usuarios.Services;
 
 public class UsuarioService : IUsuarioService
 {
+    private static readonly string[] RolesAdministrables =
+    [
+        "Operador",
+        "Administrador",
+        "Administrador inicial",
+        "Admin"
+    ];
+
     private readonly IUsuarioRepository _repository;
     private readonly IPasswordHasher<Usuario> _hasher;
     private readonly IRolService _rolService;
@@ -30,6 +38,7 @@ public class UsuarioService : IUsuarioService
         var usuario = await _repository.GetByIdAsync(id);
         if (usuario is null) return false;
 
+        // Confirma que el rol sea asignable y que el nombre de usuario no pertenezca a otra cuenta.
         await ValidarRolAsync(dto.IdRol);
         var username = dto.Username.Trim();
         var usuarioConElmismoNombre = await _repository.ObtenerPorUsernameAsync(username);
@@ -42,6 +51,7 @@ public class UsuarioService : IUsuarioService
         usuario.IdRol = dto.IdRol;
         usuario.FechaActualizada = DateTime.UtcNow;
 
+        // Una contraseña vacía significa conservar la actual; si llega una nueva, se guarda hasheada.
         if (!string.IsNullOrWhiteSpace(dto.Password))
             usuario.Password = _hasher.HashPassword(usuario, dto.Password);
 
@@ -105,10 +115,8 @@ public class UsuarioService : IUsuarioService
             throw new ReglaNegocioException("Selecciona un rol válido.");
 
         var nombre = rol.Nombre.Trim();
-        var permitido = nombre.Equals("Operador", StringComparison.OrdinalIgnoreCase) ||
-                        nombre.Equals("Administrador", StringComparison.OrdinalIgnoreCase) ||
-                        nombre.Equals("Administrador inicial", StringComparison.OrdinalIgnoreCase) ||
-                        nombre.Equals("Admin", StringComparison.OrdinalIgnoreCase);
+        var permitido = RolesAdministrables.Any(rolPermitido =>
+            nombre.Equals(rolPermitido, StringComparison.OrdinalIgnoreCase));
         if (!permitido)
             throw new ReglaNegocioException("Solo se puede asignar el rol Administrador o Operador.");
     }

@@ -16,6 +16,9 @@ public sealed class MovimientosApiController : ControllerBase
         [FromQuery] int? idGuia,
         [FromQuery] int? idAlmacen,
         [FromQuery] int? idOperacion,
-        CancellationToken ct) =>
-        Ok(await _service.ListarAsync(idGuia, idAlmacen, idOperacion, ct));
+        CancellationToken ct)
+    {
+        var movimientos = await _service.ListarAsync(idGuia, idAlmacen, idOperacion, ct);
+        return Ok(movimientos);
+    }
 }
