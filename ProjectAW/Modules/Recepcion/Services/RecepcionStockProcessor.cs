@@ -2,7 +2,6 @@ using ProjectAW.Modules.Guias.Entities;
 using ProjectAW.Infrastructure.Errors;
 using ProjectAW.Modules.Maestros.Operaciones.Entities;
 using ProjectAW.Modules.Stocks.Entities;
-using ProjectAW.Modules.Stocks.Repositories;
 using ProjectAW.Modules.Stocks.Services;
 
 namespace ProjectAW.Modules.Recepcion.Services;
@@ -10,9 +9,9 @@ namespace ProjectAW.Modules.Recepcion.Services;
 /// <summary>Aplica entradas: suma las lecturas a las ubicaciones destino.</summary>
 public sealed class RecepcionStockProcessor : IGuiaStockProcessor
 {
-    private readonly IStockBalanceRepository _stock;
+    private readonly IStockBalanceService _stock;
 
-    public RecepcionStockProcessor(IStockBalanceRepository stock) => _stock = stock;
+    public RecepcionStockProcessor(IStockBalanceService stock) => _stock = stock;
 
     public int IdTipoOperacionGuia => TipoOperacionGuiaIds.Entrada;
     public bool RequiereUbicacionOrigen => false;
@@ -26,15 +25,27 @@ public sealed class RecepcionStockProcessor : IGuiaStockProcessor
 
     public int ObtenerAlmacenMovimiento(CabeceraGuia guia) => guia.IdAlmacenDestino!.Value;
 
+    /// <summary>Suma las lecturas en sus ubicaciones destino y sincroniza el almacén.</summary>
     public async Task AplicarProductoAsync(
         CabeceraGuia guia, DetalleGuia detalle, IReadOnlyList<LecturaGuia> lecturas, CancellationToken ct = default)
     {
-        foreach (var grupo in lecturas.GroupBy(x => x.IdUbicacionDestino!.Value))
-        {
-            var cantidad = checked((int)grupo.Sum(x => (long)x.Cantidad));
-            await _stock.AjustarUbicacionAsync(grupo.Key, detalle.IdProducto, cantidad, ct);
-        }
-
+        await SumarLecturasPorUbicacionDestinoAsync(detalle.IdProducto, lecturas, ct);
         await _stock.SincronizarAlmacenAsync(guia.IdAlmacenDestino!.Value, detalle.IdProducto, ct);
+    }
+
+    /// <summary>Aplica una suma por cada ubicación destino distinta.</summary>
+    private async Task SumarLecturasPorUbicacionDestinoAsync(
+        int idProducto, IReadOnlyList<LecturaGuia> lecturas, CancellationToken ct)
+    {
+        var lecturasPorUbicacion = lecturas
+            .GroupBy(lectura => lectura.IdUbicacionDestino!.Value);
+
+        foreach (var lecturasDeUbicacion in lecturasPorUbicacion)
+        {
+            var totalLeido = lecturasDeUbicacion.Sum(lectura => (long)lectura.Cantidad);
+            var cantidadLeida = checked((int)totalLeido);
+            await _stock.AjustarUbicacionAsync(
+                lecturasDeUbicacion.Key, idProducto, cantidadLeida, ct);
+        }
     }
 }

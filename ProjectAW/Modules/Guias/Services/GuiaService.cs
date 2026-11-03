@@ -1,4 +1,5 @@
 ﻿using ProjectAW.Models;
+using ProjectAW.Infrastructure.Data;
 using ProjectAW.Modules.Guias.DTOs.Request;
 using ProjectAW.Modules.Guias.DTOs.Response;
 using ProjectAW.Modules.Guias.Entities;
@@ -8,7 +9,6 @@ using ProjectAW.Modules.Maestros.Clientes.Entities;
 using ProjectAW.Modules.Maestros.Estados.Entities;
 using ProjectAW.Modules.Maestros.Productos.Entities;
 using ProjectAW.Modules.Maestros.Proveedores.Entities;
-//using ProjectAW.Modules.Maestros.Estados.Entities;
 using ProjectAW.Modules.Maestros.Operaciones.Entities;
 using ProjectAW.Modules.Seguridad.Security.HttpAuth;
 using ProjectAW.Infrastructure.Errors;
@@ -24,17 +24,25 @@ namespace ProjectAW.Modules.Guias.Services
         private readonly ICurrentUserService _currentUser;
         private readonly IStockService _stockService;
         private readonly IMotivoGuiaRepository _motivos;
+        private readonly ITransactionManager _transactions;
 
-        public GuiaService(IGuiaRepository repo, ICurrentUserService currentUser, IStockService stockService, IMotivoGuiaRepository motivos)
+        public GuiaService(
+            IGuiaRepository repo,
+            ICurrentUserService currentUser,
+            IStockService stockService,
+            IMotivoGuiaRepository motivos,
+            ITransactionManager transactions)
         {
             _repo = repo;
             _currentUser = currentUser;
             _stockService = stockService;
             _motivos = motivos;
+            _transactions = transactions;
         } 
 
         public async Task<GuiaResponse> CrearAsync(CrearGuiaRequest request, CancellationToken ct = default)
         {
+            // El motivo define qué datos son obligatorios; después se validan detalles, referencias y stock.
             var motivo = await ObtenerMotivoActivoAsync(request.IdMotivoGuia, request.IdTipoOperacionGuia, ct);
             ValidarCabecera(motivo, request);
             ValidarDetalles(request.Detalles);
@@ -51,31 +59,10 @@ namespace ProjectAW.Modules.Guias.Services
             };
             AplicarDatos(guia, request, motivo);
 
-            if (motivo.IdTipoComportamiento == 2)
+            if (motivo.IdTipoComportamiento == TipoComportamientoGuiaIds.TrasladoInterno)
             {
-                var entradaMotivo = (await _motivos.ListarAsync(TipoOperacionGuiaIds.Entrada, true, ct))
-                    .Where(x => x.IdTipoComportamiento == 1 && x.RequiereAlmacenDestino && !x.RequiereAlmacenOrigen && !x.RequiereProveedor && !x.RequiereCliente)
-                    .ToList();
-                if (entradaMotivo.Count != 1)
-                    throw new ReglaNegocioException("Para crear un traslado interno configura exactamente un motivo activo de Entrada normal que requiera almacén destino, sin proveedor, cliente ni almacén de origen.");
-                var entrada = new CabeceraGuia
-                {
-                    NumeroGuia = await _repo.ObtenerSiguienteNumeroAsync(TipoOperacionGuiaIds.Entrada, ct),
-                    IdTipoOperacionGuia = TipoOperacionGuiaIds.Entrada,
-                    IdMotivoGuia = entradaMotivo[0].IdMotivoGuia,
-                    IdEstadoGuia = EstadoGuiasIds.Pendiente,
-                    IdUsuarioRegistro = _currentUser.IdUsuario,
-                    IdAlmacenDestino = request.IdAlmacenDestino,
-                    FechaProgramada = request.FechaProgramada,
-                    TipoDocumentoReferencia = request.TipODocumentoReferencia,
-                    NumeroDocumentoReferencia = request.NumeroDocumentoReferencia,
-                    Observacion = $"Entrada relacionada a {guia.NumeroGuia}. {request.Observacion}".Trim()
-                };
-                foreach (var detail in request.Detalles)
-                    entrada.Detalles.Add(new DetalleGuia { IdProducto = detail.IdProducto, CantidadEsperada = detail.CantidadEsperada });
-                await _repo.AgregarParAsync(guia, entrada, ct);
-                guia.GuiaRelacionada = entrada;
-                entrada.GuiaRelacionada = guia;
+                // El traslado necesita crear juntas la salida y su entrada espejo.
+                await CrearGuiaRelacionadaAsync(guia, request, ct);
             }
             else
             {
@@ -83,6 +70,7 @@ namespace ProjectAW.Modules.Guias.Services
                 await _repo.GuardarCambiosAsync(ct);
             }
 
+            // Vuelve a consultar la guía con sus relaciones para devolver el mismo modelo de detalle.
             return await ObtenerPorIdAsync(guia.IdGuia, ct);
         }
 
@@ -98,6 +86,7 @@ namespace ProjectAW.Modules.Guias.Services
 
         public async Task<GuiaResponse> ActualizarAsync(int idGuia, ActualizarGuiaRequest request, CancellationToken ct = default)
         {
+            // Solo una guía pendiente y no relacionada puede editarse individualmente.
             var guia = await ObtenerOFallarAsync(idGuia, ct);
             Exigir(guia.IdEstadoGuia == EstadoGuiasIds.Pendiente, "Solo se puede editar una guía en estado Pendiente.");
 
@@ -110,7 +99,7 @@ namespace ProjectAW.Modules.Guias.Services
             await ValidarDisponibilidadAsync(guia.IdTipoOperacionGuia, motivo, request, ct);
 
             AplicarDatos(guia, request, motivo);
-            RegistrarModificacion(guia); // nuevo api 
+            RegistrarModificacion(guia);
             await _repo.GuardarCambiosAsync(ct);
            
             return await ObtenerPorIdAsync(guia.IdGuia, ct);
@@ -118,6 +107,7 @@ namespace ProjectAW.Modules.Guias.Services
 
         public async Task CancelarAsync(int idGuia, CancellationToken ct = default)
         {
+            // Las guías relacionadas se cancelan juntas y solo mientras ambas sigan pendientes.
             var guia = await ObtenerOFallarAsync(idGuia, ct);
             Exigir(guia.IdEstadoGuia == EstadoGuiasIds.Pendiente, "Solo se puede cancelar una guía en estado Pendiente.");
             if (guia.IdGuiaRelacionada.HasValue)
@@ -127,12 +117,81 @@ namespace ProjectAW.Modules.Guias.Services
                 relacionada.IdEstadoGuia = EstadoGuiasIds.Cancelada;
                 RegistrarModificacion(relacionada);
             }
-            RegistrarModificacion(guia); // verificado
+            RegistrarModificacion(guia);
             guia.IdEstadoGuia = EstadoGuiasIds.Cancelada;
             await _repo.GuardarCambiosAsync(ct);
         }
 
+        /// <summary>
+        /// Un traslado interno se representa con una salida y una entrada espejo.
+        /// Ambas guías se guardan juntas para que nunca quede registrado solo un lado.
+        /// </summary>
+        private async Task CrearGuiaRelacionadaAsync(
+            CabeceraGuia guia, CrearGuiaRequest request, CancellationToken ct)
+        {
+            var motivoEntrada = await ObtenerMotivoEntradaEspejoAsync(ct);
+            var entrada = await CrearEntradaRelacionadaAsync(guia, request, motivoEntrada, ct);
 
+            // Genera primero ambos identificadores y luego persiste las referencias cruzadas.
+            await _transactions.ExecuteAsync(async transactionCt =>
+            {
+                await _repo.AgregarAsync(guia, transactionCt);
+                await _repo.AgregarAsync(entrada, transactionCt);
+                await _repo.GuardarCambiosAsync(transactionCt);
+
+                guia.IdGuiaRelacionada = entrada.IdGuia;
+                entrada.IdGuiaRelacionada = guia.IdGuia;
+                await _repo.GuardarCambiosAsync(transactionCt);
+            }, ct);
+
+            guia.GuiaRelacionada = entrada;
+            entrada.GuiaRelacionada = guia;
+        }
+
+        private async Task<MotivoGuia> ObtenerMotivoEntradaEspejoAsync(CancellationToken ct)
+        {
+            var motivos = (await _motivos.ListarAsync(TipoOperacionGuiaIds.Entrada, true, ct))
+                .Where(motivo => motivo.IdTipoComportamiento == TipoComportamientoGuiaIds.MovimientoNormal &&
+                    motivo.RequiereAlmacenDestino && !motivo.RequiereAlmacenOrigen &&
+                    !motivo.RequiereProveedor && !motivo.RequiereCliente)
+                .ToList();
+
+            if (motivos.Count != 1)
+                throw new ReglaNegocioException("Para crear un traslado interno configura exactamente un motivo activo de Entrada normal que requiera almacén destino, sin proveedor, cliente ni almacén de origen.");
+
+            return motivos[0];
+        }
+
+        private async Task<CabeceraGuia> CrearEntradaRelacionadaAsync(
+            CabeceraGuia guia, CrearGuiaRequest request, MotivoGuia motivoEntrada, CancellationToken ct)
+        {
+            // La entrada espejo comparte productos, cantidades, fecha y referencia de la salida.
+            var entrada = new CabeceraGuia
+            {
+                NumeroGuia = await _repo.ObtenerSiguienteNumeroAsync(TipoOperacionGuiaIds.Entrada, ct),
+                IdTipoOperacionGuia = TipoOperacionGuiaIds.Entrada,
+                IdMotivoGuia = motivoEntrada.IdMotivoGuia,
+                IdEstadoGuia = EstadoGuiasIds.Pendiente,
+                IdUsuarioRegistro = _currentUser.IdUsuario,
+                IdAlmacenDestino = request.IdAlmacenDestino,
+                FechaProgramada = request.FechaProgramada,
+                TipoDocumentoReferencia = request.TipODocumentoReferencia,
+                NumeroDocumentoReferencia = request.NumeroDocumentoReferencia,
+                Observacion = $"Entrada relacionada a {guia.NumeroGuia}. {request.Observacion}".Trim()
+            };
+
+            foreach (var detalle in request.Detalles)
+                entrada.Detalles.Add(new DetalleGuia
+                {
+                    IdProducto = detalle.IdProducto,
+                    CantidadEsperada = detalle.CantidadEsperada
+                });
+
+            return entrada;
+        }
+
+
+        /// <summary>Valida que los datos de cabecera coincidan con el motivo antes de persistir.</summary>
         private static void ValidarCabecera(MotivoGuia motivo, ActualizarGuiaRequest r)
         {
             Exigir(motivo.Activo, "El motivo está inactivo y no se puede usar en nuevas guías.");
@@ -142,19 +201,12 @@ namespace ProjectAW.Modules.Guias.Services
             Exigir(r.IdAlmacenDestino.HasValue == motivo.RequiereAlmacenDestino, motivo.RequiereAlmacenDestino ? "El motivo requiere almacén de destino." : "El motivo seleccionado no admite almacén de destino.");
             var idTipoOperacionGuia = motivo.IdTipoOperacionGuia;
             Exigir(idTipoOperacionGuia is TipoOperacionGuiaIds.Entrada or TipoOperacionGuiaIds.Salida, "Traslado ya no es una operación disponible.");
-            if (motivo.IdTipoComportamiento == 2)
+            if (motivo.IdTipoComportamiento == TipoComportamientoGuiaIds.TrasladoInterno)
                 Exigir(idTipoOperacionGuia == TipoOperacionGuiaIds.Salida && r.IdAlmacenOrigen != r.IdAlmacenDestino, "Un traslado interno requiere una salida y dos almacenes distintos.");
             Exigir(r.FechaProgramada != default, "La fecha programada es obligatoria.");
             Exigir(r.FechaProgramada.Date >= DateTime.Today,
                 "La fecha programada no puede ser anterior a hoy.");
 
-            switch (idTipoOperacionGuia)
-            {
-                case TipoOperacionGuiaIds.Entrada:
-                case TipoOperacionGuiaIds.Salida:
-                    break;
-                default: throw new ReglaNegocioException("Tipo de operación no válida. Solo se admite entrada o salida.");
-            }
         }
 
         private static void ValidarDetalles(IReadOnlyCollection<DetalleGuiaRequest>? detalles)
@@ -178,6 +230,7 @@ namespace ProjectAW.Modules.Guias.Services
             if (r.IdAlmacenDestino is int idDestino)
                 Exigir(await _repo.ExisteAsync<Almacen>(idDestino, ct), $"El almacén de destino {idDestino} no existe.");
 
+            // Comprueba cada producto una vez aunque el request repita el identificador.
             foreach (var idProducto in r.Detalles.Select(d => d.IdProducto).Distinct())
                 Exigir(await _repo.ExisteAsync<Producto>(idProducto, ct), $"El producto {idProducto} no existe.");
         }
@@ -185,6 +238,7 @@ namespace ProjectAW.Modules.Guias.Services
         private async Task ValidarDisponibilidadAsync(
             int idTipoOperacionGuia, MotivoGuia motivo, ActualizarGuiaRequest request, CancellationToken ct)
         {
+            // La disponibilidad previa solo aplica a salidas que descuentan stock del almacén origen.
             if (idTipoOperacionGuia != TipoOperacionGuiaIds.Salida || !motivo.RequiereAlmacenOrigen)
                 return;
 

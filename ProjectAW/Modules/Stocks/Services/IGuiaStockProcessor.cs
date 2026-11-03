@@ -5,7 +5,7 @@ namespace ProjectAW.Modules.Stocks.Services;
 
 /// <summary>
 /// Reglas de aplicación de inventario propias de cada tipo de operación.
-/// El historial y el cierre transaccional permanecen en el flujo común.
+/// El servicio coordina procesadores y la transacción; la implementación no confirma cambios.
 /// </summary>
 public interface IGuiaStockProcessor
 {

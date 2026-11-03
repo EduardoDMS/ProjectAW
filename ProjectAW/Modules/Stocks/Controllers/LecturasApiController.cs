@@ -22,13 +22,19 @@ public sealed class LecturasApiController : ControllerBase
 
     /// <summary>Lista las guías en proceso o atendidas que pertenecen al operador autenticado.</summary>
     [HttpGet("mias")]
-    public async Task<IActionResult> MisGuias([FromQuery] int? idEstadoGuia, CancellationToken ct) =>
-        Ok(await _service.ListarMisGuiasAsync(idEstadoGuia, ct));
+    public async Task<IActionResult> MisGuias([FromQuery] int? idEstadoGuia, CancellationToken ct)
+    {
+        var guias = await _service.ListarMisGuiasAsync(idEstadoGuia, ct);
+        return Ok(guias);
+    }
 
     /// <summary>Obtiene el detalle de una guía asignada al operador autenticado.</summary>
     [HttpGet("mias/{idGuia:int}")]
-    public async Task<IActionResult> MiGuia(int idGuia, CancellationToken ct) =>
-        Ok(await _service.ObtenerMiGuiaAsync(idGuia, ct));
+    public async Task<IActionResult> MiGuia(int idGuia, CancellationToken ct)
+    {
+        var guia = await _service.ObtenerMiGuiaAsync(idGuia, ct);
+        return Ok(guia);
+    }
 
     /// <summary>Asigna al operador autenticado una guía que siga pendiente.</summary>
     [HttpPost("{idGuia:int}/tomar")]
@@ -41,13 +47,19 @@ public sealed class LecturasApiController : ControllerBase
     /// <summary>Guarda una captura individual sin cerrar la guía ni modificar inventario.</summary>
     [HttpPost("{idGuia:int}/lecturas")]
     public async Task<IActionResult> RegistrarLectura(
-        int idGuia, [FromBody] RegistrarLecturaRequest request, CancellationToken ct) =>
-        Ok(await _service.RegistrarLecturaAsync(idGuia, request, ct));
+        int idGuia, [FromBody] RegistrarLecturaRequest request, CancellationToken ct)
+    {
+        var lectura = await _service.RegistrarLecturaAsync(idGuia, request, ct);
+        return Ok(lectura);
+    }
 
     /// <summary>Devuelve el historial persistido de la guía del operador autenticado.</summary>
     [HttpGet("{idGuia:int}/lecturas")]
-    public async Task<IActionResult> Historial(int idGuia, CancellationToken ct) =>
-        Ok(await _service.ListarLecturasAsync(idGuia, ct));
+    public async Task<IActionResult> Historial(int idGuia, CancellationToken ct)
+    {
+        var lecturas = await _service.ListarLecturasAsync(idGuia, ct);
+        return Ok(lecturas);
+    }
 
     /// <summary>Quita una lectura pendiente para corregir una asignación antes de finalizar la guía.</summary>
     [HttpDelete("{idGuia:int}/lecturas/{idLecturaGuia:long}")]

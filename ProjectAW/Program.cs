@@ -107,6 +107,7 @@ builder.Services.AddExceptionHandler<ApiExceptionHandler>();
 
 // EF Core
 builder.Services.AddDbContext<AppDbContext>(options => options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+builder.Services.AddScoped<ITransactionManager, EfTransactionManager>();
 
 // DI
 builder.Services.AddScoped<IProductoRepository, ProductoRepository>();
@@ -136,6 +137,7 @@ builder.Services.AddScoped<IStockService, StockService>();
 builder.Services.AddScoped<IMovimientoStockRepository, MovimientoStockRepository>();
 builder.Services.AddScoped<IMovimientoStockService, MovimientoStockService>();
 builder.Services.AddScoped<IStockBalanceRepository, StockBalanceRepository>();
+builder.Services.AddScoped<IStockBalanceService, StockBalanceService>();
 builder.Services.AddScoped<IGuiaStockProcessor, RecepcionStockProcessor>();
 builder.Services.AddScoped<IGuiaStockProcessor, DespachoStockProcessor>();
 builder.Services.AddScoped<IGuiaStockProcessor, TrasladoStockProcessor>();
