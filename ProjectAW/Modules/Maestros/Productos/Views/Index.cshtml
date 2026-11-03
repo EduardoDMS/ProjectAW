@@ -3,153 +3,145 @@
 	ViewData["Description"] = "Consulta, registra y mantiene el catálogo de productos.";
 	Layout = "~/Views/Shared/_Layout.cshtml";
 }
-<section class="page-heading">
+
+<section class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3 mb-4">
 	<div>
-		<h1>Productos</h1>
-		<p>Administra códigos, categorías, series y disponibilidad.</p>
+		<h1>
+			Productos
+		</h1>
+		<p class="mb-0">
+			Administra códigos, categorías, series y disponibilidad.
+		</p>
 	</div>
 	<button class="btn btn-primary" id="new-product" type="button">
 		＋ Nuevo producto
 	</button>
 </section>
-<section class="content-card maestro-card">
-	<div class="maestro-toolbar">
-		<label class="status-filter form-label" for="product-status"
-			><span>Disponibilidad</span
-			><select id="product-status" class="form-select">
-				<option value="">Todos</option>
-				<option value="true">Activos</option>
-				<option value="false">Inactivos</option>
-			</select></label
-		><span
-			class="ms-auto"
-			id="product-feedback"
-			role="status"
-			aria-live="polite"
-		></span>
+
+<section class="card overflow-hidden">
+	<div class="d-flex flex-column flex-sm-row align-items-sm-center justify-content-between gap-3 p-3 border-bottom">
+		<div class="d-flex flex-column flex-sm-row align-items-sm-center gap-2">
+			<label class="form-label mb-0" for="product-status">
+				Disponibilidad
+			</label>
+			<select id="product-status" class="form-select">
+				<option value="">
+					Todos
+				</option>
+				<option value="true">
+					Activos
+				</option>
+				<option value="false">
+					Inactivos
+				</option>
+			</select>
+		</div>
+		<span class="ms-sm-auto" id="product-feedback" role="status" aria-live="polite">
+		</span>
 	</div>
-	<div id="product-alert" class="maestro-alert" role="alert" hidden></div>
+	<div class="alert alert-danger m-3" id="product-alert" role="alert" hidden>
+	</div>
 	<div class="table-responsive p-3">
 		<table id="products-table" class="table align-middle w-100">
 			<thead>
 				<tr>
-					<th>Código</th>
-					<th>Producto</th>
-					<th>Categoría</th>
-					<th>Lote</th>
-					<th>Serie</th>
-					<th>Estado</th>
-					<th>Acciones</th>
+					<th scope="col">
+						Código
+					</th>
+					<th scope="col">
+						Producto
+					</th>
+					<th scope="col">
+						Categoría
+					</th>
+					<th scope="col">
+						Lote
+					</th>
+					<th scope="col">
+						Serie
+					</th>
+					<th scope="col">
+						Estado
+					</th>
+					<th scope="col">
+						Acciones
+					</th>
 				</tr>
 			</thead>
-			<tbody></tbody>
+			<tbody>
+			</tbody>
 		</table>
 	</div>
 </section>
-<div
-	class="modal fade"
-	id="product-modal"
-	tabindex="-1"
-	aria-labelledby="product-modal-title"
-	aria-hidden="true"
->
+
+<div class="modal fade" id="product-modal" tabindex="-1" aria-labelledby="product-modal-title" aria-hidden="true">
 	<div class="modal-dialog modal-dialog-centered modal-lg">
-		<div class="modal-content maestro-modal">
+		<div class="modal-content">
 			<div class="modal-header">
-				<div>
-					<span class="eyebrow">CATÁLOGO DE INVENTARIO</span>
-					<h2 class="modal-title" id="product-modal-title">
-						Nuevo producto
-					</h2>
-				</div>
-				<button
-					class="btn-close"
-					type="button"
-					data-bs-dismiss="modal"
-					aria-label="Cerrar"
-				></button>
+				<h2 class="modal-title" id="product-modal-title">
+					Nuevo producto
+				</h2>
+				<button class="btn-close" type="button" data-bs-dismiss="modal" aria-label="Cerrar">
+				</button>
 			</div>
 			<form id="product-form">
 				<div class="modal-body">
-					<div
-						id="product-form-alert"
-						class="maestro-alert"
-						role="alert"
-						hidden
-					></div>
-					<div class="maestro-form-grid">
-						<div class="maestro-field">
-							<label for="product-code" class="form-label">Código *</label
-							><input
-								class="form-control"
-								id="product-code"
-								name="codigo"
-								maxlength="50"
-								required
-							/>
+					<div class="alert alert-danger" id="product-form-alert" role="alert" hidden>
+					</div>
+					<div class="row g-3">
+						<div class="col-12 col-md-6">
+							<label for="product-code" class="form-label">
+								Código *
+							</label>
+							<input class="form-control" id="product-code" name="codigo" maxlength="50" required />
 						</div>
-						<div class="maestro-field"><label for="product-unit" class="form-label">Unidad de medida *</label><select class="form-select" id="product-unit" name="idUnidadMedida" required></select></div>
-						<div class="maestro-field">
-							<label for="product-name" class="form-label">Descripción *</label
-							><input
-								class="form-control"
-								id="product-name"
-								name="descripcion"
-								maxlength="150"
-								required
-							/>
+						<div class="col-12 col-md-6">
+							<label for="product-unit" class="form-label">
+								Unidad de medida *
+							</label>
+							<select class="form-select" id="product-unit" name="idUnidadMedida" required>
+							</select>
 						</div>
-						<div class="maestro-field">
-							<label for="product-category" class="form-label">Categoría *</label
-							><select
-								class="form-select"
-								id="product-category"
-								name="idCategoria"
-								required
-							></select>
+						<div class="col-12 col-md-6">
+							<label for="product-name" class="form-label">
+								Descripción *
+							</label>
+							<input class="form-control" id="product-name" name="descripcion" maxlength="150" required />
 						</div>
-						<div class="maestro-field">
-							<label for="product-serial" class="form-label">Serie</label
-							><input
-								class="form-control"
-								id="product-serial"
-								name="serie"
-								maxlength="50"
-							/>
+						<div class="col-12 col-md-6">
+							<label for="product-category" class="form-label">
+								Categoría *
+							</label>
+							<select class="form-select" id="product-category" name="idCategoria" required>
+							</select>
 						</div>
-						<div class="maestro-field">
-							<label for="product-lot" class="form-label">Lote</label
-							><input
-								class="form-control"
-								id="product-lot"
-								name="lote"
-								maxlength="50"
-							/>
+						<div class="col-12 col-md-6">
+							<label for="product-serial" class="form-label">
+								Serie
+							</label>
+							<input class="form-control" id="product-serial" name="serie" maxlength="50" />
 						</div>
-						<div class="maestro-field maestro-field--check form-check">
-							<input
-								class="form-check-input"
-								id="product-active"
-								name="activo"
-								type="checkbox"
-							/><label for="product-active"
-								 class="form-check-label">Producto activo</label
-							>
+						<div class="col-12 col-md-6">
+							<label for="product-lot" class="form-label">
+								Lote
+							</label>
+							<input class="form-control" id="product-lot" name="lote" maxlength="50" />
+						</div>
+						<div class="col-12">
+							<div class="form-check">
+								<input class="form-check-input" id="product-active" name="activo" type="checkbox" />
+								<label for="product-active" class="form-check-label">
+									Producto activo
+								</label>
+							</div>
 						</div>
 					</div>
 				</div>
 				<div class="modal-footer">
-					<button
-						class="btn btn-light"
-						type="button"
-						data-bs-dismiss="modal"
-					>
-						Cancelar</button
-					><button
-						class="btn btn-primary"
-						type="submit"
-						id="save-product"
-					>
+					<button class="btn btn-light" type="button" data-bs-dismiss="modal">
+						Cancelar
+					</button>
+					<button class="btn btn-primary" type="submit" id="save-product">
 						Guardar producto
 					</button>
 				</div>
@@ -157,21 +149,13 @@
 		</div>
 	</div>
 </div>
+
 @section Styles {
-<link
-	rel="stylesheet"
-	href="~/libs/datatables/dataTables.dataTables.min.css"
-	asp-append-version="true"
-/>
+	<link rel="stylesheet" href="~/libs/datatables/dataTables.dataTables.min.css" asp-append-version="true" />
 }
 @section Scripts {
-<script
-	src="~/libs/datatables/dataTables.min.js"
-	asp-append-version="true"
-></script>
-<script
-	src="~/js/modules/maestros/productos/producto.js"
-	asp-append-version="true"
-></script>
+	<script src="~/libs/datatables/dataTables.min.js" asp-append-version="true">
+	</script>
+	<script src="~/js/modules/maestros/productos/producto.js" asp-append-version="true">
+	</script>
 }
-

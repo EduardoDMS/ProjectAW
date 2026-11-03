@@ -71,7 +71,7 @@ document.addEventListener("DOMContentLoaded", () => {
 	function iconButton(icon, label, className, onClick) {
 		const button = document.createElement("button");
 		button.type = "button";
-		button.className = `btn table-action ${className || ""}`.trim();
+		button.className = `btn btn-sm ${className || "btn-outline-secondary"}`;
 		button.title = label;
 		button.setAttribute("aria-label", label);
 		const glyph = document.createElement("i");
@@ -115,28 +115,50 @@ document.addEventListener("DOMContentLoaded", () => {
 			grid = null;
 		}
 		rows.replaceChildren();
-		countLabel.replaceChildren();		const count = document.createElement("strong"); count.textContent = String(visible.length); countLabel.append(count, document.createTextNode(` de ${motives.length} motivos`));
+		countLabel.replaceChildren();
+		const count = document.createElement("strong");
+		count.textContent = String(visible.length);
+		countLabel.append(count, document.createTextNode(` de ${motives.length} motivos`));
 		for (const item of visible) {
 			const row = document.createElement("tr");
-			const name = document.createElement("span"); name.className = "motives-name"; name.textContent = item.nombreMotivo;
+			const name = document.createElement("strong");
+			name.textContent = item.nombreMotivo;
 			appendCell(row, "Motivo", name);
-			const operation = document.createElement("span"); operation.className = "motives-kind";
-			const operationIcon = document.createElement("i"); operationIcon.className = `ti ${Number(item.idTipoOperacionGuia) === 1 ? "ti-arrow-down-left" : "ti-arrow-up-right"}`; operationIcon.setAttribute("aria-hidden", "true");
+			const operation = document.createElement("span");
+			operation.className = "badge text-bg-primary";
+			const operationIcon = document.createElement("i");
+			operationIcon.className = `ti me-1 ${Number(item.idTipoOperacionGuia) === 1 ? "ti-arrow-down-left" : "ti-arrow-up-right"}`;
+			operationIcon.setAttribute("aria-hidden", "true");
 			operation.append(operationIcon, document.createTextNode(item.tipoOperacion));
 			appendCell(row, "Operación", operation);
-			const behavior = document.createElement("span"); behavior.className = "motives-behavior"; behavior.textContent = item.nombreComportamiento;
+			const behavior = document.createElement("span");
+			behavior.textContent = item.nombreComportamiento;
 			appendCell(row, "Comportamiento", behavior);
-			const chips = document.createElement("div"); chips.className = "motives-fields";
-			for (const label of requestedFields(item)) { const chip = document.createElement("span"); chip.textContent = label; chips.append(chip); }
-			if (!chips.children.length) { const chip = document.createElement("span"); chip.textContent = "Sin datos adicionales"; chips.append(chip); }
+			const chips = document.createElement("div");
+			chips.className = "d-flex flex-wrap gap-1";
+			for (const label of requestedFields(item)) {
+				const chip = document.createElement("span");
+				chip.className = "badge text-bg-light border";
+				chip.textContent = label;
+				chips.append(chip);
+			}
+			if (!chips.children.length) {
+				const chip = document.createElement("span");
+				chip.className = "badge text-bg-light border";
+				chip.textContent = "Sin datos adicionales";
+				chips.append(chip);
+			}
 			appendCell(row, "Datos solicitados", chips);
-			const status = document.createElement("span"); status.className = `record-status ${item.activo ? "is-active" : "is-inactive"}`; status.textContent = item.activo ? "Activo" : "Inactivo";
+			const status = document.createElement("span");
+			status.className = `badge ${item.activo ? "text-bg-success" : "text-bg-secondary"}`;
+			status.textContent = item.activo ? "Activo" : "Inactivo";
 			appendCell(row, "Estado", status);
-			const actions = document.createElement("div"); actions.className = "record-actions motives-actions";
+			const actions = document.createElement("div");
+			actions.className = "d-flex justify-content-end gap-2";
 			actions.append(iconButton("ti-pencil", "Editar motivo", "", () => openEditor(item)));
-			actions.append(iconButton(item.activo ? "ti-toggle-right" : "ti-toggle-left", item.activo ? "Desactivar" : "Activar", "table-action--muted", () => changeStatus(item)));
-			actions.append(iconButton("ti-trash", "Eliminar motivo", "table-action--danger", () => remove(item)));
-			appendCell(row, "Acciones", actions, "record-actions");
+			actions.append(iconButton(item.activo ? "ti-toggle-right" : "ti-toggle-left", item.activo ? "Desactivar" : "Activar", "", () => changeStatus(item)));
+			actions.append(iconButton("ti-trash", "Eliminar motivo", "btn-outline-danger", () => remove(item)));
+			appendCell(row, "Acciones", actions, "text-end");
 			rows.append(row);
 		}
 		emptyTableMessage = motives.length ? "No hay motivos que coincidan con los filtros." : "Todavía no hay motivos registrados.";

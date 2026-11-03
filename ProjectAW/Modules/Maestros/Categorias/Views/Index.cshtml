@@ -3,124 +3,113 @@
 	ViewData["Description"] = "Clasifica productos para mantener ordenado el inventario.";
 	Layout = "~/Views/Shared/_Layout.cshtml";
 }
-<section class="page-heading">
+
+<section class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3 mb-4">
 	<div>
-		<h1>Categorías</h1>
-		<p>Organiza productos por familias y mantén el catálogo actualizado.</p>
+		<h1>
+			Categorías
+		</h1>
+		<p class="mb-0">
+			Organiza productos por familias y mantén el catálogo actualizado.
+		</p>
 	</div>
 	<button class="btn btn-primary" id="new-category" type="button">
 		＋ Nueva categoría
 	</button>
 </section>
-<section class="content-card maestro-card">
-	<div class="maestro-toolbar">
-		<label class="status-filter form-label" for="category-status"
-			><span>Disponibilidad</span
-			><select id="category-status" class="form-select">
-				<option value="">Todas</option>
-				<option value="true">Activas</option>
-				<option value="false">Inactivas</option>
-			</select></label
-		><span
-			class="ms-auto"
-			id="category-feedback"
-			role="status"
-			aria-live="polite"
-		></span>
+
+<section class="card overflow-hidden">
+	<div class="d-flex flex-column flex-sm-row align-items-sm-center justify-content-between gap-3 p-3 border-bottom">
+		<div class="d-flex flex-column flex-sm-row align-items-sm-center gap-2">
+			<label class="form-label mb-0" for="category-status">
+				Disponibilidad
+			</label>
+			<select id="category-status" class="form-select">
+				<option value="">
+					Todas
+				</option>
+				<option value="true">
+					Activas
+				</option>
+				<option value="false">
+					Inactivas
+				</option>
+			</select>
+		</div>
+		<span class="ms-sm-auto" id="category-feedback" role="status" aria-live="polite">
+		</span>
 	</div>
-	<div id="category-alert" class="maestro-alert" role="alert" hidden></div>
+	<div class="alert alert-danger m-3" id="category-alert" role="alert" hidden>
+	</div>
 	<div class="table-responsive p-3">
 		<table id="categories-table" class="table align-middle w-100">
 			<thead>
 				<tr>
-					<th>ID</th>
-					<th>Nombre</th>
-					<th>Descripción</th>
-					<th>Estado</th>
-					<th>Acciones</th>
+					<th scope="col">
+						ID
+					</th>
+					<th scope="col">
+						Nombre
+					</th>
+					<th scope="col">
+						Descripción
+					</th>
+					<th scope="col">
+						Estado
+					</th>
+					<th scope="col">
+						Acciones
+					</th>
 				</tr>
 			</thead>
-			<tbody></tbody>
+			<tbody>
+			</tbody>
 		</table>
 	</div>
 </section>
-<div
-	class="modal fade"
-	id="category-modal"
-	tabindex="-1"
-	aria-labelledby="category-modal-title"
-	aria-hidden="true"
->
+
+<div class="modal fade" id="category-modal" tabindex="-1" aria-labelledby="category-modal-title" aria-hidden="true">
 	<div class="modal-dialog modal-dialog-centered">
-		<div class="modal-content maestro-modal">
+		<div class="modal-content">
 			<div class="modal-header">
-				<div>
-					<span class="eyebrow">ORGANIZACIÓN DE PRODUCTOS</span>
-					<h2 class="modal-title" id="category-modal-title">
-						Nueva categoría
-					</h2>
-				</div>
-				<button
-					class="btn-close"
-					type="button"
-					data-bs-dismiss="modal"
-					aria-label="Cerrar"
-				></button>
+				<h2 class="modal-title" id="category-modal-title">
+					Nueva categoría
+				</h2>
+				<button class="btn-close" type="button" data-bs-dismiss="modal" aria-label="Cerrar">
+				</button>
 			</div>
 			<form id="category-form">
 				<div class="modal-body">
-					<div
-						id="category-form-alert"
-						class="maestro-alert"
-						role="alert"
-						hidden
-					></div>
-					<div class="maestro-form-grid">
-						<div class="maestro-field">
-							<label for="category-name" class="form-label">Nombre *</label
-							><input
-								class="form-control"
-								id="category-name"
-								name="nombre"
-								maxlength="100"
-								required
-							/>
+					<div class="alert alert-danger" id="category-form-alert" role="alert" hidden>
+					</div>
+					<div class="row g-3">
+						<div class="col-12">
+							<label for="category-name" class="form-label">
+								Nombre *
+							</label>
+							<input class="form-control" id="category-name" name="nombre" maxlength="100" required />
 						</div>
-						<div class="maestro-field">
-							<label for="category-description"
-								 class="form-label">Descripción *</label
-							><input
-								class="form-control"
-								id="category-description"
-								name="descripcion"
-								maxlength="250"
-								required
-							/>
+						<div class="col-12">
+							<label for="category-description" class="form-label">
+								Descripción *
+							</label>
+							<input class="form-control" id="category-description" name="descripcion" maxlength="250" required />
 						</div>
-						<div class="maestro-field maestro-field--check form-check">
-							<input
-								class="form-check-input"
-								id="category-active"
-								name="activo"
-								type="checkbox"
-							/><label for="category-active"
-								 class="form-check-label">Categoría activa</label
-							>
+						<div class="col-12">
+							<div class="form-check">
+								<input class="form-check-input" id="category-active" name="activo" type="checkbox" />
+								<label for="category-active" class="form-check-label">
+									Categoría activa
+								</label>
+							</div>
 						</div>
 					</div>
 				</div>
 				<div class="modal-footer">
-					<button
-						class="btn btn-light"
-						type="button"
-						data-bs-dismiss="modal"
-					>
-						Cancelar</button
-					><button
-						class="btn btn-primary"
-						id="save-category"
-						type="submit"
-					>
+					<button class="btn btn-light" type="button" data-bs-dismiss="modal">
+						Cancelar
+					</button>
+					<button class="btn btn-primary" id="save-category" type="submit">
 						Guardar categoría
 					</button>
 				</div>
@@ -128,21 +117,13 @@
 		</div>
 	</div>
 </div>
+
 @section Styles {
-<link
-	rel="stylesheet"
-	href="~/libs/datatables/dataTables.dataTables.min.css"
-	asp-append-version="true"
-/>
+	<link rel="stylesheet" href="~/libs/datatables/dataTables.dataTables.min.css" asp-append-version="true" />
 }
 @section Scripts {
-<script
-	src="~/libs/datatables/dataTables.min.js"
-	asp-append-version="true"
-></script>
-<script
-	src="~/js/modules/maestros/categorias/categoria.js"
-	asp-append-version="true"
-></script>
+	<script src="~/libs/datatables/dataTables.min.js" asp-append-version="true">
+	</script>
+	<script src="~/js/modules/maestros/categorias/categoria.js" asp-append-version="true">
+	</script>
 }
-

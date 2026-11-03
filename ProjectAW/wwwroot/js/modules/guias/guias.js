@@ -18,7 +18,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
 	// Busca un elemento del HTML por selector para conectar la vista con este módulo.
 	const select = (selector) => document.querySelector(selector);
-	const rows = select("#guide-rows");
+	const row
+	s = select("#guide-rows");
 	const table = select(".guide-table");
 	const alertBox = select("#guide-alert");
 	const formAlert = select("#guide-form-alert");
@@ -311,55 +312,68 @@ document.addEventListener("DOMContentLoaded", () => {
 			const row = document.createElement("tr");
 			const numberCell = createCell(row, "", "guide-number-cell");
 			const number = document.createElement("strong");
+			number.className = "d-block text-primary";
 			number.textContent = guide.numeroGuia;
 			const id = document.createElement("small");
+			id.className = "d-block text-secondary mt-1";
 			id.textContent = `Registro #${guide.idGuia}`;
 			numberCell.append(number, id);
 
 			const operationCell = createCell(row, "", "guide-operation-cell");
 			const operation = document.createElement("strong");
+			operation.className = "d-block";
 			operation.textContent = operationName(guide.idTipoOperacionGuia);
 			const reference = document.createElement("small");
+			reference.className = "d-block text-secondary mt-1";
 			reference.textContent = counterparty(guide);
 			operationCell.append(operation, reference);
 
 			createCell(
 				row,
 				formatDate(guide.fechaProgramada),
-				"guide-date-cell",
+				"text-nowrap",
 			);
-			const productCell = createCell(row, "", "guide-product-cell");
+			const productCell = createCell(row, "");
 			const quantity = guide.detalles?.length || 0;
 			productCell.textContent = `${quantity} ${quantity === 1 ? "producto" : "productos"}`;
 
 			const statusCell = createCell(row, "");
 			const info = statusInfo(guide.idEstadoGuia);
 			const badge = document.createElement("span");
-			badge.className = `guide-status guide-status--${info.css}`;
+			const statusClasses = {
+				pending: "text-bg-warning",
+				progress: "text-bg-primary",
+				done: "text-bg-success",
+				cancelled: "text-bg-secondary",
+			};
+			badge.className = `badge ${statusClasses[info.css] || "text-bg-secondary"}`;
 			badge.textContent = info.name;
 			statusCell.append(badge);
 
 			const actions = document.createElement("td");
-			actions.className = "guide-actions";
-			actions.append(
-				actionButton("Ver", "guide-action", () =>
+			actions.className = "text-end";
+			const actionGroup = document.createElement("div");
+			actionGroup.className = "d-flex justify-content-end gap-1 flex-nowrap";
+			actionGroup.append(
+				actionButton("Ver", "btn-sm btn-outline-primary", () =>
 					openDetail(guide.idGuia),
 				),
 			);
 			if (guide.idEstadoGuia === 1) {
-				const edit = actionButton("Editar", "guide-action", () =>
+				const edit = actionButton("Editar", "btn-sm btn-outline-primary", () =>
 					openEdit(guide.idGuia),
 				);
 				edit.disabled = !lookupsReady;
-				actions.append(
+				actionGroup.append(
 					edit,
 					actionButton(
 						"Cancelar",
-						"guide-action guide-action--danger",
+						"btn-sm btn-outline-danger",
 						() => cancelGuide(guide),
 					),
 				);
 			}
+			actions.append(actionGroup);
 			row.append(actions);
 			rows.append(row);
 		}
@@ -399,7 +413,7 @@ document.addEventListener("DOMContentLoaded", () => {
 		loadingGuides = true;
 		clearAlert();
 		if (!silent && guides.length === 0) rows.innerHTML =
-			'<tr><td class="guide-empty" colspan="6">Consultando guías...</td></tr>';
+			'<tr><td class="text-center text-secondary py-5" colspan="6">Consultando guías...</td></tr>';
 		const params = new URLSearchParams();
 		if (operationFilter.value)
 			params.set("idTipoOperacionGuia", operationFilter.value);
@@ -543,7 +557,9 @@ document.addEventListener("DOMContentLoaded", () => {
 	// Agrega una línea de producto y cantidad al formulario, evitando productos repetidos.
 	function addLine(productId = "", quantity = "") {
 		const line = document.createElement("div");
-		line.className = "guide-line";
+		line.className = "row g-2 align-items-center mx-0 guide-line";
+		const productColumn = document.createElement("div");
+		productColumn.className = "col-md";
 		const product = document.createElement("select");
 		product.className = "form-select guide-line__product";
 		product.required = true;
@@ -593,6 +609,8 @@ document.addEventListener("DOMContentLoaded", () => {
 			clearAlert(formAlert);
 		});
 
+		const amountColumn = document.createElement("div");
+		amountColumn.className = "col-10 col-md-3";
 		const amount = document.createElement("input");
 		amount.className = "form-control guide-line__quantity";
 		amount.type = "number";
@@ -602,9 +620,11 @@ document.addEventListener("DOMContentLoaded", () => {
 		amount.required = true;
 		amount.value = quantity;
 
+		const removeColumn = document.createElement("div");
+		removeColumn.className = "col-2 col-md-auto";
 		const remove = document.createElement("button");
 		remove.type = "button";
-		remove.className = "btn btn-sm btn-outline-danger guide-remove-line";
+		remove.className = "btn btn-sm btn-outline-danger";
 		remove.setAttribute("aria-label", "Quitar producto");
 		remove.title = "Quitar producto";
 		remove.textContent = "×";
@@ -613,7 +633,10 @@ document.addEventListener("DOMContentLoaded", () => {
 			line.remove();
 			updateGuideLineCount();
 		});
-		line.append(product, amount, remove);
+		productColumn.append(product);
+		amountColumn.append(amount);
+		removeColumn.append(remove);
+		line.append(productColumn, amountColumn, removeColumn);
 		select("#guide-lines").append(line);
 		updateGuideLineCount();
 	}
@@ -637,7 +660,7 @@ document.addEventListener("DOMContentLoaded", () => {
 		container.scrollTo({ top: Math.max(0, top - 60), behavior: "smooth" });
 		editorElement.querySelectorAll("[data-guide-jump]").forEach((item) => {
 			const active = item === button;
-			item.classList.toggle("is-active", active);
+			item.classList.toggle("active", active);
 			if (active) item.setAttribute("aria-current", "step");
 			else item.removeAttribute("aria-current");
 		});
@@ -891,8 +914,9 @@ document.addEventListener("DOMContentLoaded", () => {
 		const payload = buildPayload();
 		if (!validateForm(payload)) return;
 		const button = select("#save-guide");
+		const spinner = select("#save-guide-spinner");
 		button.disabled = true;
-		button.classList.add("is-saving");
+		spinner.classList.remove("d-none");
 		try {
 			const wasEditing = editingId !== null;
 			const url = wasEditing ? `${API}/${editingId}` : API;
@@ -914,7 +938,7 @@ document.addEventListener("DOMContentLoaded", () => {
 			);
 		} finally {
 			button.disabled = false;
-			button.classList.remove("is-saving");
+			spinner.classList.add("d-none");
 		}
 	}
 
@@ -977,11 +1001,17 @@ document.addEventListener("DOMContentLoaded", () => {
 		];
 		for (const [label, value] of details) {
 			const item = document.createElement("div");
+			item.className = "col";
+			const contentWrapper = document.createElement("div");
+			contentWrapper.className = "border rounded p-3 h-100";
 			const caption = document.createElement("small");
+			caption.className = "d-block text-secondary";
 			caption.textContent = label;
 			const content = document.createElement("strong");
+			content.className = "d-block mt-1";
 			content.textContent = value;
-			item.append(caption, content);
+			contentWrapper.append(caption, content);
+			item.append(contentWrapper);
 			summary.append(item);
 		}
 

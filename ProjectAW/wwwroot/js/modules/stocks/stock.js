@@ -85,6 +85,4 @@ document.addEventListener("DOMContentLoaded", async () => {
 		for (const item of warehouses.filter(x => x.activo)) document.querySelector("#stock-warehouse").add(new Option(`${item.codigo} · ${item.descripcion || ""}`, item.idAlmacen));
 	} catch (error) { showError(error.message || "No fue posible cargar los almacenes activos."); }
 	document.querySelector("#stock-warehouse").addEventListener("change", loadStocks);
-	// Conecta la acción manual de actualización; requiere seleccionar almacén.
-	document.querySelector("#stock-refresh").addEventListener("click", loadStocks);
 });

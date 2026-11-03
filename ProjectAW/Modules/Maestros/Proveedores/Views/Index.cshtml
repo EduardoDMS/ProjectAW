@@ -3,177 +3,150 @@
 	ViewData["Description"] = "Administra proveedores y contactos para las operaciones de entrada.";
 	Layout = "~/Views/Shared/_Layout.cshtml";
 }
-<section class="page-heading">
+
+<section class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3 mb-4">
 	<div>
-		<h1>Proveedores</h1>
-		<p>Centraliza datos fiscales y personas de contacto.</p>
+		<h1>
+			Proveedores
+		</h1>
+		<p class="mb-0">
+			Centraliza datos fiscales y personas de contacto.
+		</p>
 	</div>
 	<button class="btn btn-primary" id="new-supplier" type="button">
 		＋ Nuevo proveedor
 	</button>
 </section>
-<section class="content-card maestro-card">
-	<div class="maestro-toolbar">
-		<label class="status-filter form-label" for="supplier-status"
-			><span>Disponibilidad</span
-			><select id="supplier-status" class="form-select">
-				<option value="">Todos</option>
-				<option value="true">Activos</option>
-				<option value="false">Inactivos</option>
-			</select></label
-		><span
-			class="ms-auto"
-			id="supplier-feedback"
-			role="status"
-			aria-live="polite"
-		></span>
+
+<section class="card overflow-hidden">
+	<div class="d-flex flex-column flex-sm-row align-items-sm-center justify-content-between gap-3 p-3 border-bottom">
+		<div class="d-flex flex-column flex-sm-row align-items-sm-center gap-2">
+			<label class="form-label mb-0" for="supplier-status">
+				Disponibilidad
+			</label>
+			<select id="supplier-status" class="form-select">
+				<option value="">
+					Todos
+				</option>
+				<option value="true">
+					Activos
+				</option>
+				<option value="false">
+					Inactivos
+				</option>
+			</select>
+		</div>
+		<span class="ms-sm-auto" id="supplier-feedback" role="status" aria-live="polite">
+		</span>
 	</div>
-	<div id="supplier-alert" class="maestro-alert" role="alert" hidden></div>
+	<div class="alert alert-danger m-3" id="supplier-alert" role="alert" hidden>
+	</div>
 	<div class="table-responsive p-3">
 		<table id="suppliers-table" class="table align-middle w-100">
 			<thead>
 				<tr>
-					<th>Razón social</th>
-					<th>Documento</th>
-					<th>Contacto</th>
-					<th>Correo</th>
-					<th>Teléfono</th>
-					<th>Estado</th>
-					<th>Acciones</th>
+					<th scope="col">
+						Razón social
+					</th>
+					<th scope="col">
+						Documento
+					</th>
+					<th scope="col">
+						Contacto
+					</th>
+					<th scope="col">
+						Correo
+					</th>
+					<th scope="col">
+						Teléfono
+					</th>
+					<th scope="col">
+						Estado
+					</th>
+					<th scope="col">
+						Acciones
+					</th>
 				</tr>
 			</thead>
-			<tbody></tbody>
+			<tbody>
+			</tbody>
 		</table>
 	</div>
 </section>
-<div
-	class="modal fade"
-	id="supplier-modal"
-	tabindex="-1"
-	aria-labelledby="supplier-modal-title"
-	aria-hidden="true"
->
+
+<div class="modal fade" id="supplier-modal" tabindex="-1" aria-labelledby="supplier-modal-title" aria-hidden="true">
 	<div class="modal-dialog modal-dialog-centered modal-lg">
-		<div class="modal-content maestro-modal">
+		<div class="modal-content">
 			<div class="modal-header">
-				<div>
-					<span class="eyebrow">DIRECTORIO DE SUMINISTRO</span>
-					<h2 class="modal-title" id="supplier-modal-title">
-						Nuevo proveedor
-					</h2>
-				</div>
-				<button
-					class="btn-close"
-					type="button"
-					data-bs-dismiss="modal"
-					aria-label="Cerrar"
-				></button>
+				<h2 class="modal-title" id="supplier-modal-title">
+					Nuevo proveedor
+				</h2>
+				<button class="btn-close" type="button" data-bs-dismiss="modal" aria-label="Cerrar">
+				</button>
 			</div>
 			<form id="supplier-form">
 				<div class="modal-body">
-					<div
-						id="supplier-form-alert"
-						class="maestro-alert"
-						role="alert"
-						hidden
-					></div>
-					<div class="maestro-form-grid">
-						<div class="maestro-field">
-							<label for="supplier-business-name"
-								 class="form-label">Razón social *</label
-							><input
-								class="form-control"
-								id="supplier-business-name"
-								name="razonSocial"
-								maxlength="50"
-								required
-							/>
+					<div class="alert alert-danger" id="supplier-form-alert" role="alert" hidden>
+					</div>
+					<div class="row g-3">
+						<div class="col-12 col-md-6">
+							<label for="supplier-business-name" class="form-label">
+								Razón social *
+							</label>
+							<input class="form-control" id="supplier-business-name" name="razonSocial" maxlength="50" required />
 						</div>
-						<div class="maestro-field">
-							<label for="supplier-document-type"
-								 class="form-label">Tipo de documento *</label
-							><select
-								class="form-select"
-								id="supplier-document-type"
-								name="idTipoDocumento"
-								required
-							></select>
+						<div class="col-12 col-md-6">
+							<label for="supplier-document-type" class="form-label">
+								Tipo de documento *
+							</label>
+							<select class="form-select" id="supplier-document-type" name="idTipoDocumento" required>
+							</select>
 						</div>
-						<div class="maestro-field">
-							<label for="supplier-document-number"
-								 class="form-label">Número de documento *</label
-							><input
-								class="form-control"
-								id="supplier-document-number"
-								name="numeroDocumento"
-								maxlength="25"
-								required
-							/>
+						<div class="col-12 col-md-6">
+							<label for="supplier-document-number" class="form-label">
+								Número de documento *
+							</label>
+							<input class="form-control" id="supplier-document-number" name="numeroDocumento" maxlength="25" required />
 						</div>
-						<div class="maestro-field">
-							<label for="supplier-address" class="form-label">Dirección</label
-							><input
-								class="form-control"
-								id="supplier-address"
-								name="direccion"
-								maxlength="50"
-							/>
+						<div class="col-12 col-md-6">
+							<label for="supplier-address" class="form-label">
+								Dirección
+							</label>
+							<input class="form-control" id="supplier-address" name="direccion" maxlength="50" />
 						</div>
-						<div class="maestro-field">
-							<label for="supplier-contact"
-								 class="form-label">Nombre de contacto</label
-							><input
-								class="form-control"
-								id="supplier-contact"
-								name="nombreContacto"
-								maxlength="50"
-							/>
+						<div class="col-12 col-md-6">
+							<label for="supplier-contact" class="form-label">
+								Nombre de contacto
+							</label>
+							<input class="form-control" id="supplier-contact" name="nombreContacto" maxlength="50" />
 						</div>
-						<div class="maestro-field">
-							<label for="supplier-email"
-								 class="form-label">Correo de contacto</label
-							><input
-								class="form-control"
-								id="supplier-email"
-								name="correoContacto"
-								type="email"
-								maxlength="50"
-							/>
+						<div class="col-12 col-md-6">
+							<label for="supplier-email" class="form-label">
+								Correo de contacto
+							</label>
+							<input class="form-control" id="supplier-email" name="correoContacto" type="email" maxlength="50" />
 						</div>
-						<div class="maestro-field">
-							<label for="supplier-phone"
-								 class="form-label">Teléfono de contacto</label
-							><input
-								class="form-control"
-								id="supplier-phone"
-								name="telefonoContacto"
-								maxlength="50"
-							/>
+						<div class="col-12 col-md-6">
+							<label for="supplier-phone" class="form-label">
+								Teléfono de contacto
+							</label>
+							<input class="form-control" id="supplier-phone" name="telefonoContacto" maxlength="50" />
 						</div>
-						<div class="maestro-field maestro-field--check form-check">
-							<input
-								class="form-check-input"
-								id="supplier-active"
-								name="activo"
-								type="checkbox"
-							/><label for="supplier-active"
-								 class="form-check-label">Proveedor activo</label
-							>
+						<div class="col-12">
+							<div class="form-check">
+								<input class="form-check-input" id="supplier-active" name="activo" type="checkbox" />
+								<label for="supplier-active" class="form-check-label">
+									Proveedor activo
+								</label>
+							</div>
 						</div>
 					</div>
 				</div>
 				<div class="modal-footer">
-					<button
-						class="btn btn-light"
-						type="button"
-						data-bs-dismiss="modal"
-					>
-						Cancelar</button
-					><button
-						class="btn btn-primary"
-						id="save-supplier"
-						type="submit"
-					>
+					<button class="btn btn-light" type="button" data-bs-dismiss="modal">
+						Cancelar
+					</button>
+					<button class="btn btn-primary" id="save-supplier" type="submit">
 						Guardar proveedor
 					</button>
 				</div>
@@ -181,21 +154,13 @@
 		</div>
 	</div>
 </div>
+
 @section Styles {
-<link
-	rel="stylesheet"
-	href="~/libs/datatables/dataTables.dataTables.min.css"
-	asp-append-version="true"
-/>
+	<link rel="stylesheet" href="~/libs/datatables/dataTables.dataTables.min.css" asp-append-version="true" />
 }
 @section Scripts {
-<script
-	src="~/libs/datatables/dataTables.min.js"
-	asp-append-version="true"
-></script>
-<script
-	src="~/js/modules/maestros/proveedores/proveedor.js"
-	asp-append-version="true"
-></script>
+	<script src="~/libs/datatables/dataTables.min.js" asp-append-version="true">
+	</script>
+	<script src="~/js/modules/maestros/proveedores/proveedor.js" asp-append-version="true">
+	</script>
 }
-

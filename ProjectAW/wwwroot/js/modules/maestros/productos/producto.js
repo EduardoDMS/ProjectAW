@@ -77,7 +77,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 						data: "activo",
 						render: (value, type) =>
 							type === "display"
-								? `<span class="record-status ${value ? "is-active" : "is-inactive"}">${value ? "Activo" : "Inactivo"}</span>`
+								? `<span class="badge ${value ? "text-bg-success" : "text-bg-secondary"}">${value ? "Activo" : "Inactivo"}</span>`
 								: value
 									? "Activo"
 									: "Inactivo",
@@ -88,7 +88,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 						searchable: false,
 						className: "text-end",
 						render: (_value, _type, row) =>
-							`<button type="button" class="btn table-action" data-action="edit" data-id="${row.idProducto}">Editar</button><button type="button" class="btn table-action table-action--muted" data-action="status" data-id="${row.idProducto}">${row.activo ? "Desactivar" : "Activar"}</button>`,
+							`<button type="button" class="btn btn-sm btn-outline-primary me-2" data-action="edit" data-id="${row.idProducto}">Editar</button><button type="button" class="btn btn-sm btn-outline-secondary" data-action="status" data-id="${row.idProducto}">${row.activo ? "Desactivar" : "Activar"}</button>`,
 					},
 				],
 				order: [[0, "asc"]],

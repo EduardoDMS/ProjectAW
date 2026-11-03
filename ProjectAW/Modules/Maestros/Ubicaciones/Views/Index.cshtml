@@ -3,131 +3,120 @@
 	ViewData["Description"] = "Localiza productos dentro de cada almacén.";
 	Layout = "~/Views/Shared/_Layout.cshtml";
 }
-<section class="page-heading">
+
+<section class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3 mb-4">
 	<div>
-		<h1>Ubicaciones</h1>
-		<p>Define pasillos, niveles y espacios asociados a un almacén.</p>
+		<h1>
+			Ubicaciones
+		</h1>
+		<p class="mb-0">
+			Define pasillos, niveles y espacios asociados a un almacén.
+		</p>
 	</div>
 	<button class="btn btn-primary" id="new-location" type="button">
 		＋ Nueva ubicación
 	</button>
 </section>
-<section class="content-card maestro-card">
-	<div class="maestro-toolbar">
-		<label class="status-filter form-label" for="location-status"
-			><span>Disponibilidad</span
-			><select id="location-status" class="form-select">
-				<option value="">Todas</option>
-				<option value="true">Activas</option>
-				<option value="false">Inactivas</option>
-			</select></label
-		><span
-			class="ms-auto"
-			id="location-feedback"
-			role="status"
-			aria-live="polite"
-		></span>
+
+<section class="card overflow-hidden">
+	<div class="d-flex flex-column flex-sm-row align-items-sm-center justify-content-between gap-3 p-3 border-bottom">
+		<div class="d-flex flex-column flex-sm-row align-items-sm-center gap-2">
+			<label class="form-label mb-0" for="location-status">
+				Disponibilidad
+			</label>
+			<select id="location-status" class="form-select">
+				<option value="">
+					Todas
+				</option>
+				<option value="true">
+					Activas
+				</option>
+				<option value="false">
+					Inactivas
+				</option>
+			</select>
+		</div>
+		<span class="ms-sm-auto" id="location-feedback" role="status" aria-live="polite">
+		</span>
 	</div>
-	<div id="location-alert" class="maestro-alert" role="alert" hidden></div>
+	<div class="alert alert-danger m-3" id="location-alert" role="alert" hidden>
+	</div>
 	<div class="table-responsive p-3">
 		<table id="locations-table" class="table align-middle w-100">
 			<thead>
 				<tr>
-					<th>Código</th>
-					<th>Ubicación</th>
-					<th>Almacén</th>
-					<th>Estado</th>
-					<th>Acciones</th>
+					<th scope="col">
+						Código
+					</th>
+					<th scope="col">
+						Ubicación
+					</th>
+					<th scope="col">
+						Almacén
+					</th>
+					<th scope="col">
+						Estado
+					</th>
+					<th scope="col">
+						Acciones
+					</th>
 				</tr>
 			</thead>
-			<tbody></tbody>
+			<tbody>
+			</tbody>
 		</table>
 	</div>
 </section>
-<div
-	class="modal fade"
-	id="location-modal"
-	tabindex="-1"
-	aria-labelledby="location-modal-title"
-	aria-hidden="true"
->
+
+<div class="modal fade" id="location-modal" tabindex="-1" aria-labelledby="location-modal-title" aria-hidden="true">
 	<div class="modal-dialog modal-dialog-centered">
-		<div class="modal-content maestro-modal">
+		<div class="modal-content">
 			<div class="modal-header">
-				<div>
-					<span class="eyebrow">DISTRIBUCIÓN DE ALMACÉN</span>
-					<h2 class="modal-title" id="location-modal-title">
-						Nueva ubicación
-					</h2>
-				</div>
-				<button
-					class="btn-close"
-					type="button"
-					data-bs-dismiss="modal"
-					aria-label="Cerrar"
-				></button>
+				<h2 class="modal-title" id="location-modal-title">
+					Nueva ubicación
+				</h2>
+				<button class="btn-close" type="button" data-bs-dismiss="modal" aria-label="Cerrar">
+				</button>
 			</div>
 			<form id="location-form">
 				<div class="modal-body">
-					<div
-						id="location-form-alert"
-						class="maestro-alert"
-						role="alert"
-						hidden
-					></div>
-					<div class="maestro-form-grid">
-						<div class="maestro-field">
-							<label for="location-code" class="form-label">Código *</label
-							><input
-								class="form-control"
-								id="location-code"
-								name="codigo"
-								maxlength="100"
-								required
-							/>
+					<div class="alert alert-danger" id="location-form-alert" role="alert" hidden>
+					</div>
+					<div class="row g-3">
+						<div class="col-12">
+							<label for="location-code" class="form-label">
+								Código *
+							</label>
+							<input class="form-control" id="location-code" name="codigo" maxlength="100" required />
 						</div>
-						<div class="maestro-field">
-							<label for="location-warehouse" class="form-label">Almacén *</label
-							><select
-								class="form-select"
-								id="location-warehouse"
-								name="idAlmacen"
-								required
-							></select>
+						<div class="col-12">
+							<label for="location-warehouse" class="form-label">
+								Almacén *
+							</label>
+							<select class="form-select" id="location-warehouse" name="idAlmacen" required>
+							</select>
 						</div>
-						<div class="maestro-field">
-							<label for="location-description" class="form-label">Descripción</label
-							><input
-								class="form-control"
-								id="location-description"
-								name="descripcion"
-								maxlength="150"
-							/>
+						<div class="col-12">
+							<label for="location-description" class="form-label">
+								Descripción
+							</label>
+							<input class="form-control" id="location-description" name="descripcion" maxlength="150" />
 						</div>
-						<div class="maestro-field maestro-field--check form-check">
-							<input
-								class="form-check-input"
-								id="location-active"
-								name="activo"
-								type="checkbox"
-							/><label for="location-active"
-								 class="form-check-label">Ubicación activa</label
-							>
+						<div class="col-12">
+							<div class="form-check">
+								<input class="form-check-input" id="location-active" name="activo" type="checkbox" />
+								<label for="location-active" class="form-check-label">
+									Ubicación activa
+								</label>
+							</div>
 						</div>
 					</div>
 				</div>
 				<div class="modal-footer">
-					<button
-						class="btn btn-light"
-						type="button"
-						data-bs-dismiss="modal"
-					>
-						Cancelar</button
-					><button
-						class="btn btn-primary"
-						id="save-location"
-						type="submit"
-					>
+					<button class="btn btn-light" type="button" data-bs-dismiss="modal">
+						Cancelar
+					</button>
+					<button class="btn btn-primary" id="save-location" type="submit">
 						Guardar ubicación
 					</button>
 				</div>
@@ -135,21 +124,13 @@
 		</div>
 	</div>
 </div>
+
 @section Styles {
-<link
-	rel="stylesheet"
-	href="~/libs/datatables/dataTables.dataTables.min.css"
-	asp-append-version="true"
-/>
+	<link rel="stylesheet" href="~/libs/datatables/dataTables.dataTables.min.css" asp-append-version="true" />
 }
 @section Scripts {
-<script
-	src="~/libs/datatables/dataTables.min.js"
-	asp-append-version="true"
-></script>
-<script
-	src="~/js/modules/maestros/ubicaciones/ubicacion.js"
-	asp-append-version="true"
-></script>
+	<script src="~/libs/datatables/dataTables.min.js" asp-append-version="true">
+	</script>
+	<script src="~/js/modules/maestros/ubicaciones/ubicacion.js" asp-append-version="true">
+	</script>
 }
-
